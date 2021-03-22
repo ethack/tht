@@ -3,12 +3,14 @@
 [GitHub](https://github.com/ethack/tht) | [DockerHub](https://hub.docker.com/r/ethack/tht)
 
 Container image with a suite of tools useful for threat hunting.
-<p style="color:white">THT can also stand for "Think Happy Thoughts" ;)</p>
+<p color="white">THT can also stand for "Think Happy Thoughts" ;)</p>
 
-Goals:
+## Goals
 - Small - Keep the image size under 1 GB.
 - Portable - Be able to load it up on any system. Nearly a given with Docker.
 - Useful - Prune anything that doesn't get used. 
+
+## Running
 
 ```bash
 docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host ethack/tht
@@ -63,7 +65,7 @@ Other ideas:
   - [Azure IP Ranges and Service Tags – Public Cloud](https://www.microsoft.com/en-us/download/details.aspx?id=56519)
 [Microsoft Public IP Space](https://www.microsoft.com/en-us/download/details.aspx?id=53602)
 
-# Issues
+## Issues
 - fx doesn't read zeek json when given filename. Works when piped.
 - jiq is super slow.
 - Home and end keys don't seem to work in MobaXterm.
