@@ -3,7 +3,10 @@
 [GitHub](https://github.com/ethack/tht) | [DockerHub](https://hub.docker.com/r/ethack/tht)
 
 Container image with a suite of tools useful for threat hunting.
-<p color="white">THT can also stand for "Think Happy Thoughts" ;)</p>
+
+```diff
+# THT can also stand for "Think Happy Thoughts" ;)
+```
 
 ## Goals
 - Small - Keep the image size under 1 GB.
