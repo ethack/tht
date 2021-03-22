@@ -16,8 +16,9 @@ FROM ubuntu:hirsute as c-builder
     ENV DEBIAN_FRONTEND noninteractive
     ENV DEBCONF_NONINTERACTIVE_SEEN true
 
-    # SiLK IPSet
     RUN apt-get update
+
+    # SiLK IPSet
     RUN apt-get -y install --no-install-recommends wget make gcc g++ libpcap-dev python python-dev libglib2.0-dev ca-certificates
     ARG IPSET_VERSION=3.18.0
     RUN wget -O /tmp/silk-ipset.tar.gz https://tools.netsa.cert.org/releases/silk-ipset-$IPSET_VERSION.tar.gz \
@@ -67,13 +68,13 @@ FROM ubuntu:hirsute as base
     RUN apt-get -y install datamash
     RUN apt-get -y install miller
 
-### Grep ###
+    ### Grep ###
     # grep, sed, awk, etc
     RUN apt-get -y install coreutils
     RUN apt-get -y install ripgrep
     RUN apt-get -y install ugrep
 
-### Zeek ###
+    ### Zeek ###
     RUN apt-get -y install zeek-aux
 
     # zq - zeek file processor
@@ -92,7 +93,7 @@ FROM ubuntu:hirsute as base
     RUN chmod +x /usr/local/bin/trace-summary
     COPY trace-summary.sh /usr/local/bin/
 
-### JSON ###
+    ### JSON ###
     RUN apt-get -y install jq
 
     # fx - json processor
@@ -106,7 +107,7 @@ FROM ubuntu:hirsute as base
     COPY --from=go-builder /go/bin/jiq /usr/local/bin/
     COPY --from=go-builder /go/bin/gron /usr/local/bin/
 
-### IP Address ###
+    ### IP Addresses ###
     RUN apt-get -y install ipcalc
 
     # SiLK IPSet
@@ -126,7 +127,7 @@ FROM ubuntu:hirsute as base
     && tar -xz -f /tmp/geoip-asn.tar.gz -C /tmp/ \
     && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/
 
-## Network ##
+## Network Utils ##
     # ping
     RUN apt-get -y install iputils-ping
     # dig
