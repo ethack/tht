@@ -149,3 +149,6 @@ FROM ubuntu:hirsute as base
 FROM scratch
 COPY --from=base / /
 CMD ["zsh"]
+
+# Metadata #
+LABEL org.opencontainers.image.source https://github.com/ethack/tht
