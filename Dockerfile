@@ -128,6 +128,8 @@ FROM ubuntu:hirsute as base
     && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/
 
 ## Network Utils ##
+    RUN apt-get -y install netcat
+    RUN apt-get -y install whois
     # ping
     RUN apt-get -y install iputils-ping
     # dig
