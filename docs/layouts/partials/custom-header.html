@@ -1,0 +1,5 @@
+    {{ $assetBusting := not .Site.Params.disableAssetsBusting }}
+    <link href="{{"css/custom.css" | relURL}}{{ if $assetBusting }}?{{ now.Unix }}{{ end }}" rel="stylesheet">
+    {{with .Site.Params.highlightStyle}}
+    <link href="{{(printf "css/highlightjs/%s.css" .) | relURL}}{{ if $assetBusting }}?{{ now.Unix }}{{ end }}" rel="stylesheet">
+    {{end}}

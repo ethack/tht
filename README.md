@@ -1,6 +1,6 @@
 # Threat Hunting Toolkit
 
-[GitHub](https://github.com/ethack/tht) | [DockerHub](https://hub.docker.com/r/ethack/tht)
+[GitHub](https://github.com/ethack/tht) | [DockerHub](https://hub.docker.com/r/ethack/tht) | [Docs](https://ethack.github.io/tht/)
 
 Container image with a suite of tools useful for threat hunting.
 

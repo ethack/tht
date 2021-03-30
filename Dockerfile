@@ -52,7 +52,6 @@ FROM ubuntu:hirsute as base
     # process monitor
     RUN apt-get -y install htop
     RUN apt-get -y install less
-    # CSV/TSV/JSON parser and lightweight streaming stats
     RUN apt-get -y install parallel
     RUN apt-get -y install unzip
     RUN apt-get -y install wget
@@ -65,7 +64,9 @@ FROM ubuntu:hirsute as base
     && broot --install
 
 ## Data Processing ##
+    # lightweight stats
     RUN apt-get -y install datamash
+    # CSV/TSV/JSON parser and lightweight streaming stats
     RUN apt-get -y install miller
 
     ### Grep ###
