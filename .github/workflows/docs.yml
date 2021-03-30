@@ -1,11 +1,11 @@
-name: github pages
+name: Deploy Docs to Github Pages
 
 on:
   push:
     branches:
       - main
     paths:
-      - 'docs/'
+      - 'docs/**'
 
 jobs:
   deploy:

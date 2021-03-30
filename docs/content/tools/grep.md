@@ -9,3 +9,11 @@ draft: true
 # Ripgrep
 
 # Ugrep
+
+```bash
+echo "Hello world"
+```
+
+```python
+print('hello world')
+```
