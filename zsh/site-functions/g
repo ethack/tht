@@ -1,0 +1,48 @@
+#!/bin/zsh
+
+# The "go" command - http://blog.patshead.com/2011/05/my-take-on-the-go-command.html
+# If arg is a file,
+if [ -f "$1" ]; then
+    if [ -n "`file $1 | grep '\(text\|empty\|no magic\)'`" ]; then
+        # If the file is writable open it in the current editor, otherwise open it using sudo.
+        if [ -w "$1" ]; then
+            $EDITOR "$1"
+        else
+            sudo $EDITOR "$1"
+            #$EDITOR /sudo::"$1" # For emacsclient+tramp
+        fi
+    fi
+# If it's a directory, go there.
+elif [ -d "$1" ]; then
+    cd "$1"
+    ls
+# If there is no arg, go home (or top level of current git tree).
+elif [ "" = "$1" ]; then
+    # http://blog.patshead.com/2012/11/improving-the-behavior-of-the-cd-command-in-git-repositories.html
+    local OUTPUT
+    #OUTPUT="$(git rev-parse --show-toplevel 2>/dev/null)"
+    if [[ -e "$OUTPUT" ]]; then
+        if [[ "$OUTPUT" != "$(pwd)" ]]; then
+            cd "$OUTPUT"
+        else
+            cd
+        fi
+    else
+        cd 
+    fi
+    ls
+# If arg is a hyphen go back to the previous directory.
+elif [ "-" = "$1" ]; then
+    cd -
+    ls
+# If there is a function defined called "zi" call it.
+elif [ -n "`declare -f | grep '^zi ()'`" ]; then
+    zi "$1"
+    ls
+# If there is an alias defined called "zi" call it.
+elif [ -n "`alias | grep '^zi='`" ]; then
+    zi "$1"
+    ls
+else
+    echo "Ran out of things to do with '$1'"
+fi
