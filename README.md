@@ -16,13 +16,13 @@ Container image with a suite of tools useful for threat hunting.
 ## Running
 
 ```bash
-docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host -w "/host/$HOME" ethack/tht
+docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host -w "/host/$(pwd)" ethack/tht
 ```
 
 Or
 
 ```bash
-docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host -w "/host/$HOME" ghcr.io/ethack/tht
+docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host -w "/host/$(pwd)" ghcr.io/ethack/tht
 ```
 
 ## Building Manually
