@@ -60,7 +60,7 @@ FROM ubuntu:hirsute as base
     # process monitor
     RUN apt-get -y install htop
     RUN apt-get -y install less
-    #RUN apt-get -y install parallel # problems with sysstat
+    # RUN apt-get -y install parallel # problems with sysstat
     RUN apt-get -y install unzip
     RUN apt-get -y install wget
     RUN apt-get -y install vim
@@ -116,6 +116,8 @@ FROM ubuntu:hirsute as base
      && mv /tmp/zq /usr/local/bin/
     # COPY --from=go-builder /go/bin/zq /usr/local/bin/
 
+    COPY bin/filter /usr/local/bin/
+
     # trace-summary
     RUN apt-get -y install --no-install-recommends python3
     # install pysubnettree dependency with pip
@@ -125,7 +127,7 @@ FROM ubuntu:hirsute as base
     RUN apt-get -y remove python3-pip
     RUN wget -nv -O /usr/local/bin/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary
     RUN chmod +x /usr/local/bin/trace-summary
-    COPY trace-summary.sh /usr/local/bin/
+    COPY bin/conn-summary /usr/local/bin/
 
     ### JSON ###
     RUN apt-get -y install jq

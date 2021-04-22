@@ -1,0 +1,154 @@
+#!/bin/bash
+
+if [ ! -z "$DEBUG" ]; then set -x; set -e; fi
+
+print_usage() {
+    cat << EOF
+Filters Zeek logs based on the search terms with output that can be piped to zeek-cut or other tools.
+
+$(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...]
+
+    --<logtype>   is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
+    -r|--regex    signifies that [search_term(s)] should be treated as regexes
+    -a|--and      all search terms are required to appear in a line (default)
+    -o|--or       at least one search term is required to appera in a line
+
+    Specify one or more [search_terms] to filter either STDIN or log files. Lines must match all search terms.
+
+Examples:
+    $(basename "$0") 10.0.0.1                            conn entries from the current directory tree that match the IP
+    $(basename "$0") 10.0.0.1 1.1.1.1                    conn entries from the current directory tree that match the pair of IPs
+    $(basename "$0") --or 8.8.8.8 1.1.1.1                conn entries from the current directory tree that match either of IPs
+    cat conn.log | $(basename "$0") 10.0.0.1             conn entries from STDIN that match the IP
+    $(basename "$0") --dns 'google.com'                  dns entries from the current directory tree that match the domain or any subdomains
+    $(basename "$0") --dns --regex '\tgoogle\.com\t'     dns entries from the current directory tree that match the regex
+
+EOF
+}
+
+#TODO require all dependencies before starting:
+#zgrep, ug, or rg; sed, printf, xargs, nproc, find, grep
+
+exists() {
+  command -v $1 >/dev/null 2>&1
+}
+
+toRegex() {
+    # escape periods and put in word boundaries
+    echo $1 | sed 's/\./\\\\./g' | xargs -n 1 printf '\\b%s\\b'
+}
+
+logType="conn"
+search=()
+regex=
+and=
+or=
+
+# process command args
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --help)
+            print_usage
+            exit
+        ;;
+        -r|--regex)
+            regex="true"
+        ;;
+        -a|--and)
+            and="true"
+            or=
+        ;;
+        -o|--or)
+            or="true"
+            and=
+        ;;
+        --*)
+            # log type passed e.g. --conn or --dns
+            logType="${1#"--"}"
+        ;;
+        *)
+            # the rest of the arguments are search terms
+            search+=("$1")
+        ;;
+    esac
+    shift
+done
+
+logFiles=
+zipFiles=
+files=
+# if stdin is not attached, search files of logType in the current directory tree
+if [ -t 0 ]; then
+    # regex must match entire path, not just filename
+    # note: never include conn-summary files and always return a success exit code
+    logFiles="$(find . -iregex ".*/$logType\b.*\.log$" | grep -v conn-summary || true)"
+    zipFiles="$(find . -iregex ".*/$logType\b.*\.log.gz$" | grep -v conn-summary || true)"
+    files="$(echo $logFiles $zipFiles | sort)"
+    # TODO: test for files/paths with spaces
+fi
+
+# pick the best search tool available
+if exists rg; then
+   grepCmd="rg"
+elif exists ug; then
+  grepCmd="ug"
+else
+  grepCmd="zgrep"
+fi
+
+filterCmd=""
+first="true"
+# loop through all search terms
+for term in "${search[@]}"; do 
+    if [ -z "$regex" ]; then
+        term="$(toRegex $term)"
+    fi
+    case $grepCmd in
+    rg)
+        # special case the first search term
+        if [ -n "$first" ]; then
+            filterCmd="rg --no-filename --search-zip -e '^#' -e '$term' $files"
+            first=
+        else
+            if [ -n "$and" ]; then      # prefer and
+                filterCmd="$filterCmd | rg -e '^#' -e '$term'"
+            elif [ -n "$or" ]; then
+                filterCmd="$filterCmd -e '$term'"
+            fi
+        fi
+    ;;
+    ug)
+        # special case the first search term
+        if [ -n "$first" ]; then
+            filterCmd="ug --no-filename --decompress --bool '^# OR ($term"
+            first=
+        else
+            if [ -n "$and" ]; then      # prefer and
+                filterCmd="$filterCmd AND '$term'"
+            elif [ -n "$or" ]; then
+                filterCmd="$filterCmd OR '$term'"
+            fi
+        fi
+    ;;
+    zgrep)
+        # special case the first search term
+        if [ -n "$first" ]; then
+            # use xargs to parallelize zgrep
+            filterCmd="echo $files | xargs -n 1 -P $(nproc) zgrep -e '^#' -e '$term'"
+            first=
+        else
+            if [ -n "$and" ]; then      # prefer and
+                filterCmd="$filterCmd | zgrep -e '^#' -e '$term'"
+            elif [ -n "$or" ]; then
+                filterCmd="$filterCmd -e '$term'"
+            fi
+        fi
+    ;;
+    esac
+done
+# sepcial case last search term for ugrep
+if [ "$grepCmd" = "ug" ]; then
+    filterCmd="$filterCmd)' $files"
+fi
+
+eval $filterCmd

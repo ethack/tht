@@ -39,7 +39,6 @@ Tools to add or investigate:
 - [go command](https://blog.patshead.com/2011/05/my-take-on-the-go-command.html)
 - [nnn](https://github.com/jarun/nnn), [ranger](https://github.com/ranger/ranger), or [midnight commander](https://midnight-commander.org/). File managers.
 - tmux, [nq](https://github.com/leahneukirchen/nq), screen, and/or [byobou](https://www.byobu.org/)
-- filter - This is a wrapper script I wrote to save keystrokes and make searching faster.
 - [harpoon](https://github.com/Te-k/harpoon) - Threat intel from cli. Like TheHive Cortex. Will require lots of API keys.
 - [VAST](https://github.com/tenzir/vast). I tried this awhile back and wasn't impressed. Take another look.
 - sqlite - https://antonz.org/sqlite-is-not-a-toy-database/
@@ -57,7 +56,7 @@ Other ideas:
     - `ripgrep`
 - Create cheatsheets. Possibly use [navi](https://github.com/denisidoro/navi).
 - Provide different image flavors. Similar to [Jupyter](https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html) and [ml-workspace](https://github.com/ml-tooling/ml-workspace). Would love to have a heavy flavor that uses ml-workspace as a base. Here are possible candidates for that images.
-    - Jupyter/Spark flavor
+    - Jupyter/Python/Spark flavor
         - [VAST](https://github.com/tenzir/vast)
         - [ZAT](https://github.com/SuperCowPowers/zat)
     - Pcap flavor
@@ -65,6 +64,7 @@ Other ideas:
         - tcpdump, [termshark](https://termshark.io/) (will need special execution instructions for live capture)
         - [passer](https://github.com/activecm/passer)
         - https://github.com/brimdata/zed/tree/main/cmd/pcap
+    - Zeek flavor (this is the current default)
     - Julia flavor
         - https://github.com/KristofferC/OhMyREPL.jl
         - https://github.com/joshday/OnlineStats.jl
@@ -73,7 +73,8 @@ Other ideas:
 [Microsoft Public IP Space](https://www.microsoft.com/en-us/download/details.aspx?id=53602)
 - Consider running `unminimize` and restoring man pages `apt install man-db`.
 - I like the prompt that Kali uses.
-- Create a rust/cargo builder image as well.
+- Create a rust/cargo builder stage as well.
+- Wrapper scripts around ipset
 
 ## Issues
 - `fx` requires a JSON array to get the interactive features (e.g. `jq -s | fx`). I'm thinking fx isn't going to be too useful.
@@ -83,3 +84,4 @@ Other ideas:
 - `g` zsh function is not loading
 - Need to save `zoxide` database in a volume. Which probably means making a wrapper script.
 - Problems installing `parallel`.
+- Can't use pipes or multiple terms in `interactively`.
