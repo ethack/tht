@@ -56,6 +56,8 @@ Other ideas:
     - `ripgrep`
 - Create cheatsheets. Possibly use [navi](https://github.com/denisidoro/navi).
 - Provide different image flavors. Similar to [Jupyter](https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html) and [ml-workspace](https://github.com/ml-tooling/ml-workspace). Would love to have a heavy flavor that uses ml-workspace as a base. Here are possible candidates for that images.
+    - Docs
+        - Run `unminimize && apt install man-db` command to restore man pages.
     - Jupyter/Python/Spark flavor
         - [VAST](https://github.com/tenzir/vast)
         - [ZAT](https://github.com/SuperCowPowers/zat)
@@ -63,7 +65,10 @@ Other ideas:
         - Pcap tools for summarizing, combining, parsing, etc.
         - tcpdump, [termshark](https://termshark.io/) (will need special execution instructions for live capture)
         - [passer](https://github.com/activecm/passer)
+        - [prads](https://github.com/gamelinux/prads/)
+        - trace-summary is already included but it needs `ipsumdump` to capture live traffic
         - https://github.com/brimdata/zed/tree/main/cmd/pcap
+        - zeek to convert from pcap to logs
     - Zeek flavor (this is the current default)
     - Julia flavor
         - https://github.com/KristofferC/OhMyREPL.jl
@@ -85,3 +90,4 @@ Other ideas:
 - Need to save `zoxide` database in a volume. Which probably means making a wrapper script.
 - Problems installing `parallel`.
 - Can't use pipes or multiple terms in `interactively`.
+- `conn-summary` doesn't detect `trace-summary` in the path even though it's there.

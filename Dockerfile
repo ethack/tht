@@ -17,10 +17,8 @@ FROM ubuntu:hirsute as c-builder
     ENV DEBIAN_FRONTEND noninteractive
     ENV DEBCONF_NONINTERACTIVE_SEEN true
 
-    RUN apt-get update
-
     # SiLK IPSet
-    RUN apt-get -y install --no-install-recommends wget make gcc g++ libpcap-dev python python-dev libglib2.0-dev ca-certificates
+    RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ libpcap-dev python python-dev libglib2.0-dev ca-certificates
     ARG IPSET_VERSION=3.18.0
     RUN wget -nv -O /tmp/silk-ipset.tar.gz https://tools.netsa.cert.org/releases/silk-ipset-${IPSET_VERSION}.tar.gz \
      && cd /tmp \
@@ -29,6 +27,15 @@ FROM ubuntu:hirsute as c-builder
      && ./configure --prefix=/opt/silk --enable-ipv6 --enable-ipset-compatibility=${IPSET_VERSION} \
      && make \
      && make install
+
+     # grepcidr
+    RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git
+    # Version 3; change to "main" for latest
+    ARG GREPCIDR_VERSION=b80b0c6ad1fce7f81bef0457a3e3b1208a3d76e3
+    RUN git clone https://github.com/jrlevine/grepcidr3.git /tmp/grepcidr \
+     && cd /tmp/grepcidr \
+     && git checkout $GREPCIDR_VERSION \
+     && make
 
 # Package Installer Stage #
 # Pick hirsute to get the latest possible version of each tool
@@ -161,6 +168,9 @@ FROM ubuntu:hirsute as base
     RUN wget -nv -O /tmp/geoip-asn.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
      && tar -xz -f /tmp/geoip-asn.tar.gz -C /tmp/ \
      && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/
+
+     # grepcidr
+     COPY --from=c-builder /tmp/grepcidr/grepcidr /usr/local/bin/
 
 ## Network Utils ##
     RUN apt-get -y install netcat

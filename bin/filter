@@ -89,11 +89,14 @@ fi
 
 # pick the best search tool available
 if exists rg; then
-   grepCmd="rg"
+  grepCmd="rg"
 elif exists ug; then
-  grepCmd="ug"
-else
+   grepCmd="ug"
+elif exists zgrep; then
   grepCmd="zgrep"
+else
+  echo "Could not find a grep program."
+  exit 1
 fi
 
 filterCmd=""
