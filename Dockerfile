@@ -37,6 +37,11 @@ FROM ubuntu:hirsute as c-builder
      && git checkout $GREPCIDR_VERSION \
      && make
 
+     # zeek-cut
+    RUN apt-get update && apt-get -y install --no-install-recommends wget gcc
+    RUN wget -nv -O /tmp/zeek-cut.c https://raw.githubusercontent.com/zeek/zeek-aux/master/zeek-cut/zeek-cut.c \
+     && gcc --static -o /tmp/zeek-cut /tmp/zeek-cut.c
+
 # Package Installer Stage #
 # Pick hirsute to get the latest possible version of each tool
 FROM ubuntu:hirsute as base
@@ -114,7 +119,7 @@ FROM ubuntu:hirsute as base
      && tar -xz -f /tmp/grex.tar.gz -C /usr/local/bin/
 
     ### Zeek ###
-    RUN apt-get -y install zeek-aux
+    COPY --from=c-builder /tmp/zeek-cut /usr/local/bin/
 
     # zq - zeek file processor
     ARG ZQ_VERSION=0.29.0
