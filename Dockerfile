@@ -169,10 +169,12 @@ FROM ubuntu:hirsute as base
     RUN mkdir -p /usr/share/GeoIP
     RUN wget -nv -O /tmp/geoip-country.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
      && tar -xz -f /tmp/geoip-country.tar.gz -C /tmp/ \
-     && mv -f /tmp/GeoLite2-Country_*/GeoLite2-Country.mmdb /usr/share/GeoIP/
+     && mv -f /tmp/GeoLite2-Country_*/GeoLite2-Country.mmdb /usr/share/GeoIP/ \
+     || echo "Failed to download Maxmind Country data. Skipping."
     RUN wget -nv -O /tmp/geoip-asn.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
      && tar -xz -f /tmp/geoip-asn.tar.gz -C /tmp/ \
-     && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/
+     && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/ \
+     || echo "Failed to download Maxmind ASN data. Skipping."
 
      # grepcidr
      COPY --from=c-builder /tmp/grepcidr/grepcidr /usr/local/bin/
