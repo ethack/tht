@@ -4,7 +4,7 @@ if [ ! -z "$DEBUG" ]; then set -x; set -e; fi
 
 print_usage() {
     cat << EOF
-Filters Zeek logs based on the search terms with output that can be piped to zeek-cut or other tools.
+Filters Zeek logs based on the search terms with output that can be piped to zeek-cut or other tools that can read Zeek logs.
 
 $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...]
 
@@ -81,8 +81,8 @@ files=
 if [ -t 0 ]; then
     # regex must match entire path, not just filename
     # note: never include conn-summary files and always return a success exit code
-    logFiles="$(find . -iregex ".*/$logType\b.*\.log$" | grep -v conn-summary || true)"
-    zipFiles="$(find . -iregex ".*/$logType\b.*\.log.gz$" | grep -v conn-summary || true)"
+    logFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log$" | grep -v conn-summary || true)"
+    zipFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log.gz$" | grep -v conn-summary || true)"
     files="$(echo $logFiles $zipFiles | sort)"
     # TODO: test for files/paths with spaces
 fi
