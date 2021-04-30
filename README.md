@@ -51,6 +51,9 @@ hugo -s docs server -D
 
 Then access the local website http://localhost:1313 in your browser.
 
+> Note:If you see a blank page or see warnings from hugo like `found no layout file` you need to download the theme, which you can do with:
+> `git submodule update --init`
+
 ## Future Ideas
 
 Tools to add or investigate:
