@@ -1,0 +1,106 @@
+<!doctype html><html lang=en class="js csstransforms3d"><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><meta name=generator content="Hugo 0.82.0"><meta name=description content="Threat Hunting Toolkit"><meta name=author content="Ethan Robish & Derek Banks"><link rel=icon href=/tht/images/favicon.png type=image/png><title>Filter :: Threat Hunting Toolkit</title><link href=/tht/css/nucleus.css?1619848072 rel=stylesheet><link href=/tht/css/fontawesome-all.min.css?1619848072 rel=stylesheet><link href=/tht/css/hybrid.css?1619848072 rel=stylesheet><link href=/tht/css/featherlight.min.css?1619848072 rel=stylesheet><link href=/tht/css/perfect-scrollbar.min.css?1619848072 rel=stylesheet><link href=/tht/css/auto-complete.css?1619848072 rel=stylesheet><link href=/tht/css/atom-one-dark-reasonable.css?1619848072 rel=stylesheet><link href=/tht/css/theme.css?1619848072 rel=stylesheet><link href=/tht/css/tabs.css?1619848072 rel=stylesheet><link href=/tht/css/hugo-theme.css?1619848072 rel=stylesheet><link href=/tht/css/theme-blue.css?1619848072 rel=stylesheet><script src=/tht/js/jquery-3.3.1.min.js?1619848072></script><style>:root #header+#content>#left>#rlblock_left{display:none!important}:not(pre)>code+span.copy-to-clipboard{display:none}</style><link href=/tht/css/custom.css?1619848072 rel=stylesheet><link href=/tht/css/highlightjs/rainbow.css?1619848072 rel=stylesheet></head><body data-url=/tht/tools/filter/><nav id=sidebar class=showVisitedLinks><div id=header-wrapper><div id=header><h3>Toolkit</h3></div><div class=searchbox><label for=search-by><i class="fas fa-search"></i></label>
+<input data-search-input id=search-by type=search placeholder=Search...>
+<span data-search-clear><i class="fas fa-times"></i></span></div><script type=text/javascript src=/tht/js/lunr.min.js?1619848072></script><script type=text/javascript src=/tht/js/auto-complete.js?1619848072></script><script type=text/javascript>var baseurl="https://ethack.github.io/tht/"</script><script type=text/javascript src=/tht/js/search.js?1619848072></script></div><section id=homelinks><ul><li><a class=padding href=/><i class="fas fa-home"></i> Home</a></li></ul></section><div class=highlightable><ul class=topics><li data-nav-id=/tht/tools/ title=Tools class="dd-item
+parent"><a href=/tht/tools/>Tools
+<i class="fas fa-check read-icon"></i></a><ul><li data-nav-id=/tht/tools/filter/ title=Filter class="dd-item active"><a href=/tht/tools/filter/>Filter
+<i class="fas fa-check read-icon"></i></a></li><li data-nav-id=/tht/tools/conn-summary/ title="Conn Summary" class=dd-item><a href=/tht/tools/conn-summary/>Conn Summary
+<i class="fas fa-check read-icon"></i></a></li></ul></li></ul><section id=prefooter><hr><ul><li><a class=padding href=# data-clear-history-toggle><i class="fas fa-history fa-fw"></i> Clear History</a></li></ul></section><section id=footer></section></div></nav><section id=body><div id=overlay></div><div class="padding highlightable"><div><div id=top-bar><div id=top-github-link><a class=github-link title="Edit this page" href=https://github.com/ethack/tht/edit/master/docs/content/tools/filter.md target=blank><i class="fas fa-code-branch"></i>
+<span id=top-github-link-text>Edit this page</span></a></div><div id=breadcrumbs itemscope itemtype=http://data-vocabulary.org/Breadcrumb><span id=sidebar-toggle-span><a href=# id=sidebar-toggle data-sidebar-toggle><i class="fas fa-bars"></i></a></span>
+<span id=toc-menu><i class="fas fa-list-alt"></i></span>
+<span class=links><a href=/tht/>Threat Hunting Toolkit</a> > <a href=/tht/tools/>Tools</a> > Filter</span></div><div class=progress><div class=wrapper><nav id=TableOfContents><ul><li><a href=#overview>Overview</a></li><li><a href=#usage>Usage</a></li><li><a href=#comparison-with-grep>Comparison with Grep</a></li><li><a href=#examples>Examples</a></li><li><a href=#performance>Performance</a></li><li><a href=#limitations>Limitations</a></li><li><a href=#alternatives>Alternatives</a></li><li><a href=#faq>FAQ</a></li></ul></nav></div></div></div></div><div id=head-tags></div><div id=body-inner><h1>Filter</h1><h2 id=overview>Overview</h2><p>The <code>filter</code> script is tailored for searching IP addresses and domains in Zeek logs. However, it is flexible enough that it can be used for other purpsoses as well.</p><p><code>filter</code> has several special features. By default, it:</p><ul><li>Searches in the current directory tree for any <code>conn.log</code> files, including compressed files and rotated logs.</li><li>Searches files in parallel using multiple cores.</li><li>Uses faster alternatives to <code>grep</code> like <a href=https://github.com/BurntSushi/ripgrep>ripgrep</a> or <a href=https://github.com/Genivia/ugrep>ugrep</a>, when available.</li><li>Keeps Zeek TSV headers intact so that tools like <code>zeek-cut</code> can be used on the results.</li><li>Requires all search terms to be found in the same line to cut down on piping to repeated searches.</li><li>Escapes periods in search terms to prevent <code>10.0.1.0</code> from matching <code>10.0.100</code> or <code>google.com</code> from matching <code>google1com.com</code>.</li><li>Adds boundaries around the search term to prevent <code>192.168.1</code> from matching <code>192.168.100.50</code> or <code>google.com</code> from matching <code>fakegoogle.com</code>.</li></ul><h2 id=usage>Usage</h2><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-txt data-lang=txt>filter [--&lt;logtype&gt;] [OPTIONS] [search_term] [search_term...]
+
+    --&lt;logtype&gt;   is used to search logs of &#34;logtype&#34; (e.g. conn, dns, etc) in the current directory tree (default: conn)
+
+    -a|--and      all search terms are required to appear in a line (default)
+    -o|--or       at least one search term is required to appera in a line
+
+    -n|--dry-run  print out the final search command rather than execute it
+    -r|--regex    signifies that [search_term(s)] should be treated as regexes
+
+    Specify one or more [search_terms] to filter either STDIN or log files. By default, lines must match all search terms.
+</code></pre></div><h2 id=comparison-with-grep>Comparison with Grep</h2><p>The best way to understand the benefits is with an example. <code>filter</code> is designed to be called as-is for the most common use cases. It would defeat its purpose if it required extra options every time.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># find all conn log entries from the current directory tree containing 192.168.1.1</span>
+filter 192.168.1.1
+</code></pre></div><p>Let&rsquo;s look at what it would take to do this without using <code>filter</code>. A first attempt is straightforward:</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>cat conn.*log | fgrep 192.168.1.1
+<span style=color:#75715e># or</span>
+zcat conn.*log.gz | fgrep 192.168.1.1
+</code></pre></div><p>However, this has multiple issues:</p><ul><li>It is cumbersome to search both plaintext and gzip logs at once.</li><li>Zeek TSV headers are stripped which means no piping to <code>zeek-cut</code>.</li><li><code>grep</code> doesn&rsquo;t make use of multiple cores, increasing the search time.</li><li>Logs in subdirectories are not searched.</li><li>Search will match <code>192.168.1.10</code>, <code>192.168.1.19</code>, <code>192.168.1.100</code>, etc.</li></ul><p>There are ways around each of these issues, but they add extra complexity to the command and more typing. You&rsquo;d ultimately end up with something like this:</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>find . -regextype egrep -iregex <span style=color:#e6db74>&#39;.*/conn\b.*\.log(.gz)?$&#39;</span> | xargs -n <span style=color:#ae81ff>1</span> -P <span style=color:#66d9ef>$(</span>nproc<span style=color:#66d9ef>)</span> zgrep -e <span style=color:#e6db74>&#39;^#&#39;</span> -e <span style=color:#e6db74>&#39;\b192\.168\.1\.1\b&#39;</span>
+</code></pre></div><p>Which is roughly equivalent to the much shorter <code>filter 192.168.1.1</code>.</p><h2 id=examples>Examples</h2><p>Let&rsquo;s take a look at more examples.</p><div class="notices tip"><p>Just like traditional <code>grep</code> you can also pipe text to search as input.</p></div><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># log entries from stdin containing 192.168.1.1</span>
+cat conn.log | filter 192.168.1.1
+
+<span style=color:#75715e># conn log entries containing 192.168; note: this could also match 10.10.192.168</span>
+filter 192.168
+
+<span style=color:#75715e># conn log entries containing both 192.168.1.1 and 8.8.8.8</span>
+filter 192.168.1.1 8.8.8.8
+
+<span style=color:#75715e># dns log entries containing 8.8.8.8</span>
+filter --dns 8.8.8.8
+
+<span style=color:#75715e># dns log entries to Google or Cloudflare&#39;s DNS servers</span>
+filter --dns --or 8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1
+
+<span style=color:#75715e># http log entries containing google.com; note: this will also match google.com.fake.com</span>
+filter --http google.com
+
+<span style=color:#75715e># conn JSON entries where the origin host is 192.168.1.1</span>
+filter --regex <span style=color:#e6db74>&#39;&#34;id.orig_h&#34;:&#34;192.168.1.1&#34;&#39;</span>
+</code></pre></div><p>Where <code>filter</code> really shines is when you combine it with other tools that can parse Zeek logs, such as <code>zeek-cut</code>, <code>conn-summary</code>, and <code>zq</code>.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># find all source IPs that queried evil.com</span>
+filter --dns evil.com | zeek-cut id.orig_h | sort -V | uniq
+
+<span style=color:#75715e># show a summary of traffic involving a specific IP address</span>
+filter 1.2.3.4 | conn-summary
+
+<span style=color:#75715e># TODO zq example with a grouping</span>
+</code></pre></div><h2 id=performance>Performance</h2><div class="notices tip"><p>Use <code>filter</code> to quickly reduce log volume before piping to more specialized tools.</p></div><p>By design, <code>filter</code> will match the search string anywhere in the line. This means that if you want to search for an <em>origin</em> of 192.168.1.1, the best method is to first use <code>filter</code> and then another tool that can check a certain field such as <code>awk</code>, <code>jq</code>, <code>zq</code>.</p><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># TODO awk example</span>
+
+<span style=color:#75715e># for JSON logs you can do something like this</span>
+filter --regex <span style=color:#e6db74>&#39;&#34;id.orig_h&#34;:&#34;192.168.1.1&#34;&#39;</span>
+<span style=color:#75715e># or this</span>
+filter 192.168.1.1 | jq <span style=color:#e6db74>&#39;select(.&#34;id.orig_h&#34;==&#34;192.168.1.1&#34;)&#39;</span>
+
+<span style=color:#75715e># or you can use zq for either type of Zeek log</span>
+filter 192.168.1.1 | zq -f zeek <span style=color:#e6db74>&#34;id.orig_h = 192.168.1.1&#34;</span> -
+</code></pre></div><p>You might be wondering in that last example why you would even need to use filter at all. You&rsquo;d certainly get the same results by using the <code>zq</code> command on the unfiltered logs.</p><p>It comes down to performance. String searching tools like <code>grep</code> are going to be much faster than something like <code>zq</code> or <code>jq</code> that parses and interprets the field values in a log file. The benchmarks below show that it is quite a bit faster to first use <code>filter</code> to reduce log volume before doing more expensive matching, than it is to feed all the logs directly into <code>zq</code> or <code>jq</code> for field matching first.</p><div class="notices note"><p>Since <code>filter</code> uses multiple CPU cores, this also has the benefit of parallelizing the pipeline stage when the log volume is at its peak.</p></div><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>$ hyperfine -w <span style=color:#ae81ff>1</span> <span style=color:#ae81ff>\
+</span><span style=color:#ae81ff></span>  -n filter-then-select <span style=color:#e6db74>&#39;filter 10.55.182.100 | zq -f zeek &#34;id.orig_h = 10.55.182.100&#34; -&#39;</span> <span style=color:#ae81ff>\
+</span><span style=color:#ae81ff></span>  -n cat-then-select <span style=color:#e6db74>&#39;zcat conn.* | zq -f zeek &#34;id.orig_h = 10.55.182.100&#34; -&#39;</span>
+
+Benchmark <span style=color:#75715e>#1: filter-then-select</span>
+  Time <span style=color:#f92672>(</span>mean ± σ<span style=color:#f92672>)</span>:     768.8 ms ±  31.5 ms    <span style=color:#f92672>[</span>User: 3.399 s, System: 0.262 s<span style=color:#f92672>]</span>
+  Range <span style=color:#f92672>(</span>min … max<span style=color:#f92672>)</span>:   714.9 ms … 822.9 ms    <span style=color:#ae81ff>10</span> runs
+ 
+Benchmark <span style=color:#75715e>#2: cat-then-select</span>
+  Time <span style=color:#f92672>(</span>mean ± σ<span style=color:#f92672>)</span>:      6.256 s ±  0.392 s    <span style=color:#f92672>[</span>User: 11.595 s, System: 0.466 s<span style=color:#f92672>]</span>
+  Range <span style=color:#f92672>(</span>min … max<span style=color:#f92672>)</span>:    5.807 s …  7.240 s    <span style=color:#ae81ff>10</span> runs
+ 
+Summary
+  <span style=color:#e6db74>&#39;filter-then-select&#39;</span> ran
+    8.14 ± 0.61 times faster than <span style=color:#e6db74>&#39;cat-then-select&#39;</span>
+</code></pre></div><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash>$ hyperfine -w <span style=color:#ae81ff>1</span> <span style=color:#ae81ff>\
+</span><span style=color:#ae81ff></span>  -n cat-then-select <span style=color:#e6db74>&#39;cat conn.* | jq &#34;select(.\&#34;id.orig_h\&#34;==\&#34;10.55.182.100\&#34;)&#34;&#39;</span> <span style=color:#ae81ff>\
+</span><span style=color:#ae81ff></span>  -n filter-then-select <span style=color:#e6db74>&#39;filter 10.55.182.100 | jq &#34;select(.\&#34;id.orig_h\&#34;==\&#34;10.55.182.100\&#34;)&#34;&#39;</span>
+
+Benchmark <span style=color:#75715e>#1: cat-then-select</span>
+  Time <span style=color:#f92672>(</span>mean ± σ<span style=color:#f92672>)</span>:     22.428 s ±  2.036 s    <span style=color:#f92672>[</span>User: 22.185 s, System: 2.264 s<span style=color:#f92672>]</span>
+  Range <span style=color:#f92672>(</span>min … max<span style=color:#f92672>)</span>:   18.629 s … 24.577 s    <span style=color:#ae81ff>10</span> runs
+ 
+Benchmark <span style=color:#75715e>#2: filter-then-select</span>
+  Time <span style=color:#f92672>(</span>mean ± σ<span style=color:#f92672>)</span>:      1.285 s ±  0.101 s    <span style=color:#f92672>[</span>User: 2.455 s, System: 0.172 s<span style=color:#f92672>]</span>
+  Range <span style=color:#f92672>(</span>min … max<span style=color:#f92672>)</span>:    1.096 s …  1.386 s    <span style=color:#ae81ff>10</span> runs
+ 
+Summary
+  <span style=color:#e6db74>&#39;filter-then-select&#39;</span> ran
+   17.45 ± 2.09 times faster than <span style=color:#e6db74>&#39;cat-then-select&#39;</span>
+</code></pre></div><h2 id=limitations>Limitations</h2><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># this will also match 10.10.192.168 or 10.192.168.10, etc.</span>
+filter 192.168
+<span style=color:#75715e># workaround for TSV</span>
+filter --regex <span style=color:#e6db74>&#39;\t192\.168\.&#39;</span>
+<span style=color:#75715e># workaround for JSON</span>
+filter --regex <span style=color:#e6db74>&#39;&#34;192\.168\.&#39;</span>
+</code></pre></div><div class=highlight><pre style=color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=color:#75715e># this will also match google.com.fake.com</span>
+filter --http google.com
+<span style=color:#75715e># workaround for TSV</span>
+filter --regex <span style=color:#e6db74>&#39;\bgoogle\.com\t&#39;</span>
+<span style=color:#75715e># workaround for JSON</span>
+filter --regex <span style=color:#e6db74>&#39;\bgoogle\.com&#34;&#39;</span>
+</code></pre></div><h2 id=alternatives>Alternatives</h2><ul><li><a href=https://github.com/markjx/search2018>grepwide</a></li><li><a href=https://github.com/BurntSushi/ripgrep>ripgrep</a></li><li><a href=https://github.com/Genivia/ugrep>ugrep</a></li></ul><h2 id=faq>FAQ</h2><p>Q: Why use <code>filter</code> over tools like <code>awk</code>, <code>grep</code>, <code>jq</code>, <a href=https://github.com/brimdata/zed/blob/main/cmd/zed/README.md#zq><code>zq</code></a>, etc.?</p><p>A: <code>filter</code> complements or enhances many of these tools.</p><ul><li>For instance, using a regex search tool is nearly always faster than using <code>awk</code>, <code>zq</code>, or <code>jq</code> to perform equality testing.</li><li>By assuming a specific use case (searching Zeek logs for things like IP addresses) <code>filter</code> can automate a bunch of boilerplate like escaping periods in regexes, passing through Zeek headers, and not printing filenames.</li><li><code>grep</code> on its own does not utilize paralell processing. This means either replacing it with an alternative or remembering the correct syntax to combine it with something like <code>parallel</code> or <code>xargs</code>.</li></ul><footer class=footline></footer></div></div><div id=navigation><a class="nav nav-prev" href=/tht/tools/ title=Tools><i class="fa fa-chevron-left"></i></a>
+<a class="nav nav-next" href=/tht/tools/conn-summary/ title="Conn Summary" style=margin-right:0><i class="fa fa-chevron-right"></i></a></div></section><div style=left:-1000px;overflow:scroll;position:absolute;top:-1000px;border:none;box-sizing:content-box;height:200px;margin:0;padding:0;width:200px><div style=border:none;box-sizing:content-box;height:200px;margin:0;padding:0;width:200px></div></div><script src=/tht/js/clipboard.min.js?1619848072></script><script src=/tht/js/perfect-scrollbar.min.js?1619848072></script><script src=/tht/js/perfect-scrollbar.jquery.min.js?1619848072></script><script src=/tht/js/jquery.sticky.js?1619848072></script><script src=/tht/js/featherlight.min.js?1619848072></script><script src=/tht/js/highlight.pack.js?1619848072></script><script>hljs.initHighlightingOnLoad()</script><script src=/tht/js/modernizr.custom-3.6.0.js?1619848072></script><script src=/tht/js/learn.js?1619848072></script><script src=/tht/js/hugo-learn.js?1619848072></script><script src=/tht/mermaid/mermaid.js?1619848072></script><script>mermaid.initialize({startOnLoad:!0})</script></body></html>
