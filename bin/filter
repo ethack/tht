@@ -9,9 +9,16 @@ Filters Zeek logs based on the search terms with output that can be piped to zee
 $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...]
 
     --<logtype>   is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
-    -r|--regex    signifies that [search_term(s)] should be treated as regexes
+
     -a|--and      all search terms are required to appear in a line (default)
     -o|--or       at least one search term is required to appera in a line
+
+    -n|--dry-run  print out the final search command rather than execute it
+    -r|--regex    signifies that [search_term(s)] should be treated as regexes
+
+    --rg          force use of ripgrep
+    --ug          force use of ugrep
+    --zgrep       force use of zgrep
 
     Specify one or more [search_terms] to filter either STDIN or log files. Lines must match all search terms.
 
@@ -43,11 +50,13 @@ search=()
 regex=
 and=
 or=
+dryRun=
+grepCmd=
 
 # process command args
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --help)
+        -h|--help)
             print_usage
             exit
         ;;
@@ -61,6 +70,18 @@ while [[ $# -gt 0 ]]; do
         -o|--or)
             or="true"
             and=
+        ;;
+        -n|--dry-run)
+            dryRun="true"
+        ;;
+        --rg)
+            grepCmd="rg"
+        ;;
+        --ug)
+            grepCmd="ug"
+        ;;
+        --zgrep)
+            grepCmd="zgrep"
         ;;
         --*)
             # log type passed e.g. --conn or --dns
@@ -88,13 +109,17 @@ if [ -t 0 ]; then
 fi
 
 # pick the best search tool available
-if exists rg; then
+if [ -n "$grepCmd" ]; then
+  : # grep type forced on commandline
+elif exists rg; then
   grepCmd="rg"
 elif exists ug; then
    grepCmd="ug"
 elif exists zgrep; then
   grepCmd="zgrep"
-else
+fi
+
+if ! exists "$grepCmd"; then
   echo "Could not find a grep program."
   exit 1
 fi
@@ -110,7 +135,10 @@ for term in "${search[@]}"; do
     rg)
         # special case the first search term
         if [ -n "$first" ]; then
-            filterCmd="rg --no-filename --search-zip -e '^#' -e '$term' $files"
+            # disable unicode to avoid taking a speed hit
+            # https://github.com/BurntSushi/ripgrep/issues/1860
+            # https://github.com/BurntSushi/ripgrep/issues/1760
+            filterCmd="rg --no-filename --no-line-number --no-unicode --search-zip -e '^#' -e '$term' $files"
             first=
         else
             if [ -n "$and" ]; then      # prefer and
@@ -154,4 +182,18 @@ if [ "$grepCmd" = "ug" ]; then
     filterCmd="$filterCmd)' $files"
 fi
 
-eval $filterCmd
+if [ -n "$dryRun" ]; then
+    echo $filterCmd
+else
+    eval $filterCmd
+fi
+
+
+# TODO
+# Specify multiple types of logs? e.g.
+# filter --http --ssl --dns google.com
+# Wouldn't really be useful for zeek-cut. But would be useful for jq and JSON logs.
+
+# Fix 192.168 matching in the middle.
+# filter --starts-with|-s 192.168 == '(\t|")192\.168\b'
+# filter --ends-with|-e 254 == '\b254(\t|")'

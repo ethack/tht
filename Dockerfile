@@ -128,7 +128,7 @@ FROM ubuntu:hirsute as base
      && mv /tmp/zq /usr/local/bin/
     # COPY --from=go-builder /go/bin/zq /usr/local/bin/
 
-    COPY bin/filter /usr/local/bin/
+    # COPY bin/filter /usr/local/bin/
 
     # trace-summary
     RUN apt-get -y install --no-install-recommends python3
@@ -139,16 +139,10 @@ FROM ubuntu:hirsute as base
     RUN apt-get -y remove python3-pip
     RUN wget -nv -O /usr/local/bin/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary
     RUN chmod +x /usr/local/bin/trace-summary
-    COPY bin/conn-summary /usr/local/bin/
+    # COPY bin/conn-summary /usr/local/bin/
 
     ### JSON ###
     RUN apt-get -y install jq
-
-    # fx - json processor
-    # ARG FX_VERSION=20.0.2
-    # RUN wget -nv -O /tmp/fx.zip https://github.com/antonmedv/fx/releases/download/${FX_VERSION}/fx-linux.zip \
-    #  && unzip -j -d /usr/local/bin/ /tmp/fx.zip \
-    #  && mv /usr/local/bin/fx-linux /usr/local/bin/fx
 
     COPY --from=go-builder /go/bin/json-cut /usr/local/bin/
     COPY --from=go-builder /go/bin/gojq /usr/local/bin/
@@ -192,6 +186,10 @@ FROM ubuntu:hirsute as base
     RUN wget -nv -O /tmp/dog.zip https://github.com/ogham/dog/releases/download/v${DOG_VERSION}/dog-v${DOG_VERSION}-x86_64-unknown-linux-gnu.zip \
      && unzip -j -d /tmp/ /tmp/dog.zip \
      && mv /tmp/dog /usr/local/bin/
+
+## Local scripts (moved to end for efficient caching)
+    COPY bin/conn-summary /usr/local/bin/
+    COPY bin/filter /usr/local/bin/
 
 ## Customization ##
     COPY zsh/.zshrc /root/.zshrc

@@ -90,6 +90,7 @@ Other ideas:
         - trace-summary is already included but it needs `ipsumdump` to capture live traffic
         - https://github.com/brimdata/zed/tree/main/cmd/pcap
         - zeek to convert from pcap to logs
+        - https://github.com/zeek/capstats
     - Zeek flavor (this is the current default)
     - Julia flavor
         - https://github.com/KristofferC/OhMyREPL.jl
