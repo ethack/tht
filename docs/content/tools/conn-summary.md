@@ -71,6 +71,11 @@ THT has a `conn-summary` script that is useful for generating summaries on the f
 filter 192.168.88.2 165.227.88.15 | conn-summary
 ```
 
+{{% notice info %}}
+The above example uses the [`filter`](../filter/) script included with THT.
+{{% /notice %}}
+
+
 `conn-summary` uses `trace-summary` under the hood, and the output is similar to what we saw above with the following differences:
 - Internal to internal traffic is not included. That is, any connections between RFC1918 IP address ranges are excluded.
 - Unlike the Zeek `conn-summary.log` the data is not sampled by default. This means the statistics presented include all the connections instead of a sample size.
@@ -113,7 +118,8 @@ Bytes:
                   |                           | 95.100.168.194       0.2% |                    |           |               | 
 ```
 
-
+## Alternatives
+- https://github.com/jbaggs/conn-summary - reads Zeek logs from Elasticsearch
 
 <!-- 
 TODO:
@@ -128,7 +134,4 @@ Investigate more trace-summary options:
 --udp
 --min-time - would be useful for incidents
 --max-time
-
-Similar projects:
-- https://github.com/jbaggs/conn-summary - reads Zeek logs from Elasticsearch.
 -->
