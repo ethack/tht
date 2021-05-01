@@ -43,59 +43,75 @@ Examples:
 
 The best way to understand the benefits is with examples.
 
-`filter` is designed to be called as-is for the most common use cases. It would defeat the purpose if it always required extra options.
+`filter` is designed to be called as-is for the most common use cases. It would defeat its purpose if it required extra options every time.
 
 ```bash
 # find all conn log entries from the current directory tree containing 192.168.1.1
 filter 192.168.1.1
-# find all log entries from stdin containing 192.168.1.1
-cat conn.log | filter 192.168.1.1
-# find all conn log entries containing 192.168; note: this could also match 10.10.192.168
-filter 192.168
-# find all conn log entries containing both 192.168.1.1 and 8.8.8.8
-filter 192.168.1.1 8.8.8.8
 ```
 
+Let's look at what it would take to do this without using `filter`. A first attempt is straightforward:
+
 ```bash
-# use filter as a parallel grep replacement
+cat conn.*log | fgrep 192.168.1.1
+# or
+zcat conn.*log.gz | fgrep 192.168.1.1
+```
+
+However, this has multiple issues:
+- It is tricky to search both plaintext and gzip logs at once.
+- Zeek TSV headers are stripped which means no piping to zeek-cut.
+- Grep doesn't make use of multiple cores, severely increasing the search time.
+- Logs in subdirectories are not searched.
+- Search will match `192.168.1.10`, `192.168.1.19`, `192.168.1.100`, etc.
+
+There are ways around each of these issues, but they add extra complexity to the command and more typing. You'd ultimately end up with something like this:
+
+```bash
+find . -regextype egrep -iregex '.*/conn\b.*\.log(.gz)?$' | xargs -n 1 -P 12 zgrep -e '^#' -e '\b192\.168\.1\.1\b'
+```
+
+Which is roughly equivalent to the much shorter `filter 192.168.1.1`.
+
+Let's take a look at more examples.
+
+```bash
+# log entries from stdin containing 192.168.1.1
+cat conn.log | filter 192.168.1.1
+
+# conn log entries containing 192.168; note: this could also match 10.10.192.168
+filter 192.168
+
+# conn log entries containing both 192.168.1.1 and 8.8.8.8
+filter 192.168.1.1 8.8.8.8
+
+# dns log entries containing 8.8.8.8
+filter --dns 8.8.8.8
+
+# conn log entries containing both 192.168.1.1 and 8.8.8.8
+filter --dns --or 8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1
+
+# http log entries containing google.com; note: this will also match google.com.fake.com
+filter --http google.com
+
+# conn JSON entries where the origin host is 192.168.1.1
 filter --regex '"id.orig_h":"192.168.1.1"'
 ```
 
-```bash
-# find all http log entries containing 192.168.1.1
-filter --http 192.168.1.50
-# find all dns log entries containing both 192.168.1.1 and 8.8.8.8
-filter --dns 192.168.1.1 8.8.8.8
-```
+Where `filter` really shines is when you combine it with other tools that can parse Zeek logs, such as `zeek-cut`, `conn-summary`, and `zq`.
+
 
 ```bash
-# find all conn log entries containing 192.168.1.1
-filter 192.168.1.1
-# find all conn log entries containing both 192.168.1.1 and 8.8.8.8
-filter --dns --or 8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1
-```
+# find all sources who queried evil.com
+filter --dns evil.com | zeek-cut id.orig_h | sort -V | uniq
 
-TODO
-Show examples of piping into zeek-cut, conn-summary (link to documentation), zq, or any other tool.
-
-More Examples:
-
-```bash
-filter 1.1.1.1 192.168.1.2 | zeek-cut id.orig_h id.resp_h id.resp_p proto service
-```
-
-```bash
-filter --dns 1.1.1.1 google.com | zeek-cut id.orig_h
-```
-
-It will look in the current directory tree for any files matching the type you pass in. However, you can also pipe in files to be more granular.
-
-```
-cat http.log | filter google.com | zeek-cut host uri
+# show a summary of traffic involving a specific IP address
+filter 1.2.3.4 | conn-summary
 ```
 
 ## Shortcomings
-Or why you should use this to quickly reduce log volume before pairing with more specialized tools.
+
+> Or... reasons to use `filter` to quickly reduce log volume before pairing with more specialized tools.
 
 ```bash
 # This will also match 10.10.192.168 or 10.192.168.10, etc.
@@ -106,17 +122,37 @@ filter --regex '\t192\.168\.'
 filter --regex '"192\.168\.'
 ```
 
-TODO: Can I fix these cases in the script?
-filter --begins 192.168 == '(\t|")192\.168\b'
-filter --ends 254 == '\b254(\t|")'
-
 By design, `filter` will match the search string anywhere in the line. This means that if you want to search for an _origin_ of 192.168.1.1, the best method is to first use `filter` and then combine with another tool that can check a certain field such as `awk`, `jq`, `zq`, or even a combination of `zeek-cut` and more `filter`. 
 
-For JSON logs you can do something like this:
 ```bash
-# use filter as a parallel grep replacement
+# for JSON logs you can do something like this
 filter --regex '"id.orig_h":"192.168.1.1"'
+# or this
+filter 192.168.1.1 | jq ""
+
+# or you can use zq for either type of Zeek log
+filter 192.168.1.1 | zq -f zeek "id.orig_h = 192.168.1.1" -
 ```
+
+Now you might be wondering in that last example why you would even need to use filter at all. And you'd certainly get the same results by using the `zq` command on the unfiltered logs. It comes down to performance. String searching tools like `grep` are going to be much faster than something that parses and interprets a log file like `zq`. The benchmark below shows that it is quite a bit faster to first use `filter` to reduce log volume before doing more expensive matching, than it is to feed all the logs directly into `zq` for exact matching first. This also has the benefit 
+
+```bash
+$ hyperfine -w 1 'filter 10.55.182.100 | zq -f zeek "id.orig_h = 10.55.182.100" -' 'zcat conn.* | zq -f zeek "id.orig_h = 10.55.182.100" -'
+Benchmark #1: filter 10.55.182.100 | zq -f zeek "id.orig_h = 10.55.182.100" -
+  Time (mean ± σ):     768.8 ms ±  31.5 ms    [User: 3.399 s, System: 0.262 s]
+  Range (min … max):   714.9 ms … 822.9 ms    10 runs
+ 
+Benchmark #2: zcat conn.* | zq -f zeek "id.orig_h = 10.55.182.100" -
+  Time (mean ± σ):      6.256 s ±  0.392 s    [User: 11.595 s, System: 0.466 s]
+  Range (min … max):    5.807 s …  7.240 s    10 runs
+ 
+Summary
+  'filter 10.55.182.100 | zq -f zeek "id.orig_h = 10.55.182.100" -' ran
+    8.14 ± 0.61 times faster than 'zcat conn.* | zq -f zeek "id.orig_h = 10.55.182.100" -'
+```
+
+$ cat conn.* | jq 'select(."id.orig_h"=="10.55.182.100")'
+filter 10.55.182.100 | jq 'select(."id.orig_h"=="10.55.182.100")'
 
 ## Alternatives
 - `grepwide` from https://github.com/markjx/search2018
