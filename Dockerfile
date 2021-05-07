@@ -1,6 +1,7 @@
 # Golang Builder Stage #
 FROM golang:buster as go-builder
 
+    # go get installs tools to /go/bin/
     RUN go get -v -u github.com/zmap/zannotate/cmd/zannotate
     # RUN go get -v -u github.com/brimdata/zed/cmd/zq
     RUN go get -v -u github.com/JustinAzoff/json-cut
@@ -10,6 +11,24 @@ FROM golang:buster as go-builder
     RUN go get -v -u github.com/tomnomnom/gron
     # du alternative
     RUN go get -v -u github.com/viktomas/godu
+    # TODO fzf https://github.com/junegunn/fzf/blob/master/BUILD.md or https://github.com/junegunn/fzf/blob/master/install
+
+# Rust Builder Stage #
+FROM rust:buster as rust-builder
+
+    # cargo installs tools to /usr/local/cargo/bin/
+    RUN cargo install broot
+    RUN git clone https://github.com/ogham/dog.git /tmp/dog \
+     && cd /tmp/dog \
+     && cargo build --release \
+     && cargo test \
+     && cp target/release/dog /usr/local/cargo/bin/
+    RUN cargo install exa
+    RUN cargo install fd-find
+    RUN cargo install grex
+    RUN cargo install hyperfine
+    RUN cargo install ripgrep
+    RUN cargo install zoxide
 
 # C/C++ Builder Stage #
 FROM ubuntu:hirsute as c-builder
@@ -36,6 +55,15 @@ FROM ubuntu:hirsute as c-builder
      && cd /tmp/grepcidr \
      && git checkout $GREPCIDR_VERSION \
      && make
+
+    # TODO miller https://miller.readthedocs.io/en/latest/build.html
+    # TODO jq https://github.com/stedolan/jq
+
+    # ugrep
+    RUN apt-get update && apt-get -y install --no-install-recommends git gcc g++ make libpcre2-dev libz-dev
+    RUN git clone https://github.com/Genivia/ugrep.git /tmp/ugrep \
+     && cd /tmp/ugrep \
+     && ./build.sh
 
      # zeek-cut
     RUN apt-get update && apt-get -y install --no-install-recommends wget gcc
@@ -64,9 +92,11 @@ FROM ubuntu:hirsute as base
 ## System Utils ##
     RUN apt-get -y install curl
     # ls alternative
-    RUN apt-get -y install exa
+    # RUN apt-get -y install exa
+    COPY --from=rust-builder /usr/local/cargo/bin/exa /usr/local/bin/
     # find alternative
-    RUN apt-get -y install fd-find && ln -s $(which fdfind) /usr/local/bin/fd
+    # RUN apt-get -y install fd-find && ln -s $(which fdfind) /usr/local/bin/fd
+    COPY --from=rust-builder /usr/local/cargo/bin/fd /usr/local/bin/
     # fuzzy finder
     RUN apt-get -y install fzf
     # process monitor
@@ -79,17 +109,20 @@ FROM ubuntu:hirsute as base
 
     # broot - file lister and browser
     RUN apt-get -y install libxcb1
-    RUN wget -nv -O /usr/local/bin/broot https://dystroy.org/broot/download/x86_64-linux/broot \
-     && chmod +x /usr/local/bin/broot \
-     && broot --install
+    # RUN wget -nv -O /usr/local/bin/broot https://dystroy.org/broot/download/x86_64-linux/broot \
+    #  && chmod +x /usr/local/bin/broot \
+    #  && broot --install
+    COPY --from=rust-builder /usr/local/cargo/bin/broot /usr/local/bin/
+    RUN broot --install
 
     # godu - du alternative
     COPY --from=go-builder /go/bin/godu /usr/local/bin/
 
     # hyperfine - command benchmarking; like time on steroids
-    ARG HYPERFINE_VERSION=1.11.0
-    RUN wget -nv -O /tmp/hyperfine.deb https://github.com/sharkdp/hyperfine/releases/download/v${HYPERFINE_VERSION}/hyperfine_${HYPERFINE_VERSION}_amd64.deb
-    RUN dpkg -i /tmp/hyperfine.deb
+    # ARG HYPERFINE_VERSION=1.11.0
+    # RUN wget -nv -O /tmp/hyperfine.deb https://github.com/sharkdp/hyperfine/releases/download/v${HYPERFINE_VERSION}/hyperfine_${HYPERFINE_VERSION}_amd64.deb
+    # RUN dpkg -i /tmp/hyperfine.deb
+    COPY --from=rust-builder /usr/local/cargo/bin/hyperfine /usr/local/bin/
 
     # interactively - run commands interactively
     RUN wget -nv -O /usr/local/bin/interactively https://github.com/bigH/interactively/raw/master/bin/interactively \
@@ -97,10 +130,15 @@ FROM ubuntu:hirsute as base
     # for some infuriating reason [ -r ] and [ -w ] are only working in zsh and not bash
     RUN sed -i '0,/env bash$/s//env zsh/' /usr/local/bin/interactively
 
+    # skim - run commands interactively and fzf alternative
+    RUN wget -nv -O /tmp/skim.tar.gz https://github.com/lotabout/skim/releases/download/v0.9.4/skim-v0.9.4-x86_64-unknown-linux-musl.tar.gz \
+     && tar -xz -f /tmp/skim.tar.gz -C /usr/local/bin/
+
     # zoxide - better directory traversal
-    ARG ZOXIDE_VERSION=0.5.0
-    RUN wget -nv -O /usr/local/bin/zoxide https://github.com/ajeetdsouza/zoxide/releases/download/v${ZOXIDE_VERSION}/zoxide-x86_64-unknown-linux-musl \
-     && chmod +x /usr/local/bin/zoxide
+    # ARG ZOXIDE_VERSION=0.5.0
+    # RUN wget -nv -O /usr/local/bin/zoxide https://github.com/ajeetdsouza/zoxide/releases/download/v${ZOXIDE_VERSION}/zoxide-x86_64-unknown-linux-musl \
+    #  && chmod +x /usr/local/bin/zoxide
+    COPY --from=rust-builder /usr/local/cargo/bin/zoxide /usr/local/bin/
 
 ## Data Processing ##
     # lightweight stats
@@ -111,12 +149,16 @@ FROM ubuntu:hirsute as base
     ### Grep ###
     # grep, sed, awk, etc
     RUN apt-get -y install coreutils
-    RUN apt-get -y install ripgrep
-    RUN apt-get -y install ugrep
+    # RUN apt-get -y install ripgrep
+    COPY --from=rust-builder /usr/local/cargo/bin/rg /usr/local/bin/
+    # RUN apt-get -y install ugrep
+    COPY --from=c-builder /tmp/ugrep/bin/ugrep /usr/local/bin/
+    COPY --from=c-builder /tmp/ugrep/bin/ug /usr/local/bin/
 
-    ARG GREX_VERSION=1.2.0
-    RUN wget -nv -O /tmp/grex.tar.gz https://github.com/pemistahl/grex/releases/download/v${GREX_VERSION}/grex-v${GREX_VERSION}-x86_64-unknown-linux-musl.tar.gz \
-     && tar -xz -f /tmp/grex.tar.gz -C /usr/local/bin/
+    # ARG GREX_VERSION=1.2.0
+    # RUN wget -nv -O /tmp/grex.tar.gz https://github.com/pemistahl/grex/releases/download/v${GREX_VERSION}/grex-v${GREX_VERSION}-x86_64-unknown-linux-musl.tar.gz \
+    #  && tar -xz -f /tmp/grex.tar.gz -C /usr/local/bin/
+    COPY --from=rust-builder /usr/local/cargo/bin/grex /usr/local/bin/
 
     ### Zeek ###
     COPY --from=c-builder /tmp/zeek-cut /usr/local/bin/
@@ -182,10 +224,11 @@ FROM ubuntu:hirsute as base
     RUN apt-get -y install dnsutils
     # dog - dig replacement
     RUN apt-get -y install libc6
-    ARG DOG_VERSION=0.1.0
-    RUN wget -nv -O /tmp/dog.zip https://github.com/ogham/dog/releases/download/v${DOG_VERSION}/dog-v${DOG_VERSION}-x86_64-unknown-linux-gnu.zip \
-     && unzip -j -d /tmp/ /tmp/dog.zip \
-     && mv /tmp/dog /usr/local/bin/
+    # ARG DOG_VERSION=0.1.0
+    # RUN wget -nv -O /tmp/dog.zip https://github.com/ogham/dog/releases/download/v${DOG_VERSION}/dog-v${DOG_VERSION}-x86_64-unknown-linux-gnu.zip \
+    #  && unzip -j -d /tmp/ /tmp/dog.zip \
+    #  && mv /tmp/dog /usr/local/bin/
+    COPY --from=rust-builder /usr/local/cargo/bin/dog /usr/local/bin/
 
 ## Local scripts (moved to end for efficient caching)
     COPY bin/conn-summary /usr/local/bin/
