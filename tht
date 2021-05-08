@@ -23,6 +23,18 @@ docker_cmd=(
 $SUDO docker volume create tht_zoxide-cache >/dev/null && \
     docker_cmd+=("--mount" "source=tht_zoxide-cache,destination=/usr/local/share/zoxide/,type=volume")
 
+# volume mount repo scripts for development
+# TODO proper argument parsing
+if [ "$1" = "--dev" ]; then
+    docker_cmd+=(
+        "-v" "$(pwd)/bin/conn-summary:/usr/local/bin/conn-summary"
+        "-v" "$(pwd)/bin/filter:/usr/local/bin/filter"
+    )
+    # these cause issues currently
+    #  -v "$(pwd)/zsh/.zshrc:/root/.zshrc"
+    #  -v "$(pwd)/zsh/site-functions:/usr/local/share/zsh/site-functions/"
+fi
+
 # try starting tht from two different repos; dockerhub could fail due to rate limits
 $SUDO "${docker_cmd[@]}" ethack/tht || \
 $SUDO "${docker_cmd[@]}" ghcr.io/ethack/tht

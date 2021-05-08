@@ -20,17 +20,28 @@ The `filter` script is tailored for searching IP addresses and domains in Zeek l
 ## Usage
 
 ```txt
-filter [--<logtype>] [OPTIONS] [search_term] [search_term...]
+filter [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPTIONS]]
 
     --<logtype>   is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
 
-    -a|--and      all search terms are required to appear in a line (default)
-    -o|--or       at least one search term is required to appera in a line
+    Specify one or more [search_terms] to filter either STDIN or log files. If you don't specify any search terms, all lines will be printed.
+    
+    Lines must match all search terms by default.
+    -o|--or       at least one search term is required to appear in a line (as opposed to all terms matching)
 
-    -n|--dry-run  print out the final search command rather than execute it
-    -r|--regex    signifies that [search_term(s)] should be treated as regexes
+    Search terms will match on word boundaries by default.
+    -s|--starts-with  anchor search term to beginning of field (e.g. 192.168)
+    -e|--ends-with    anchor search term to end of field (e.g. google.com)
+    -r|--regex        signifies that [search_term(s)] should be treated as regexes
 
-    Specify one or more [search_terms] to filter either STDIN or log files. By default, lines must match all search terms.
+    -n|--dry-run      print out the final search command rather than execute it
+
+    filter will find the first search tool available. Use the following options to force a specific tool.
+    --rg          force use of ripgrep
+    --ug          force use of ugrep
+    --zgrep       force use of zgrep
+
+    Any arguments given after -- will be passed to the underlying search command.
 ```
 
 ## Comparison with Grep
@@ -173,24 +184,20 @@ Summary
    17.45 ± 2.09 times faster than 'cat-then-select'
 ```
 
-## Limitations
+## Gotchas
 
 ```bash
 # this will also match 10.10.192.168 or 10.192.168.10, etc.
 filter 192.168
-# workaround for TSV
-filter --regex '\t192\.168\.'
-# workaround for JSON
-filter --regex '"192\.168\.'
+# do this instead
+filter --starts-with 192.168
 ```
 
 ```bash
 # this will also match google.com.fake.com
 filter --http google.com
-# workaround for TSV
-filter --regex '\bgoogle\.com\t'
-# workaround for JSON
-filter --regex '\bgoogle\.com"'
+# do this instead
+filter --http --ends-with google.com
 ```
 
 ## Alternatives
@@ -198,6 +205,7 @@ filter --regex '\bgoogle\.com"'
 - [grepwide](https://github.com/markjx/search2018)
 - [ripgrep](https://github.com/BurntSushi/ripgrep)
 - [ugrep](https://github.com/Genivia/ugrep)
+- [grepcidr](https://github.com/jrlevine/grepcidr3)
 
 ## FAQ
 

@@ -10,16 +10,23 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
 
     --<logtype>   is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
 
-    -n|--dry-run  print out the final search command rather than execute it
+    Specify one or more [search_terms] to filter either STDIN or log files. If you don't specify any search terms, all lines will be printed.
+    
+    Lines must match all search terms by default.
     -o|--or       at least one search term is required to appear in a line (as opposed to all terms matching)
-    -r|--regex    signifies that [search_term(s)] should be treated as regexes
 
+    Search terms will match on word boundaries by default.
+    -s|--starts-with  anchor search term to beginning of field (e.g. 192.168)
+    -e|--ends-with    anchor search term to end of field (e.g. google.com)
+    -r|--regex        signifies that [search_term(s)] should be treated as regexes
+
+    -n|--dry-run      print out the final search command rather than execute it
+
+    $(basename "$0") will find the first search tool available. Use the following options to force a specific tool.
     --rg          force use of ripgrep
     --ug          force use of ugrep
     --zgrep       force use of zgrep
 
-    Specify one or more [search_terms] to filter either STDIN or log files. By default, lines must match all search terms.
-    If you don't specify any search terms, all lines will be printed.
     Any arguments given after -- will be passed to the underlying search command.
 
 Examples:
@@ -41,8 +48,11 @@ exists() {
 }
 
 toRegex() {
+    term="$1"
+    prefix="$2"
+    suffix="$3"
     # escape periods and put in word boundaries
-    echo $1 | sed 's/\./\\\\./g' | xargs -n 1 printf '\\b%s\\b'
+    echo "$term" | sed 's/\./\\\\./g' | xargs -n 1 printf "${prefix}%s${suffix}"
 }
 
 logType="conn"
@@ -52,6 +62,8 @@ regex=
 condition="and"
 dryRun=
 grepCmd=
+termPrefix='\\b'
+termSuffix='\\b'
 
 # process command args
 while [[ $# -gt 0 ]]; do
@@ -59,6 +71,12 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             print_usage
             exit
+        ;;
+        -s|--starts-with)
+            termPrefix='("|\\t)'
+        ;;
+        -e|--ends-with)
+            termSuffix='("|\\t)'
         ;;
         -r|--regex)
             regex="true"
@@ -134,7 +152,7 @@ first="true"
 for term in "${search[@]}"; do 
     # if regex flag was not given then escape the search term
     if [ -z "$regex" ]; then
-        term="$(toRegex $term)"
+        term="$(toRegex $term $termPrefix $termSuffix)"
     fi
     case $grepCmd in
     rg)
@@ -205,10 +223,6 @@ fi
 # Specify multiple types of logs? e.g.
 # filter --http --ssl --dns google.com
 # Wouldn't really be useful for zeek-cut. But would be useful for jq and JSON logs.
-
-# Fix 192.168 matching in the middle.
-# filter --starts-with|-s 192.168 == '(\t|")192\.168\b'
-# filter --ends-with|-e 254 == '\b254(\t|")'
 
 # make grepcidr an option
 
