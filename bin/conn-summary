@@ -17,12 +17,16 @@ Alternatively, you can pass in conn.log files as arguments (not gzipped).
 Usage:
 $(basename "$0") [-h|--help] [files...] [-- [OPTIONS]]
 
+    -a|--all    $(basename "$0") defaults to analyzing internal<->external traffic only unless this option is given
+
 Any OPTIONS specified after -- will be passed directly to trace-summary. See below for available options."
     echo
     trace-summary --help
 }
 
 logs=()
+args=("--conn-summaries")
+all=
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -30,8 +34,14 @@ while [[ $# -gt 0 ]]; do
             print_usage
             exit 0
         ;;
+        -a|--all)
+            all="true"
+            shift
+        ;;
         --)
             shift
+            # pass through rest of args to trace-summary
+            args+=("$@")
             break
         ;;
         *)
@@ -47,8 +57,12 @@ if [ -t 0 ] && [ ${#logs[@]} -eq 0 ]; then
     exit 0
 fi
 
-# trace-summary python script wouldn't read from stdin so instead write to actual files
+# if all flag was not given default to external traffic
+if [ -z "$all" ]; then
+    args+=("--external")
+fi
 
+# trace-summary python script wouldn't read from stdin so instead write to temp files
 networks=$(mktemp)
 trap "rm -f \"$networks\"" EXIT
 cat << EOF > "$networks"
@@ -56,6 +70,7 @@ cat << EOF > "$networks"
 172.16.0.0/12
 192.168.0.0/16
 EOF
+args+=("--local-nets" "$networks")
 
 # no logs specified, assume reading from stdin
 if [ ${#logs[@]} -eq 0 ]; then
@@ -67,8 +82,8 @@ fi
 
 echo Connections:
 echo ============
-trace-summary "$@" --conn-summaries --external --local-nets "$networks" "${logs[@]}" | head -15
+trace-summary "${args[@]}" "${logs[@]}" | head -15
 
 echo Bytes:
 echo ======
-trace-summary "$@" --bytes --conn-summaries --external --local-nets "$networks" "${logs[@]}" | head -15
+trace-summary --bytes "${args[@]}" "${logs[@]}" | head -15
