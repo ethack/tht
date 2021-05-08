@@ -20,7 +20,7 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...]
     --ug          force use of ugrep
     --zgrep       force use of zgrep
 
-    Specify one or more [search_terms] to filter either STDIN or log files. Lines must match all search terms.
+    Specify one or more [search_terms] to filter either STDIN or log files. By default, lines must match all search terms.
 
 Examples:
     $(basename "$0") 10.0.0.1                            conn entries from the current directory tree that match the IP
@@ -95,6 +95,11 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+# if there are no search terms just cat all files
+if [ ${#search[@]} -eq 0 ]; then
+    grepCmd="cat"
+fi
+
 logFiles=
 zipFiles=
 files=
@@ -102,8 +107,8 @@ files=
 if [ -t 0 ]; then
     # regex must match entire path, not just filename
     # note: never include conn-summary files and always return a success exit code
-    logFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log$" | grep -v conn-summary || true)"
-    zipFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log.gz$" | grep -v conn-summary || true)"
+    logFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log$" | grep -v conn-summary | sort || true)"
+    zipFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log.gz$" | grep -v conn-summary | sort || true)"
     files="$(echo $logFiles $zipFiles | sort)"
     # TODO: test for files/paths with spaces
 fi
@@ -128,6 +133,7 @@ filterCmd=""
 first="true"
 # loop through all search terms
 for term in "${search[@]}"; do 
+    # if regex flag was not given then escape the search term
     if [ -z "$regex" ]; then
         term="$(toRegex $term)"
     fi
@@ -177,10 +183,17 @@ for term in "${search[@]}"; do
     ;;
     esac
 done
-# sepcial case last search term for ugrep
-if [ "$grepCmd" = "ug" ]; then
-    filterCmd="$filterCmd)' $files"
-fi
+# sepcial case last search term when needed
+case $grepCmd in
+    ug)
+        filterCmd="$filterCmd)' $files"
+    ;;
+    cat)
+        # zcat doesn't work on uncompressed files so split it up between cat/zcat
+        # not worth it to parallelize the cat command as it's not CPU bound
+        filterCmd="cat $logFiles; echo $zipFiles | xargs -n 1 -P $(nproc) zcat"
+    ;;
+esac
 
 if [ -n "$dryRun" ]; then
     echo $filterCmd
@@ -197,3 +210,6 @@ fi
 # Fix 192.168 matching in the middle.
 # filter --starts-with|-s 192.168 == '(\t|")192\.168\b'
 # filter --ends-with|-e 254 == '\b254(\t|")'
+
+# Allow --only-matching functionality.
+# Possibly -- followed by other options get passed through to the search tool. Or a --args "-o etc" that does the same.
