@@ -73,10 +73,10 @@ while [[ $# -gt 0 ]]; do
             exit
         ;;
         -s|--starts-with)
-            termPrefix='("|\\t)'
+            termPrefix='["\\t]'
         ;;
         -e|--ends-with)
-            termSuffix='("|\\t)'
+            termSuffix='["\\t]'
         ;;
         -r|--regex)
             regex="true"
