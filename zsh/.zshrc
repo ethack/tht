@@ -48,9 +48,13 @@ if exists zannotate; then
 fi
 
 if exists zoxide; then
+  export _ZO_DATA_DIR="/usr/local/share/zoxide"
+  mkdir -p "$_ZO_DATA_DIR"
   eval "$(zoxide init zsh)"
   # remove conflict
   __zoxide_unset 'zq'
+
+  alias g='z'
 fi
 
 alias l='ls'
@@ -65,6 +69,9 @@ alias df="df -h --total"
 alias dud="du -h -d 1 --total"
 
 alias digs="dig +short"
+
+# BEWARE: this will freeze if you run something that waits for stdin
+alias live='sk --layout=reverse --no-sort --ansi -i -c "{}"'
 
 # these are supposed to make the g command work. TODO
 autoload -Uz compinit

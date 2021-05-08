@@ -1,0 +1,28 @@
+#!/bin/bash
+
+# If the current user doesn't have docker permissions run with sudo
+SUDO=''	
+if [ ! -w "/var/run/docker.sock" ]; then	
+	SUDO="sudo --preserve-env "	
+fi
+
+docker_cmd=(
+    "docker" "container" "run"
+    "--rm"
+    "--interactive"
+    "--tty"
+    "--hostname" "$(hostname)"
+    "--init"
+    "--pid" "host"
+    "--mount" "source=/etc/localtime,destination=/etc/localtime,type=bind"
+    "--mount" "source=/,destination=/host,type=bind"
+    "--workdir" "/host/$(pwd)"
+)
+
+# create and use a persistent volume
+$SUDO docker volume create tht_zoxide-cache >/dev/null && \
+    docker_cmd+=("--mount" "source=tht_zoxide-cache,destination=/usr/local/share/zoxide/,type=volume")
+
+# try starting tht from two different repos; dockerhub could fail due to rate limits
+$SUDO "${docker_cmd[@]}" ethack/tht || \
+$SUDO "${docker_cmd[@]}" ghcr.io/ethack/tht
