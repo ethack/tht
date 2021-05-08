@@ -6,14 +6,12 @@ print_usage() {
     cat << EOF
 Filters Zeek logs based on the search terms with output that can be piped to zeek-cut or other tools that can read Zeek logs.
 
-$(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...]
+$(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPTIONS]]
 
     --<logtype>   is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
 
-    -a|--and      all search terms are required to appear in a line (default)
-    -o|--or       at least one search term is required to appera in a line
-
     -n|--dry-run  print out the final search command rather than execute it
+    -o|--or       at least one search term is required to appear in a line (as opposed to all terms matching)
     -r|--regex    signifies that [search_term(s)] should be treated as regexes
 
     --rg          force use of ripgrep
@@ -21,6 +19,8 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...]
     --zgrep       force use of zgrep
 
     Specify one or more [search_terms] to filter either STDIN or log files. By default, lines must match all search terms.
+    If you don't specify any search terms, all lines will be printed.
+    Any arguments given after -- will be passed to the underlying search command.
 
 Examples:
     $(basename "$0") 10.0.0.1                            conn entries from the current directory tree that match the IP
@@ -34,7 +34,7 @@ EOF
 }
 
 #TODO require all dependencies before starting:
-#zgrep, ug, or rg; sed, printf, xargs, nproc, find, grep
+#zgrep, ug, or rg; sed, printf, xargs, nproc, find, grep, cat, zcat
 
 exists() {
   command -v $1 >/dev/null 2>&1
@@ -47,9 +47,9 @@ toRegex() {
 
 logType="conn"
 search=()
+extra_args=()
 regex=
-and=
-or=
+condition="and"
 dryRun=
 grepCmd=
 
@@ -63,28 +63,29 @@ while [[ $# -gt 0 ]]; do
         -r|--regex)
             regex="true"
         ;;
-        -a|--and)
-            and="true"
-            or=
-        ;;
         -o|--or)
-            or="true"
-            and=
+            condition="or"
         ;;
         -n|--dry-run)
             dryRun="true"
         ;;
-        --rg)
+        --rg|--ripgrep)
             grepCmd="rg"
         ;;
-        --ug)
+        --ug|--ugrep)
             grepCmd="ug"
         ;;
-        --zgrep)
+        --zgrep|--grep)
             grepCmd="zgrep"
         ;;
+        --)
+            shift
+            # pass through args after "--" to search tool
+            extra_args+=("$@")
+            break
+        ;;
         --*)
-            # log type passed e.g. --conn or --dns
+            # log type e.g. --conn or --dns
             logType="${1#"--"}"
         ;;
         *)
@@ -94,11 +95,6 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
-
-# if there are no search terms just cat all files
-if [ ${#search[@]} -eq 0 ]; then
-    grepCmd="cat"
-fi
 
 logFiles=
 zipFiles=
@@ -114,8 +110,11 @@ if [ -t 0 ]; then
 fi
 
 # pick the best search tool available
-if [ -n "$grepCmd" ]; then
-  : # grep type forced on commandline
+if [ ${#search[@]} -eq 0 ]; then
+    # use cat if there are no search terms
+    grepCmd="cat"
+elif [ -n "$grepCmd" ]; then
+  : # grep command forced via flag
 elif exists rg; then
   grepCmd="rg"
 elif exists ug; then
@@ -144,12 +143,12 @@ for term in "${search[@]}"; do
             # disable unicode to avoid taking a speed hit
             # https://github.com/BurntSushi/ripgrep/issues/1860
             # https://github.com/BurntSushi/ripgrep/issues/1760
-            filterCmd="rg --no-filename --no-line-number --no-unicode --search-zip -e '^#' -e '$term' $files"
+            filterCmd="rg ${extra_args[@]} --no-filename --no-line-number --no-unicode --search-zip -e '^#' -e '$term' $files"
             first=
         else
-            if [ -n "$and" ]; then      # prefer and
-                filterCmd="$filterCmd | rg -e '^#' -e '$term'"
-            elif [ -n "$or" ]; then
+            if [ "$condition" = "and" ]; then      # prefer and
+                filterCmd="$filterCmd | rg ${extra_args[@]} -e '^#' -e '$term'"
+            elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd -e '$term'"
             fi
         fi
@@ -157,12 +156,12 @@ for term in "${search[@]}"; do
     ug)
         # special case the first search term
         if [ -n "$first" ]; then
-            filterCmd="ug --no-filename --decompress --bool '^# OR ($term"
+            filterCmd="ug ${extra_args[@]} --no-filename --decompress --bool '^# OR ($term"
             first=
         else
-            if [ -n "$and" ]; then      # prefer and
+            if [ "$condition" = "and" ]; then
                 filterCmd="$filterCmd AND '$term'"
-            elif [ -n "$or" ]; then
+            elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd OR '$term'"
             fi
         fi
@@ -171,19 +170,19 @@ for term in "${search[@]}"; do
         # special case the first search term
         if [ -n "$first" ]; then
             # use xargs to parallelize zgrep
-            filterCmd="echo $files | xargs -n 1 -P $(nproc) zgrep -e '^#' -e '$term'"
+            filterCmd="echo $files | xargs -n 1 -P $(nproc) zgrep ${extra_args[@]} -e '^#' -e '$term'"
             first=
         else
-            if [ -n "$and" ]; then      # prefer and
-                filterCmd="$filterCmd | zgrep -e '^#' -e '$term'"
-            elif [ -n "$or" ]; then
+            if [ "$condition" = "and" ]; then
+                filterCmd="$filterCmd | zgrep ${extra_args[@]} -e '^#' -e '$term'"
+            elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd -e '$term'"
             fi
         fi
     ;;
     esac
 done
-# sepcial case last search term when needed
+# special case after search terms when needed
 case $grepCmd in
     ug)
         filterCmd="$filterCmd)' $files"
@@ -211,5 +210,6 @@ fi
 # filter --starts-with|-s 192.168 == '(\t|")192\.168\b'
 # filter --ends-with|-e 254 == '\b254(\t|")'
 
-# Allow --only-matching functionality.
-# Possibly -- followed by other options get passed through to the search tool. Or a --args "-o etc" that does the same.
+# make grepcidr an option
+
+# write some unit tests
