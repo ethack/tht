@@ -15,7 +15,7 @@ The recommended method to run THT is with the wrapper script included in the rep
 
 **Download and install**
 ```bash
-sudo curl -O /usr/local/bin/tht https://raw.githubusercontent.com/ethack/tht/main/tht && sudo chmod +x /usr/local/bin/tht
+sudo curl -o /usr/local/bin/tht https://raw.githubusercontent.com/ethack/tht/main/tht && sudo chmod +x /usr/local/bin/tht
 ```
 
 **Run**
