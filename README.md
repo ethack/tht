@@ -15,21 +15,27 @@ Container image with a suite of tools useful for threat hunting.
 
 ## Running
 
-The recommended method is with the wrapper script included in the repo.
+The recommended method to run THT is with the wrapper script included in the repo.
 
+Download and install:
 ```bash
-# download and install
 sudo curl -O /usr/local/bin/tht https://github.com/ethack/tht/raw/main/tht && sudo chmod +x /usr/local/bin/tht
-# run
+```
+
+Run:
+```bash
 tht
 ```
 
-You can also start it without the wrapping script with a docker command. Though this method will not have all the same convenience features as the script.
+You can also start it without the wrapper script with a docker command. This method will not have all the same convenience features as the script.
 
+From DockerHub:
 ```bash
-# DockerHub version
 docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host -w "/host/$(pwd)" ethack/tht
-# GitHub Container Registry version
+```
+
+From GitHub Container Registry:
+```bash
 docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host -w "/host/$(pwd)" ghcr.io/ethack/tht
 ```
 
