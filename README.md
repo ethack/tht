@@ -15,100 +15,22 @@ Container image with a suite of tools useful for threat hunting.
 
 ## Running
 
+The recommended method is with the wrapper script included in the repo.
+
 ```bash
-docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host -w "/host/$(pwd)" ethack/tht
+# download and install
+sudo curl -O /usr/local/bin/tht https://github.com/ethack/tht/raw/main/tht && sudo chmod +x /usr/local/bin/tht
+# run
+tht
 ```
 
-Or
+You can also start it without the wrapping script with a docker command. Though this method will not have all the same convenience features as the script.
 
 ```bash
+# DockerHub version
+docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host -w "/host/$(pwd)" ethack/tht
+# GitHub Container Registry version
 docker run --rm -it -h $(hostname) --init --pid host -v /etc/localtime:/etc/localtime -v /:/host -w "/host/$(pwd)" ghcr.io/ethack/tht
 ```
 
-## Building Docker Image
-
-You can build the image manually with the following command. However, the Maxmind geo information will not be included.
-
-```bash
-docker build -t ethack/tht .
-```
-
-If you want to build with Maxmind data, you'll need to sign up for a free [Maxmind license key](https://support.maxmind.com/account-faq/license-keys/where-do-i-find-my-license-key/). You can then specify your key when building.
-
-```bash
-docker build --build-arg MAXMIND_LICENSE=yourkeyhere -t ethack/tht .
-```
-
-## Building Documentation
-
-You'll need [Hugo](https://gohugo.io/). Official install instructions are [here](https://gohugo.io/getting-started/installing) though the easiest way is to grab the latest [Github release](https://github.com/gohugoio/hugo/releases) for your platform. Hugo is a single binary so there's really not much to install.
-
-Once you have Hugo you can compile and host the documentation locally with:
-
-```bash
-hugo -s docs server -D
-```
-
-Then access the local website http://localhost:1313 in your browser.
-
-> Note:If you see a blank page or see warnings from hugo like `found no layout file` you need to download the theme, which you can do with:
-> `git submodule update --init`
-
-## Future Ideas
-
-Tools to add or investigate:
-- [go command](https://blog.patshead.com/2011/05/my-take-on-the-go-command.html)
-- [nnn](https://github.com/jarun/nnn), [ranger](https://github.com/ranger/ranger), or [midnight commander](https://midnight-commander.org/). File managers.
-- tmux, [nq](https://github.com/leahneukirchen/nq), screen, and/or [byobou](https://www.byobu.org/)
-- [harpoon](https://github.com/Te-k/harpoon) - Threat intel from cli. Like TheHive Cortex. Will require lots of API keys.
-- [VAST](https://github.com/tenzir/vast). I tried this awhile back and wasn't impressed. Take another look.
-- sqlite - https://antonz.org/sqlite-is-not-a-toy-database/
-
-Other ideas:
-- Auto-increment version tags.
-- Export container image tar (`docker image export`) and upload as release. Provide one-liner for installing using this method.
-- Build portable versions of tools where possible and make available outside of docker (`docker cp`) then upload as release artifacts. [Ref](https://gist.github.com/ethack/6bd3a9551c02bbf8b404af0d2023114d). Go and Rust tools are generally good. C tools are good if compiled using musl.
-- Test and provide usage with [Podman](https://podman.io/) and possibly [Buildah](https://buildah.io/).
-- Create example usage guides around the tools. Use [Threat Hunting Labs](https://github.com/activecm/threat-hunting-labs/) and [Hugo Learn Theme](https://learn.netlify.app/en/) for inspiration.
-    - `miller`
-    - `zq`
-    - `jq` w/ `awk`, `cut`, `grep`, etc.
-    - `ugrep -Q`
-    - `ripgrep`
-- Create cheatsheets. Possibly use [navi](https://github.com/denisidoro/navi).
-- Provide different image flavors. Similar to [Jupyter](https://jupyter-docker-stacks.readthedocs.io/en/latest/using/selecting.html) and [ml-workspace](https://github.com/ml-tooling/ml-workspace). Would love to have a heavy flavor that uses ml-workspace as a base. Here are possible candidates for that images.
-    - Docs
-        - Run `unminimize && apt install man-db` command to restore man pages.
-    - Jupyter/Python/Spark flavor
-        - [VAST](https://github.com/tenzir/vast)
-        - [ZAT](https://github.com/SuperCowPowers/zat)
-    - Pcap flavor
-        - Pcap tools for summarizing, combining, parsing, etc.
-        - tcpdump, [termshark](https://termshark.io/) (will need special execution instructions for live capture)
-        - [passer](https://github.com/activecm/passer)
-        - [prads](https://github.com/gamelinux/prads/)
-        - trace-summary is already included but it needs `ipsumdump` to capture live traffic
-        - https://github.com/brimdata/zed/tree/main/cmd/pcap
-        - zeek to convert from pcap to logs
-        - https://github.com/zeek/capstats
-    - Zeek flavor (this is the current default)
-    - Julia flavor
-        - https://github.com/KristofferC/OhMyREPL.jl
-        - https://github.com/joshday/OnlineStats.jl
-    - Download and include datasets (e.g. Microsoft's IP space).
-  - [Azure IP Ranges and Service Tags – Public Cloud](https://www.microsoft.com/en-us/download/details.aspx?id=56519)
-[Microsoft Public IP Space](https://www.microsoft.com/en-us/download/details.aspx?id=53602)
-- I like the prompt that Kali uses.
-- Create a rust/cargo builder stage as well.
-- Wrapper scripts around ipset
-
-## Issues
-- `fx` requires a JSON array to get the interactive features (e.g. `jq -s | fx`). I'm thinking fx isn't going to be too useful.
-- `jiq` is super slow. `interactively 'jq -C'` is faster and better looking.
-- Home and end keys don't seem to work in MobaXterm.
-- All created files are owned by root. Change the user id and name of the container user to match the host and make sudo nopasswd the default.
-- `g` zsh function is not loading
-- Need to save `zoxide` database in a volume. Which probably means making a wrapper script.
-- Problems installing `parallel`.
-- Can't use pipes or multiple terms in `interactively`.
-- `conn-summary` doesn't detect `trace-summary` in the path even though it's there.
+If you'd like to build the image or documentation manually, see [here](https://ethack.github.io/tht/development/).
