@@ -8,6 +8,7 @@ on:
       - 'LICENSE'
       - 'docs/**'
       - '.github/workflows/docs.yml'
+      - 'tht'
 
 jobs:
   build:
