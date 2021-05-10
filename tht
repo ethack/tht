@@ -35,6 +35,6 @@ if [ "$1" = "--dev" ]; then
     #  -v "$(pwd)/zsh/site-functions:/usr/local/share/zsh/site-functions/"
 fi
 
-# try starting tht from two different repos; dockerhub could fail due to rate limits
-$SUDO "${docker_cmd[@]}" ethack/tht || \
-$SUDO "${docker_cmd[@]}" ghcr.io/ethack/tht
+$SUDO "${docker_cmd[@]}" ethack/tht
+# switch to ghcr.io if dockerhub fails due to rate limits
+#$SUDO "${docker_cmd[@]}" ghcr.io/ethack/tht
