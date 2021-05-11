@@ -26,6 +26,7 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
     --rg          force use of ripgrep
     --ug          force use of ugrep
     --zgrep       force use of zgrep
+    --cat         force use of cat (useful for testing)
 
     Any arguments given after -- will be passed to the underlying search command.
 
@@ -96,6 +97,9 @@ while [[ $# -gt 0 ]]; do
         --zgrep|--grep)
             grepCmd="zgrep"
         ;;
+        --cat|--zcat)
+            grepCmd="cat"
+        ;;
         --)
             shift
             # pass through args after "--" to search tool
@@ -114,6 +118,10 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
+# Test cheatsheet
+# -z return true if unset or set to the empty string
+# -n return true if set to a non-empty string
+
 logFiles=
 zipFiles=
 files=
@@ -124,7 +132,12 @@ if [ -t 0 ]; then
     logFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log$" | grep -v conn-summary | sort || true)"
     zipFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log.gz$" | grep -v conn-summary | sort || true)"
     files="$(echo $logFiles $zipFiles | sort)"
-    # TODO: test for files/paths with spaces
+    # TODO: test for files/paths with spaces; maybe use -print0; maybe loop through adding each to an array
+    
+    # if no log files are found then exit
+    if [ -z "$files" ]; then
+        exit 1
+    fi
 fi
 
 # pick the best search tool available
@@ -146,6 +159,7 @@ if ! exists "$grepCmd"; then
   exit 1
 fi
 
+# TODO: Test if you can have too many files passed in. Might have to pipe from find directly.
 filterCmd=""
 first="true"
 # loop through all search terms
@@ -188,6 +202,7 @@ for term in "${search[@]}"; do
         # special case the first search term
         if [ -n "$first" ]; then
             # use xargs to parallelize zgrep
+            #TODO test for race conditions like you get with zcat and xargs
             filterCmd="echo $files | xargs -n 1 -P $(nproc) zgrep ${extra_args[@]} -e '^#' -e '$term'"
             first=
         else
@@ -206,9 +221,15 @@ case $grepCmd in
         filterCmd="$filterCmd)' $files"
     ;;
     cat)
-        # zcat doesn't work on uncompressed files so split it up between cat/zcat
-        # not worth it to parallelize the cat command as it's not CPU bound
-        filterCmd="cat $logFiles; echo $zipFiles | xargs -n 1 -P $(nproc) zcat"
+        # only run respective commands if there are actual files that match
+        filterCmd=
+        if [ -n "$logFiles" ]; then
+            filterCmd="cat $logFiles;"
+        fi
+        if [ -n "$zipFiles" ]; then
+            filterCmd="$filterCmd zcat $zipFiles"
+        fi
+        # Note: xargs causes race conditions with line output; don't use in parallel
     ;;
 esac
 
