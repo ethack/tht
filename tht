@@ -20,8 +20,8 @@ docker_cmd=(
 )
 
 # create and use a persistent volume
-$SUDO docker volume create tht_zoxide-cache >/dev/null && \
-    docker_cmd+=("--mount" "source=tht_zoxide-cache,destination=/usr/local/share/zoxide/,type=volume")
+$SUDO docker volume create tht_zsh-cache >/dev/null && \
+    docker_cmd+=("--mount" "source=tht_zsh-cache,destination=/usr/local/share/zsh/,type=volume")
 
 # volume mount repo scripts for development
 # TODO proper argument parsing
@@ -35,6 +35,11 @@ if [ "$1" = "--dev" ]; then
     #  -v "$(pwd)/zsh/site-functions:/usr/local/share/zsh/site-functions/"
 fi
 
-$SUDO "${docker_cmd[@]}" ethack/tht
+image=ethack/tht
 # switch to ghcr.io if dockerhub fails due to rate limits
-#$SUDO "${docker_cmd[@]}" ghcr.io/ethack/tht
+#image=ghcr.io/ethack/tht
+# TODO proper argument parsing
+if [ "$1" = "--pull" ]; then
+  $SUDO docker pull "$image" >/dev/null
+fi
+$SUDO "${docker_cmd[@]}" "$image"

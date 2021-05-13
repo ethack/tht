@@ -1,9 +1,27 @@
+PERSISTENT="/usr/local/share/zsh/"
+mkdir -p "$PERSISTENT"
+
 autoload -U colors && colors
 PS1="%{$fg[red]%}%n%{$reset_color%}@%{$fg[blue]%}%m %{$fg[yellow]%}%~ %{$reset_color%}
 $ "
 
 export EDITOR=vim
 export TMPDIR=/tmp
+
+# set history size
+export HISTSIZE=10000
+# save history after logout
+export SAVEHIST=10000
+# history file
+export HISTFILE=$PERSISTENT/.zhistory
+# append into history file
+setopt APPEND_HISTORY
+# save only one command if 2 common are same and consistent
+setopt HIST_IGNORE_DUPS
+# add timestamp for each entry
+setopt EXTENDED_HISTORY
+# make history show all entries by default
+alias history="history 1"
 
 exists () {
 	#type $1 &> /dev/null
@@ -27,7 +45,7 @@ else
 fi
 
 if exists fzf; then
-  export FZF_HISTORY_DIR="$HOME/.fzf"
+  export FZF_HISTORY_DIR="$PERSISTENT/fzf"
   mkdir -p "$FZF_HISTORY_DIR"
   # set preview window layout; mainly for "interactively"
   export FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS --preview-window=down:90%"
@@ -48,7 +66,7 @@ if exists zannotate; then
 fi
 
 if exists zoxide; then
-  export _ZO_DATA_DIR="/usr/local/share/zoxide"
+  export _ZO_DATA_DIR="$PERSISTENT/zoxide"
   mkdir -p "$_ZO_DATA_DIR"
   eval "$(zoxide init zsh)"
   # remove conflict

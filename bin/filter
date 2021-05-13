@@ -248,3 +248,5 @@ fi
 # make grepcidr an option
 
 # write some unit tests
+
+# Allow inverse matching with -v
