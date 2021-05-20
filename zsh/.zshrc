@@ -1,3 +1,8 @@
+exists () {
+	#type $1 &> /dev/null
+  command -v $1 >/dev/null 2>&1
+}
+
 PERSISTENT="/usr/local/share/zsh/"
 mkdir -p "$PERSISTENT"
 
@@ -5,7 +10,12 @@ autoload -U colors && colors
 PS1="%{$fg[red]%}%n%{$reset_color%}@%{$fg[blue]%}%m %{$fg[yellow]%}%~ %{$reset_color%}
 $ "
 
-export EDITOR=vim
+if exists vim; then
+  export EDITOR=vim
+fi
+if exists pspg; then
+  export PAGER=pspg
+fi
 export TMPDIR=/tmp
 
 # set history size
@@ -20,13 +30,8 @@ setopt APPEND_HISTORY
 setopt HIST_IGNORE_DUPS
 # add timestamp for each entry
 setopt EXTENDED_HISTORY
-# make history show all entries by default
-alias history="history 1"
 
-exists () {
-	#type $1 &> /dev/null
-  command -v $1 >/dev/null 2>&1
-}
+## Specific Tool Setup ##
 
 if exists broot && [ -f /root/.config/broot/launcher/bash/br ]; then
   source /root/.config/broot/launcher/bash/br
@@ -75,21 +80,25 @@ if exists zoxide; then
   alias g='z'
 fi
 
+## General Aliases ##
+alias history="history 1"  # show all entries by default
 alias l='ls'
 alias ll='ls -l'
 alias la='ls -la'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias mv='mv -i'
-alias mb='mv'
-alias mkdir="mkdir -p"
+alias mb='mv'              # common typo
+alias mkdir="mkdir -p"     # create parent directories by default
 alias df="df -h --total"
 alias dud="du -h -d 1 --total"
-
 alias digs="dig +short"
+alias less="less -S"       # side-scrolling by default
 
 # BEWARE: this will freeze if you run something that waits for stdin
 alias live='sk --layout=reverse --no-sort --ansi -i -c "{}"'
+
+## ZSH Setup; must be last ##
 
 # these are supposed to make the g command work. TODO
 autoload -Uz compinit

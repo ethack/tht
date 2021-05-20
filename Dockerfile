@@ -56,8 +56,8 @@ FROM ubuntu:hirsute as c-builder
      && git checkout $GREPCIDR_VERSION \
      && make
 
-    # TODO miller https://miller.readthedocs.io/en/latest/build.html
     # TODO jq https://github.com/stedolan/jq
+    # TODO pspg
 
     # ugrep
     RUN apt-get update && apt-get -y install --no-install-recommends git gcc g++ make libpcre2-dev libz-dev
@@ -82,7 +82,7 @@ FROM ubuntu:hirsute as base
     ENV DEBCONF_NONINTERACTIVE_SEEN true
 
     # Used for cache busting
-    COPY Dockerfile /tmp/
+    # COPY Dockerfile /tmp/
     RUN apt-get update
 
     # set default shell to zsh so apt automatically detects and adds zsh completions
@@ -92,16 +92,16 @@ FROM ubuntu:hirsute as base
 ## System Utils ##
     RUN apt-get -y install curl
     # ls alternative
-    # RUN apt-get -y install exa
     COPY --from=rust-builder /usr/local/cargo/bin/exa /usr/local/bin/
     # find alternative
-    # RUN apt-get -y install fd-find && ln -s $(which fdfind) /usr/local/bin/fd
     COPY --from=rust-builder /usr/local/cargo/bin/fd /usr/local/bin/
     # fuzzy finder
     RUN apt-get -y install fzf
     # process monitor
     RUN apt-get -y install htop
     RUN apt-get -y install less
+    # Pager
+    RUN apt-get -y install pspg
     # RUN apt-get -y install parallel # problems with sysstat
     RUN apt-get -y install unzip
     RUN apt-get -y install wget
@@ -109,19 +109,16 @@ FROM ubuntu:hirsute as base
 
     # broot - file lister and browser
     RUN apt-get -y install libxcb1
-    # RUN wget -nv -O /usr/local/bin/broot https://dystroy.org/broot/download/x86_64-linux/broot \
-    #  && chmod +x /usr/local/bin/broot \
-    #  && broot --install
     COPY --from=rust-builder /usr/local/cargo/bin/broot /usr/local/bin/
     RUN broot --install
+
+    # docker cli
+    COPY --from=docker:20.10 /usr/local/bin/docker /usr/local/bin/
 
     # godu - du alternative
     COPY --from=go-builder /go/bin/godu /usr/local/bin/
 
     # hyperfine - command benchmarking; like time on steroids
-    # ARG HYPERFINE_VERSION=1.11.0
-    # RUN wget -nv -O /tmp/hyperfine.deb https://github.com/sharkdp/hyperfine/releases/download/v${HYPERFINE_VERSION}/hyperfine_${HYPERFINE_VERSION}_amd64.deb
-    # RUN dpkg -i /tmp/hyperfine.deb
     COPY --from=rust-builder /usr/local/cargo/bin/hyperfine /usr/local/bin/
 
     # interactively - run commands interactively
@@ -135,16 +132,15 @@ FROM ubuntu:hirsute as base
      && tar -xz -f /tmp/skim.tar.gz -C /usr/local/bin/
 
     # zoxide - better directory traversal
-    # ARG ZOXIDE_VERSION=0.5.0
-    # RUN wget -nv -O /usr/local/bin/zoxide https://github.com/ajeetdsouza/zoxide/releases/download/v${ZOXIDE_VERSION}/zoxide-x86_64-unknown-linux-musl \
-    #  && chmod +x /usr/local/bin/zoxide
     COPY --from=rust-builder /usr/local/cargo/bin/zoxide /usr/local/bin/
 
 ## Data Processing ##
     # lightweight stats
     RUN apt-get -y install datamash
     # CSV/TSV/JSON parser and lightweight streaming stats
-    RUN apt-get -y install miller
+    ARG MILLER_VERSION=5.10.2
+    RUN wget -nv -O /usr/local/bin/mlr https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
+     && chmod +x /usr/local/bin/mlr
 
     ### Grep ###
     # grep, sed, awk, etc
@@ -155,9 +151,6 @@ FROM ubuntu:hirsute as base
     COPY --from=c-builder /tmp/ugrep/bin/ugrep /usr/local/bin/
     COPY --from=c-builder /tmp/ugrep/bin/ug /usr/local/bin/
 
-    # ARG GREX_VERSION=1.2.0
-    # RUN wget -nv -O /tmp/grex.tar.gz https://github.com/pemistahl/grex/releases/download/v${GREX_VERSION}/grex-v${GREX_VERSION}-x86_64-unknown-linux-musl.tar.gz \
-    #  && tar -xz -f /tmp/grex.tar.gz -C /usr/local/bin/
     COPY --from=rust-builder /usr/local/cargo/bin/grex /usr/local/bin/
 
     ### Zeek ###
@@ -170,8 +163,6 @@ FROM ubuntu:hirsute as base
      && mv /tmp/zq /usr/local/bin/
     # COPY --from=go-builder /go/bin/zq /usr/local/bin/
 
-    # COPY bin/filter /usr/local/bin/
-
     # trace-summary
     RUN apt-get -y install --no-install-recommends python3
     # install pysubnettree dependency with pip
@@ -181,7 +172,6 @@ FROM ubuntu:hirsute as base
     RUN apt-get -y remove python3-pip
     RUN wget -nv -O /usr/local/bin/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary
     RUN chmod +x /usr/local/bin/trace-summary
-    # COPY bin/conn-summary /usr/local/bin/
 
     ### JSON ###
     RUN apt-get -y install jq
@@ -224,15 +214,10 @@ FROM ubuntu:hirsute as base
     RUN apt-get -y install dnsutils
     # dog - dig replacement
     RUN apt-get -y install libc6
-    # ARG DOG_VERSION=0.1.0
-    # RUN wget -nv -O /tmp/dog.zip https://github.com/ogham/dog/releases/download/v${DOG_VERSION}/dog-v${DOG_VERSION}-x86_64-unknown-linux-gnu.zip \
-    #  && unzip -j -d /tmp/ /tmp/dog.zip \
-    #  && mv /tmp/dog /usr/local/bin/
     COPY --from=rust-builder /usr/local/cargo/bin/dog /usr/local/bin/
 
 ## Local scripts (moved to end for efficient caching)
-    COPY bin/conn-summary /usr/local/bin/
-    COPY bin/filter /usr/local/bin/
+    COPY bin/* /usr/local/bin/
 
 ## Customization ##
     COPY zsh/.zshrc /root/.zshrc

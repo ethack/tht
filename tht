@@ -15,6 +15,7 @@ docker_cmd=(
     "--init"
     "--pid" "host"
     "--mount" "source=/etc/localtime,destination=/etc/localtime,type=bind"
+    "--mount" "source=/var/run/docker.sock,destination=/var/run/docker.sock,type=bind"
     "--mount" "source=/,destination=/host,type=bind"
     "--workdir" "/host/$(pwd)"
 )
