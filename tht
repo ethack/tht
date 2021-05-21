@@ -43,6 +43,7 @@ image=ethack/tht
 #image=ghcr.io/ethack/tht
 # TODO proper argument parsing
 if [ "$1" = "--pull" ]; then
-  $SUDO docker pull "$image" >/dev/null
+  echo "Downloading latest THT image..."
+  $SUDO docker pull "$image"
 fi
 $SUDO "${docker_cmd[@]}" "$image"

@@ -96,7 +96,7 @@ alias digs="dig +short"
 alias less="less -S"       # side-scrolling by default
 
 # note: set stdin to /dev/null to prevent skim from hanging when running a command that reads stdin
-alias live='sk --layout=reverse --no-sort --ansi --interactive --print-cmd --cmd-prompt="$ " --show-command-error --cmd="0</dev/null {}"'
+alias live='sk --layout=reverse --no-sort --ansi --interactive --print-cmd --cmd-prompt="$ " --show-cmd-error --cmd="0</dev/null {}"'
 
 ## ZSH Setup; must be last ##
 
