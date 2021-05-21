@@ -5,5 +5,9 @@
 # only output first x lines
 lines="${1:-1000}"
 
+# Rationale for piping to head is a large number of results is not useful to browse manually.
+# On top of that, pspg waits until all input is available before displaying in order to calculate
+# column widths and totals.
+
 # cut off the first seven lines of input, use fields line for headers, ignore all following comments, and truncate to the first x lines
 tail -n +7 | sed -e '0,/^#fields\t/s///' | grep -v '^#' | head -n "$lines" | pspg --tsv --vertical-cursor

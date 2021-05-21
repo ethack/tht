@@ -27,9 +27,11 @@ $SUDO docker volume create tht_zsh-cache >/dev/null && \
 # volume mount repo scripts for development
 # TODO proper argument parsing
 if [ "$1" = "--dev" ]; then
+    # TODO loop through dynamically to prevent having to update on ever tool addition
     docker_cmd+=(
         "-v" "$(pwd)/bin/conn-summary:/usr/local/bin/conn-summary"
         "-v" "$(pwd)/bin/filter:/usr/local/bin/filter"
+        "-v" "$(pwd)/bin/zv:/usr/local/bin/zv"
     )
     # these cause issues currently
     #  -v "$(pwd)/zsh/.zshrc:/root/.zshrc"
