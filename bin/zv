@@ -1,0 +1,9 @@
+#!/bin/bash
+
+# zv = zeek viewer
+
+# only output first x lines
+lines="${1:-1000}"
+
+# cut off the first seven lines of input, use fields line for headers, ignore all following comments, and truncate to the first x lines
+tail -n +7 | sed -e '0,/^#fields\t/s///' | grep -v '^#' | head -n "$lines" | pspg --tsv --vertical-cursor

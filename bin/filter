@@ -16,11 +16,11 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
     -o|--or       at least one search term is required to appear in a line (as opposed to all terms matching)
 
     Search terms will match on word boundaries by default.
-    -s|--starts-with  anchor search term to beginning of field (e.g. 192.168)
-    -e|--ends-with    anchor search term to end of field (e.g. google.com)
-    -r|--regex        signifies that [search_term(s)] should be treated as regexes
-
-    -n|--dry-run      print out the final search command rather than execute it
+    -s|--starts-with   anchor search term to beginning of field (e.g. 192.168)
+    -e|--ends-with     anchor search term to end of field (e.g. google.com)
+    -r|--regex         signifies that [search_term(s)] should be treated as regexes
+    -v|--invert-match  will invert the matching
+    -n|--dry-run       print out the final search command rather than execute it
 
     $(basename "$0") will find the first search tool available. Use the following options to force a specific tool.
     --rg          force use of ripgrep
@@ -62,6 +62,7 @@ extra_args=()
 regex=
 condition="and"
 dryRun=
+invert=
 grepCmd=
 termPrefix='\\b'
 termSuffix='\\b'
@@ -87,6 +88,9 @@ while [[ $# -gt 0 ]]; do
         ;;
         -n|--dry-run)
             dryRun="true"
+        ;;
+        -v|--invert-match)
+            invert="true"
         ;;
         --rg|--ripgrep)
             grepCmd="rg"
@@ -176,10 +180,17 @@ for term in "${search[@]}"; do
             # https://github.com/BurntSushi/ripgrep/issues/1860
             # https://github.com/BurntSushi/ripgrep/issues/1760
             filterCmd="rg ${extra_args[@]} --no-filename --no-line-number --no-unicode --search-zip -e '^#' -e '$term' $files"
+            if [ -n "$invert" ]; then
+                filterCmd="rg ${extra_args[@]} --no-filename --no-line-number --no-unicode --search-zip --invert-match -e '$term' $files"
+            fi
             first=
         else
             if [ "$condition" = "and" ]; then      # prefer and
-                filterCmd="$filterCmd | rg ${extra_args[@]} -e '^#' -e '$term'"
+                if [ -n "$invert" ]; then
+                    filterCmd="$filterCmd | rg ${extra_args[@]} --invert-match -e '$term'"
+                else
+                    filterCmd="$filterCmd | rg ${extra_args[@]} -e '^#' -e '$term'"
+                fi
             elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd -e '$term'"
             fi
@@ -189,6 +200,9 @@ for term in "${search[@]}"; do
         # special case the first search term
         if [ -n "$first" ]; then
             filterCmd="ug ${extra_args[@]} --no-filename --decompress --bool '^# OR ($term"
+            if [ -n "$invert" ]; then
+                filterCmd="ug ${extra_args[@]} --no-filename --decompress --invert-match --bool '($term"
+            fi
             first=
         else
             if [ "$condition" = "and" ]; then
@@ -204,10 +218,17 @@ for term in "${search[@]}"; do
             # use xargs to parallelize zgrep
             #TODO test for race conditions like you get with zcat and xargs
             filterCmd="echo $files | xargs -n 1 -P $(nproc) zgrep ${extra_args[@]} -e '^#' -e '$term'"
+            if [ -n "$invert" ]; then
+                filterCmd="echo $files | xargs -n 1 -P $(nproc) zgrep ${extra_args[@]} --invert-match -e '$term'"
+            fi
             first=
         else
             if [ "$condition" = "and" ]; then
-                filterCmd="$filterCmd | zgrep ${extra_args[@]} -e '^#' -e '$term'"
+                if [ -n "$invert" ]; then
+                    filterCmd="$filterCmd | zgrep ${extra_args[@]} --invert-match -e '$term'"
+                else
+                    filterCmd="$filterCmd | zgrep ${extra_args[@]} -e '^#' -e '$term'"
+                fi
             elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd -e '$term'"
             fi
@@ -248,5 +269,3 @@ fi
 # make grepcidr an option
 
 # write some unit tests
-
-# Allow inverse matching with -v
