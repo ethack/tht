@@ -25,18 +25,13 @@ export SAVEHIST=10000
 # history file
 export HISTFILE=$PERSISTENT/.zhistory
 # append into history file
-setopt APPEND_HISTORY
+setopt INC_APPEND_HISTORY
 # save only one command if 2 common are same and consistent
 setopt HIST_IGNORE_DUPS
-# add timestamp for each entry
-setopt EXTENDED_HISTORY
+# add timestamp for each entry; note: don't do this so it can double as fzf history
+#setopt EXTENDED_HISTORY
 
 ## Specific Tool Setup ##
-
-if exists broot && [ -f /root/.config/broot/launcher/bash/br ]; then
-  source /root/.config/broot/launcher/bash/br
-  alias br='br -sdp'
-fi
 
 if exists exa; then
   if [ -f "$HOME/.local/share/fonts/Regular/Hack Regular Nerd Font Complete.ttf" ]; then
@@ -52,8 +47,6 @@ fi
 if exists fzf; then
   export FZF_HISTORY_DIR="$PERSISTENT/fzf"
   mkdir -p "$FZF_HISTORY_DIR"
-  # set preview window layout; mainly for "interactively"
-  export FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS --preview-window=down:90%"
   # colorize output; may consider disabling for performance reasons https://github.com/junegunn/fzf#performance
   export FZF_DEFAULT_OPTS="$FZF_DEFAULT_OPTS --ansi"
 
@@ -77,11 +70,12 @@ if exists zoxide; then
   # remove conflict
   __zoxide_unset 'zq'
 
-  alias g='z'
+  function g() {
+    z "$@" && ls
+  }
 fi
 
 ## General Aliases ##
-alias history="history 1"  # show all entries by default
 alias l='ls'
 alias ll='ls -l'
 alias la='ls -la'
@@ -96,7 +90,18 @@ alias digs="dig +short"
 alias less="less -S"       # side-scrolling by default
 
 # note: set stdin to /dev/null to prevent skim from hanging when running a command that reads stdin
-alias live='sk --layout=reverse --no-sort --ansi --interactive --print-cmd --cmd-prompt="$ " --show-cmd-error --cmd="0</dev/null {}"'
+#alias live='sk --layout=reverse --no-sort --ansi --interactive --print-cmd --cmd-prompt="$ " --show-cmd-error --cmd="0</dev/null FILTER_NO_STDIN=1 {}"'
+alias live="\
+  FZF_DEFAULT_COMMAND=: \
+  fzf --ansi --no-sort \
+    --disabled \
+    --print-query \
+    --no-info \
+    --no-bold \
+    --preview \"0</dev/null FILTER_NO_STDIN=1 '{q}'\" \
+    --preview-window 'down:99%' \
+    --prompt '$ ' \
+    --bind 'change:reload:sleep 0.3'"
 
 ## ZSH Setup; must be last ##
 

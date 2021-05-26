@@ -126,11 +126,13 @@ done
 # -z return true if unset or set to the empty string
 # -n return true if set to a non-empty string
 
-logFiles=
-zipFiles=
-files=
+# default to reading from stdin
+logFiles=-
+zipFiles=-
+files=-
 # if stdin is not attached, search files of logType in the current directory tree
-if [ -t 0 ]; then
+# FILTER_NO_STDIN is a special environment variable that can be set to force disabling reading from stdin (e.g. fzf)
+if [ -t 0 ] || [ -n "$FILTER_NO_STDIN" ]; then
     # regex must match entire path, not just filename
     # note: never include conn-summary files and always return a success exit code
     logFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log$" | grep -v conn-summary | sort || true)"

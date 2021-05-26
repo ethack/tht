@@ -5,8 +5,6 @@ FROM golang:buster as go-builder
     RUN go get -v -u github.com/zmap/zannotate/cmd/zannotate
     # RUN go get -v -u github.com/brimdata/zed/cmd/zq
     RUN go get -v -u github.com/JustinAzoff/json-cut
-    # Go re-implementation of jq
-    RUN go get -v -u github.com/itchyny/gojq/cmd/gojq
     # Help find the path to the data you want
     RUN go get -v -u github.com/tomnomnom/gron
     # du alternative
@@ -17,7 +15,6 @@ FROM golang:buster as go-builder
 FROM rust:buster as rust-builder
 
     # cargo installs tools to /usr/local/cargo/bin/
-    RUN cargo install broot
     RUN git clone https://github.com/ogham/dog.git /tmp/dog \
      && cd /tmp/dog \
      && cargo build --release \
@@ -71,8 +68,8 @@ FROM ubuntu:hirsute as c-builder
      && gcc --static -o /tmp/zeek-cut /tmp/zeek-cut.c
 
 # Package Installer Stage #
-# Pick hirsute to get the latest possible version of each tool
-FROM ubuntu:hirsute as base
+# Pick 20.04 to get the latest possible version of each tool
+FROM ubuntu:20.04 as base
 
 # NOTE: Intentionally written with many layers for efficient caching
 # and readability. All layers are squashed at the end.
@@ -95,8 +92,6 @@ FROM ubuntu:hirsute as base
     COPY --from=rust-builder /usr/local/cargo/bin/exa /usr/local/bin/
     # find alternative
     COPY --from=rust-builder /usr/local/cargo/bin/fd /usr/local/bin/
-    # fuzzy finder
-    RUN apt-get -y install fzf
     # process monitor
     RUN apt-get -y install htop
     RUN apt-get -y install less
@@ -107,25 +102,19 @@ FROM ubuntu:hirsute as base
     RUN apt-get -y install wget
     RUN apt-get -y install vim
 
-    # broot - file lister and browser
-    RUN apt-get -y install libxcb1
-    COPY --from=rust-builder /usr/local/cargo/bin/broot /usr/local/bin/
-    RUN broot --install
-
     # docker cli
     COPY --from=docker:20.10 /usr/local/bin/docker /usr/local/bin/
+
+    # fzf - fuzzy finder
+    ARG FZF_VERSION=0.27.1
+    RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
+     && tar -xz -f /tmp/fzf.tar.gz -C /usr/local/bin/
 
     # godu - du alternative
     COPY --from=go-builder /go/bin/godu /usr/local/bin/
 
     # hyperfine - command benchmarking; like time on steroids
     COPY --from=rust-builder /usr/local/cargo/bin/hyperfine /usr/local/bin/
-
-    # interactively - run commands interactively
-    RUN wget -nv -O /usr/local/bin/interactively https://github.com/bigH/interactively/raw/master/bin/interactively \
-     && chmod +x /usr/local/bin/interactively
-    # for some infuriating reason [ -r ] and [ -w ] are only working in zsh and not bash
-    RUN sed -i '0,/env bash$/s//env zsh/' /usr/local/bin/interactively
 
     # skim - run commands interactively and fzf alternative
     RUN wget -nv -O /tmp/skim.tar.gz https://github.com/lotabout/skim/releases/download/v0.9.4/skim-v0.9.4-x86_64-unknown-linux-musl.tar.gz \
@@ -177,7 +166,6 @@ FROM ubuntu:hirsute as base
     RUN apt-get -y install jq
 
     COPY --from=go-builder /go/bin/json-cut /usr/local/bin/
-    COPY --from=go-builder /go/bin/gojq /usr/local/bin/
     COPY --from=go-builder /go/bin/gron /usr/local/bin/
 
     ### IP Addresses ###
@@ -216,16 +204,16 @@ FROM ubuntu:hirsute as base
     RUN apt-get -y install libc6
     COPY --from=rust-builder /usr/local/cargo/bin/dog /usr/local/bin/
 
+## Cleanup ##
+    RUN apt-get -y autoremove
+    RUN rm -rf /tmp/*
+
 ## Local scripts (moved to end for efficient caching)
     COPY bin/* /usr/local/bin/
 
 ## Customization ##
     COPY zsh/.zshrc /root/.zshrc
     COPY zsh/site-functions/* /usr/local/share/zsh/site-functions/
-
-## Cleanup ##
-    RUN apt-get -y autoremove
-    RUN rm -rf /tmp/*
 
 # Squash Layers Stage #
 FROM scratch
