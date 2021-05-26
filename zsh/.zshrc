@@ -17,6 +17,7 @@ if exists pspg; then
   export PAGER=pspg
 fi
 export TMPDIR=/tmp
+export SHELL=/usr/bin/zsh
 
 # set history size
 export HISTSIZE=10000
@@ -89,11 +90,14 @@ alias dud="du -h -d 1 --total"
 alias digs="dig +short"
 alias less="less -S"       # side-scrolling by default
 
-# note: set stdin to /dev/null to prevent skim from hanging when running a command that reads stdin
-#alias live='sk --layout=reverse --no-sort --ansi --interactive --print-cmd --cmd-prompt="$ " --show-cmd-error --cmd="0</dev/null FILTER_NO_STDIN=1 {}"'
-alias live="\
+# set stdin to /dev/null to prevent skim from hanging when running a command that reads stdin
+alias live_skim='sk --layout=reverse --no-sort --ansi --interactive --print-cmd --cmd-prompt="$ " --show-cmd-error --cmd="0</dev/null FILTER_NO_STDIN=1 {}"'
+# BUG: Can't use single quotes in the live view.
+# BUG: Can't use zsh aliases or functions.
+alias live_fzf="\
   FZF_DEFAULT_COMMAND=: \
-  fzf --ansi --no-sort \
+  fzf --ansi \
+    --no-sort \
     --disabled \
     --print-query \
     --no-info \
@@ -102,10 +106,19 @@ alias live="\
     --preview-window 'down:99%' \
     --prompt '$ ' \
     --bind 'change:reload:sleep 0.3'"
+alias live=live_skim
+
+## Zeek Aliases/Functions ##
+function zeek2csv() { zq -f csv "${1:-cat}" - }
+function zeek2text() { zq -f text "${1:-cat}" - }
+function zeek2zeek() { zq -f zeek "${1:-cat}" - } # useful for converting json to tsv
+function zeek2json() { zq -f ndjson "${1:-cat}" - }
+alias z2csv=zeek2csv
+alias z2text=zeek2text
+alias z2zeek=zeek2zeek
+alias z2json=zeek2json
 
 ## ZSH Setup; must be last ##
-
-# these are supposed to make the g command work. TODO
 autoload -Uz compinit
 compinit
 # autocompletion with an arrow-key driven interface
