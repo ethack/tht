@@ -23,7 +23,7 @@ sudo curl -o /usr/local/bin/tht https://raw.githubusercontent.com/ethack/tht/mai
 tht
 ```
 
-You can also start it without the wrapper script with a docker command. This method will not have all the same convenience features as the script.
+You can also start THT with a docker command. This method will not have all the same convenience features as the wrapper script.
 
 **From DockerHub**
 ```bash

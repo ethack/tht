@@ -213,7 +213,6 @@ FROM ubuntu:20.04 as base
 
 ## Customization ##
     COPY zsh/.zshrc /root/.zshrc
-    COPY zsh/site-functions/* /usr/local/share/zsh/site-functions/
 
 # Squash Layers Stage #
 FROM scratch
