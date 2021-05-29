@@ -74,36 +74,18 @@ while [[ $# -gt 0 ]]; do
             print_usage
             exit
         ;;
-        -s|--starts-with)
-            termPrefix='["\\t]'
-        ;;
-        -e|--ends-with)
-            termSuffix='["\\t]'
-        ;;
-        -r|--regex)
-            regex="true"
-        ;;
-        -o|--or)
-            condition="or"
-        ;;
-        -n|--dry-run)
-            dryRun="true"
-        ;;
-        -v|--invert-match)
-            invert="true"
-        ;;
-        --rg|--ripgrep)
-            grepCmd="rg"
-        ;;
-        --ug|--ugrep)
-            grepCmd="ug"
-        ;;
-        --zgrep|--grep)
-            grepCmd="zgrep"
-        ;;
-        --cat|--zcat)
-            grepCmd="cat"
-        ;;
+        -s|--starts-with)       termPrefix='["\\t]' ;;
+        -e|--ends-with)         termSuffix='["\\t]' ;;
+        -r|--regex)             regex="true" ;;
+        -o|--or)                condition="or" ;;
+        -n|--dry-run)           dryRun="true" ;;
+        -v|--invert-match)      invert="true" ;;
+        --rg|--ripgrep)         grepCmd="rg" ;;
+        --ug|--ugrep)           grepCmd="ug" ;;
+        --zgrep|--grep)         grepCmd="zgrep" ;;
+        --cat|--zcat)           grepCmd="cat" ;;
+        --cidr|--grepcidr)      grepCmd="grepcidr" 
+                                regex="true" ;;
         --)
             shift
             # pass through args after "--" to search tool
@@ -126,15 +108,20 @@ done
 # -z return true if unset or set to the empty string
 # -n return true if set to a non-empty string
 
-# default to reading from stdin
-logFiles=-
-zipFiles=-
-files=-
 # if log type was specified, find all logs to search from disk
 # if no log type was specified and stdin is a tty (i.e not redirected), default to finding conn logs
 # if no log type was specified and stdin is not a tty (i.e. is redirected), read input from stdin (unless FILTER_NO_STDIN is defined)
 # FILTER_NO_STDIN is a special environment variable that can be set to force disabling reading from stdin (e.g. fzf)
+stdin=true
 if [ -n "$logType" ] || [ -t 0 ] || [ -n "$FILTER_NO_STDIN" ]; then
+    stdin=
+fi
+
+logFiles=
+zipFiles=
+# default to reading from stdin
+files=-
+if [ -z "$stdin" ]; then
     logType=${logType:-conn}
     # regex must match entire path, not just filename
     # note: never include conn-summary files and always return a success exit code
@@ -172,6 +159,7 @@ fi
 # TODO: Test if you can have too many files passed in. Might have to pipe from find directly.
 filterCmd=""
 first="true"
+parallel="xargs -n 1 -P $(nproc)"
 # loop through all search terms
 for term in "${search[@]}"; do 
     # if regex flag was not given then escape the search term
@@ -223,9 +211,9 @@ for term in "${search[@]}"; do
         if [ -n "$first" ]; then
             # use xargs to parallelize zgrep
             #TODO test for race conditions like you get with zcat and xargs
-            filterCmd="echo $files | xargs -n 1 -P $(nproc) zgrep ${extra_args[@]} -e '^#' -e '$term'"
+            filterCmd="echo $files | $parallel zgrep ${extra_args[@]} -e '^#' -e '$term'"
             if [ -n "$invert" ]; then
-                filterCmd="echo $files | xargs -n 1 -P $(nproc) zgrep ${extra_args[@]} --invert-match -e '$term'"
+                filterCmd="echo $files | $parallel zgrep ${extra_args[@]} --invert-match -e '$term'"
             fi
             first=
         else
@@ -234,6 +222,51 @@ for term in "${search[@]}"; do
                     filterCmd="$filterCmd | zgrep ${extra_args[@]} --invert-match -e '$term'"
                 else
                     filterCmd="$filterCmd | zgrep ${extra_args[@]} -e '^#' -e '$term'"
+                fi
+            elif [ "$condition" = "or" ]; then
+                filterCmd="$filterCmd -e '$term'"
+            fi
+        fi
+    ;;
+    grepcidr)
+        # TODO preserve zeek headers; grepcidr doesn't keep comments
+        # idea: use sed to condense all leading # lines into one, 
+        # use tail -n +1 for every stage,
+        # use sed at the end to expand line back out
+        # idea: use mktemp to create temporary file for the headers,
+        # use tee >(head -100 > tmp) # not likely to work,
+        # prepend grep -e '^#' tmp; to the filterCmd
+
+        # special case the first search term
+        if [ -n "$first" ]; then
+            invert_flag=
+            if [ -n "$invert" ]; then
+                invert_flag="-v"
+            fi
+            # if data comes from stdin, then just run grepcidr
+            if [ -n "$stdin" ]; then
+                filterCmd=""
+            # if data comes from only zip files, then zcat and pipe to grepcidr
+            elif [ -n "$zipFiles" ] && [ -z "$logFiles" ]; then
+                # note: grepcidr strips headers logs being interleaved is ok
+                filterCmd="echo $zipFiles | $parallel zcat |"
+            # if data comes from both zip files and log files, then cat them both to grepcidr
+            elif [ -n "$zipFiles" ] && [ -n "$logFiles" ]; then
+                # note: grepcidr strips headers logs being interleaved is ok
+                # note: there's no parallel speed increase for cat since it's not CPU-bound
+                filterCmd="( echo $zipFiles | $parallel zcat; cat $logFiles ) |"
+            # if data only comes from log files, then we can parallelize grepcidr
+            elif [ -z "$zipFiles" ] && [ -n "$logFiles" ]; then
+                filterCmd="echo $logFiles | $parallel"
+            fi
+            filterCmd="$filterCmd grepcidr ${extra_args[@]} $invert_flag -e '$term'"
+            first=
+        else
+            if [ "$condition" = "and" ]; then
+                if [ -n "$invert" ]; then
+                    filterCmd="$filterCmd | grepcidr ${extra_args[@]} -v -e '$term'"
+                else
+                    filterCmd="$filterCmd | grepcidr ${extra_args[@]} -e '$term'"
                 fi
             elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd -e '$term'"
@@ -252,19 +285,26 @@ case $grepCmd in
     cat)
         # only run respective commands if there are actual files that match
         filterCmd=
-        if [ -n "$logFiles" ]; then
-            filterCmd="cat $logFiles;"
+        if [ -z "$logFiles" ] && [ -z "$zipFiles" ]; then
+            # no files match; simply send data through from stdin
+            filterCmd="cat"
+        else
+            if [ -n "$logFiles" ]; then
+                filterCmd="cat $logFiles;"
+            fi
+            if [ -n "$zipFiles" ]; then
+                filterCmd="$filterCmd zcat $zipFiles"
+            fi
         fi
-        if [ -n "$zipFiles" ]; then
-            filterCmd="$filterCmd zcat $zipFiles"
-        fi
-        # Note: xargs causes race conditions with line output; don't use in parallel
+        # note: xargs causes race conditions with line output; 
+        # don't use in parallel because we want to preserve heading order
     ;;
 esac
 
 # if stdout is not redirected, get rid of zeek headers
 if [ -t 1 ]; then
-    # TODO should I do something like tail -n +9 | grep -v '^#' unconditionally?
+    # only do this if printing to stdout to avoid a performance hit anywhere else
+    # printing to stdout implies user expects few results
     filterCmd="$filterCmd | grep -v '^#'"
 fi
 
@@ -279,8 +319,6 @@ fi
 # Specify multiple types of logs? e.g.
 # filter --http --ssl --dns google.com
 # Wouldn't really be useful for zeek-cut. But would be useful for jq and JSON logs.
-
-# make grepcidr an option
 
 # write some unit tests
 
