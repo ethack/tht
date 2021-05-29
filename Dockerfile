@@ -1,3 +1,6 @@
+ARG GO_BIN=/go/bin
+ARG RUST_BIN=/usr/local/cargo/bin
+
 # Golang Builder Stage #
 FROM golang:buster as go-builder
 
@@ -13,17 +16,18 @@ FROM golang:buster as go-builder
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
-
+    ARG RUST_BIN
     # cargo installs tools to /usr/local/cargo/bin/
     RUN git clone https://github.com/ogham/dog.git /tmp/dog \
      && cd /tmp/dog \
      && cargo build --release \
      && cargo test \
-     && cp target/release/dog /usr/local/cargo/bin/
+     && cp target/release/dog $RUST_BIN
     RUN cargo install exa
     RUN cargo install fd-find
     RUN cargo install grex
     RUN cargo install hyperfine
+    RUN cargo install navi
     RUN cargo install ripgrep
     RUN cargo install zoxide
 
@@ -70,6 +74,9 @@ FROM ubuntu:hirsute as c-builder
 # Package Installer Stage #
 # Pick 20.04 to get the latest possible version of each tool
 FROM ubuntu:20.04 as base
+ARG GO_BIN
+ARG RUST_BIN
+ARG BIN=/usr/local/bin
 
 # NOTE: Intentionally written with many layers for efficient caching
 # and readability. All layers are squashed at the end.
@@ -88,69 +95,64 @@ FROM ubuntu:20.04 as base
 
 ## System Utils ##
     RUN apt-get -y install curl
-    # ls alternative
-    COPY --from=rust-builder /usr/local/cargo/bin/exa /usr/local/bin/
-    # find alternative
-    COPY --from=rust-builder /usr/local/cargo/bin/fd /usr/local/bin/
-    # process monitor
-    RUN apt-get -y install htop
-    RUN apt-get -y install less
-    # Pager
-    RUN apt-get -y install pspg
-    # RUN apt-get -y install parallel # problems with sysstat
-    RUN apt-get -y install unzip
-    RUN apt-get -y install wget
-    RUN apt-get -y install vim
-
     # docker cli
-    COPY --from=docker:20.10 /usr/local/bin/docker /usr/local/bin/
-
+    COPY --from=docker:20.10 /usr/local/bin/docker $BIN
+    # exa - ls alternative
+    COPY --from=rust-builder $RUST_BIN/exa $BIN
+    # fd - find alternative
+    COPY --from=rust-builder $RUST_BIN/fd $BIN
     # fzf - fuzzy finder
     ARG FZF_VERSION=0.27.1
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
-     && tar -xz -f /tmp/fzf.tar.gz -C /usr/local/bin/
-
+     && tar -xz -f /tmp/fzf.tar.gz -C $BIN
     # godu - du alternative
-    COPY --from=go-builder /go/bin/godu /usr/local/bin/
-
-    # hyperfine - command benchmarking; like time on steroids
-    COPY --from=rust-builder /usr/local/cargo/bin/hyperfine /usr/local/bin/
-
+    COPY --from=go-builder $GO_BIN/godu $BIN
+    # htop - process monitor
+    RUN apt-get -y install htop
+    RUN apt-get -y install less
+    # navi - cheatsheet
+    RUN apt-get -y install git
+    COPY --from=rust-builder $RUST_BIN/navi $BIN
+    # pspg - Pager
+    RUN apt-get -y install pspg
+    # RUN apt-get -y install parallel # problems installing sysstat
     # skim - run commands interactively and fzf alternative
     RUN wget -nv -O /tmp/skim.tar.gz https://github.com/lotabout/skim/releases/download/v0.9.4/skim-v0.9.4-x86_64-unknown-linux-musl.tar.gz \
-     && tar -xz -f /tmp/skim.tar.gz -C /usr/local/bin/
-
+     && tar -xz -f /tmp/skim.tar.gz -C $BIN
+    RUN apt-get -y install unzip
+    RUN apt-get -y install wget
+    RUN apt-get -y install vim
     # zoxide - better directory traversal
-    COPY --from=rust-builder /usr/local/cargo/bin/zoxide /usr/local/bin/
+    COPY --from=rust-builder $RUST_BIN/zoxide $BIN
 
 ## Data Processing ##
     # lightweight stats
     RUN apt-get -y install datamash
     # CSV/TSV/JSON parser and lightweight streaming stats
     ARG MILLER_VERSION=5.10.2
-    RUN wget -nv -O /usr/local/bin/mlr https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
-     && chmod +x /usr/local/bin/mlr
+    RUN wget -nv -O $BIN/mlr https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
+     && chmod +x $BIN/mlr
 
     ### Grep ###
     # grep, sed, awk, etc
     RUN apt-get -y install coreutils
     # RUN apt-get -y install ripgrep
-    COPY --from=rust-builder /usr/local/cargo/bin/rg /usr/local/bin/
+    COPY --from=rust-builder $RUST_BIN/rg $BIN
     # RUN apt-get -y install ugrep
-    COPY --from=c-builder /tmp/ugrep/bin/ugrep /usr/local/bin/
-    COPY --from=c-builder /tmp/ugrep/bin/ug /usr/local/bin/
+    COPY --from=c-builder /tmp/ugrep/bin/ugrep $BIN
+    COPY --from=c-builder /tmp/ugrep/bin/ug $BIN
 
-    COPY --from=rust-builder /usr/local/cargo/bin/grex /usr/local/bin/
+    COPY --from=rust-builder $RUST_BIN/grex $BIN
 
     ### Zeek ###
-    COPY --from=c-builder /tmp/zeek-cut /usr/local/bin/
+    COPY --from=c-builder /tmp/zeek-cut $BIN
 
     # zq - zeek file processor
     ARG ZQ_VERSION=0.29.0
     RUN wget -nv -O /tmp/zq.zip https://github.com/brimdata/zq/releases/download/v${ZQ_VERSION}/zq-v${ZQ_VERSION}.linux-amd64.zip \
      && unzip -j -d /tmp/ /tmp/zq.zip \
-     && mv /tmp/zq /usr/local/bin/
-    # COPY --from=go-builder /go/bin/zq /usr/local/bin/
+     && mv /tmp/zq $BIN
+    # COPY --from=go-builder $GO_BIN/zq $BIN
 
     # trace-summary
     RUN apt-get -y install --no-install-recommends python3
@@ -159,26 +161,26 @@ FROM ubuntu:20.04 as base
     RUN python3 -m pip install pysubnettree
     # remove pip (and auto dependencies further down) to save space
     RUN apt-get -y remove python3-pip
-    RUN wget -nv -O /usr/local/bin/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary
-    RUN chmod +x /usr/local/bin/trace-summary
+    RUN wget -nv -O $BIN/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary
+    RUN chmod +x $BIN/trace-summary
 
     ### JSON ###
     RUN apt-get -y install jq
 
-    COPY --from=go-builder /go/bin/json-cut /usr/local/bin/
-    COPY --from=go-builder /go/bin/gron /usr/local/bin/
+    COPY --from=go-builder $GO_BIN/json-cut $BIN
+    COPY --from=go-builder $GO_BIN/gron $BIN
 
     ### IP Addresses ###
     RUN apt-get -y install ipcalc
 
     # SiLK IPSet
-    COPY --from=c-builder /opt/silk/bin /usr/local/bin/
+    COPY --from=c-builder /opt/silk/bin $BIN
     COPY --from=c-builder /opt/silk/include /usr/local/include/
     COPY --from=c-builder /opt/silk/lib /usr/local/lib/
     COPY --from=c-builder /opt/silk/share /usr/local/share/
 
     # zannotate
-    COPY --from=go-builder /go/bin/zannotate /usr/local/bin/
+    COPY --from=go-builder $GO_BIN/zannotate $BIN
     ARG MAXMIND_LICENSE
     RUN mkdir -p /usr/share/GeoIP
     RUN wget -nv -O /tmp/geoip-country.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
@@ -191,7 +193,7 @@ FROM ubuntu:20.04 as base
      || echo "Failed to download Maxmind ASN data. Skipping."
 
      # grepcidr
-     COPY --from=c-builder /tmp/grepcidr/grepcidr /usr/local/bin/
+     COPY --from=c-builder /tmp/grepcidr/grepcidr $BIN
 
 ## Network Utils ##
     RUN apt-get -y install netcat
@@ -202,14 +204,19 @@ FROM ubuntu:20.04 as base
     RUN apt-get -y install dnsutils
     # dog - dig replacement
     RUN apt-get -y install libc6
-    COPY --from=rust-builder /usr/local/cargo/bin/dog /usr/local/bin/
+    COPY --from=rust-builder $RUST_BIN/dog $BIN
 
 ## Cleanup ##
+    # Strip binaries
+    RUN apt-get -y install binutils
+    RUN find /usr/local/bin -type f -exec strip {} \; || true
+    RUN apt-get -y remove binutils
+    # Remove unecessary packages
     RUN apt-get -y autoremove
     RUN rm -rf /tmp/*
 
 ## Local scripts (moved to end for efficient caching)
-    COPY bin/* /usr/local/bin/
+    COPY bin/* $BIN/
 
 ## Customization ##
     COPY zsh/.zshrc /root/.zshrc

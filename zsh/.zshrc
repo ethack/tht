@@ -59,6 +59,10 @@ if exists fzf; then
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 fi
 
+if exists navi; then
+  eval "$(navi widget zsh)"
+fi
+
 if exists zannotate; then 
   alias zannotate="zannotate --geoasn-database /usr/share/GeoIP/GeoLite2-ASN.mmdb --geoip2-database /usr/share/GeoIP/GeoLite2-Country.mmdb"
   alias za="zannotate"
@@ -110,13 +114,20 @@ alias live=live_skim
 
 ## Zeek Aliases/Functions ##
 function zeek2csv() { zq -f csv "${1:-cat}" - }
-function zeek2text() { zq -f text "${1:-cat}" - }
-function zeek2zeek() { zq -f zeek "${1:-cat}" - } # useful for converting json to tsv
+function zeek2tsv() { 
+  if [  -n "$1" ]; then 
+    zq -f zeek "${1}" - | sed -e '0,/^#fields\t/s///' | grep -v '^#'
+  else
+    # doing this without zq is much faster and leaves the header row intact
+    sed -e '0,/^#fields\t/s///' | grep -v '^#'
+  fi
+}
+function zeek2zeek() { zq -f zeek "${1:-cat}" - }
 function zeek2json() { zq -f ndjson "${1:-cat}" - }
-alias z2csv=zeek2csv
-alias z2text=zeek2text
-alias z2zeek=zeek2zeek
-alias z2json=zeek2json
+alias z2c=zeek2csv
+alias z2t=zeek2tsv
+alias z2z=zeek2zeek
+alias z2j=zeek2json
 
 ## ZSH Setup; must be last ##
 autoload -Uz compinit
