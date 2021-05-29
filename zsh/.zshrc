@@ -14,7 +14,7 @@ if exists vim; then
   export EDITOR=vim
 fi
 if exists pspg; then
-  export PAGER=pspg
+  export PAGER="pspg --quit-if-one-screen"
 fi
 export TMPDIR=/tmp
 export SHELL=/usr/bin/zsh
