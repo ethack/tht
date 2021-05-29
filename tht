@@ -1,13 +1,17 @@
 #!/bin/bash
 
+IMAGE=ethack/tht
+# switch to ghcr.io if dockerhub fails due to rate limits
+#IMAGE=ghcr.io/ethack/tht
+
 # If the current user doesn't have docker permissions run with sudo
-SUDO=''	
+DOCKER=docker
 if [ ! -w "/var/run/docker.sock" ]; then	
-	SUDO="sudo --preserve-env "	
+    DOCKER="sudo --preserve-env docker"	
 fi
 
 docker_cmd=(
-    "docker" "container" "run"
+    "container" "run"
     "--rm"
     "--interactive"
     "--tty"
@@ -20,33 +24,39 @@ docker_cmd=(
     "--workdir" "/host/$(pwd)"
 )
 
+while [ $# -gt 0 ]; do
+    case $1 in
+    update|pull|--pull)
+        echo "Downloading latest THT image..."
+        $DOCKER pull $IMAGE
+        SUDO=
+        if [ ! -w "$0" ]; then
+            SUDO="sudo"
+        fi
+        echo "Self-updating THT script..."
+        $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht > "$0"
+        shift
+        # run the updated script instead with the same parameters minus the one that triggered the update
+        exec "$0" "$@"
+    ;;
+    dev|--dev)
+        # change to directory this script is in, following any symlinks
+        pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" > /dev/null
+        if [ -d "bin" ]; then
+            # loop through dynamically to prevent having to update on ever tool addition
+            while IFS=  read -r -d $'\0' PROG; do
+                # volume mount repo scripts for development
+                docker_cmd+=("--mount" "source=$(pwd)/${PROG},destination=/usr/local/${PROG},type=bind")
+            done < <(find bin -type f -print0 2>/dev/null)
+        fi
+        popd > /dev/null
+    ;;
+    esac
+    shift
+done
+
 # create and use a persistent volume
-$SUDO docker volume create tht_zsh-cache >/dev/null && \
+$DOCKER volume create tht_zsh-cache >/dev/null && \
     docker_cmd+=("--mount" "source=tht_zsh-cache,destination=/usr/local/share/zsh/,type=volume")
 
-# volume mount repo scripts for development
-# TODO proper argument parsing
-if [ "$1" = "--dev" ]; then
-    # TODO loop through dynamically to prevent having to update on ever tool addition
-    docker_cmd+=(
-        "-v" "$(pwd)/bin/conn-summary:/usr/local/bin/conn-summary"
-        "-v" "$(pwd)/bin/filter:/usr/local/bin/filter"
-        "-v" "$(pwd)/bin/zv:/usr/local/bin/zv"
-    )
-    # these cause issues currently
-    #  -v "$(pwd)/zsh/.zshrc:/root/.zshrc"
-    #  -v "$(pwd)/zsh/site-functions:/usr/local/share/zsh/site-functions/"
-fi
-
-image=ethack/tht
-# switch to ghcr.io if dockerhub fails due to rate limits
-#image=ghcr.io/ethack/tht
-# TODO proper argument parsing
-if [ "$1" = "--pull" ]; then
-  echo "Downloading latest THT image..."
-  $SUDO docker pull "$image"
-fi
-$SUDO "${docker_cmd[@]}" "$image"
-
-# TODO
-# Add a self-update function that updates this script. Probably just do it same time as pulling new image.
+$DOCKER "${docker_cmd[@]}" "$IMAGE"
