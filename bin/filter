@@ -45,7 +45,7 @@ EOF
 #zgrep, ug, or rg; sed, printf, xargs, nproc, find, grep, cat, zcat
 
 exists() {
-  command -v $1 >/dev/null 2>&1
+    command -v $1 >/dev/null 2>&1
 }
 
 toRegex() {
@@ -56,7 +56,7 @@ toRegex() {
     echo "$term" | sed 's/\./\\\\./g' | xargs -n 1 printf "${prefix}%s${suffix}"
 }
 
-logType="conn"
+logType=
 search=()
 extra_args=()
 regex=
@@ -130,9 +130,12 @@ done
 logFiles=-
 zipFiles=-
 files=-
-# if stdin is not attached, search files of logType in the current directory tree
+# if log type was specified, find all logs to search from disk
+# if no log type was specified and stdin is a tty (i.e not redirected), default to finding conn logs
+# if no log type was specified and stdin is not a tty (i.e. is redirected), read input from stdin (unless FILTER_NO_STDIN is defined)
 # FILTER_NO_STDIN is a special environment variable that can be set to force disabling reading from stdin (e.g. fzf)
-if [ -t 0 ] || [ -n "$FILTER_NO_STDIN" ]; then
+if [ -n "$logType" ] || [ -t 0 ] || [ -n "$FILTER_NO_STDIN" ]; then
+    logType=${logType:-conn}
     # regex must match entire path, not just filename
     # note: never include conn-summary files and always return a success exit code
     logFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log$" | grep -v conn-summary | sort || true)"
@@ -146,23 +149,24 @@ if [ -t 0 ] || [ -n "$FILTER_NO_STDIN" ]; then
     fi
 fi
 
+
 # pick the best search tool available
-if [ ${#search[@]} -eq 0 ]; then
-    # use cat if there are no search terms
+if [ -n "$grepCmd" ]; then
+    : # grep command forced via flag
+elif [ ${#search[@]} -eq 0 ] && [ ${#extra_args[@]} -eq 0 ]; then
+    # use cat if there are no search terms and no extra arguments
     grepCmd="cat"
-elif [ -n "$grepCmd" ]; then
-  : # grep command forced via flag
 elif exists rg; then
-  grepCmd="rg"
+    grepCmd="rg"
 elif exists ug; then
-   grepCmd="ug"
+    grepCmd="ug"
 elif exists zgrep; then
-  grepCmd="zgrep"
+    grepCmd="zgrep"
 fi
 
 if ! exists "$grepCmd"; then
-  echo "Could not find a grep program."
-  exit 1
+    echo "Could not find a grep program."
+    exit 1
 fi
 
 # TODO: Test if you can have too many files passed in. Might have to pipe from find directly.
@@ -241,7 +245,9 @@ done
 # special case after search terms when needed
 case $grepCmd in
     ug)
-        filterCmd="$filterCmd)' $files"
+        if [ ! -n "$first" ]; then
+            filterCmd="$filterCmd)' $files"
+        fi
     ;;
     cat)
         # only run respective commands if there are actual files that match
@@ -255,6 +261,12 @@ case $grepCmd in
         # Note: xargs causes race conditions with line output; don't use in parallel
     ;;
 esac
+
+# if stdout is not redirected, get rid of zeek headers
+if [ -t 1 ]; then
+    # TODO should I do something like tail -n +9 | grep -v '^#' unconditionally?
+    filterCmd="$filterCmd | grep -v '^#'"
+fi
 
 if [ -n "$dryRun" ]; then
     echo $filterCmd
@@ -271,3 +283,5 @@ fi
 # make grepcidr an option
 
 # write some unit tests
+
+# make a way to select files to search. maybe with fuzzy finder.
