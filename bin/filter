@@ -139,7 +139,7 @@ readFromStdin=true
 if isNotEmpty "$logType" || ! isStdinRedir || isNotEmpty "$FILTER_NO_STDIN"; then
     readFromStdin=false
     logType=${logType:-conn}
-    # regex must match entire path, not just filename
+    # note: regex matches entire path, not just filename
     # note: never include conn-summary files and always return a success exit code
     logFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log$" | grep -v conn-summary | sort || true)"
     zipFiles="$(find . -regextype egrep -iregex ".*/$logType(\b|_).*\.log.gz$" | grep -v conn-summary | sort || true)"
@@ -173,6 +173,14 @@ if ! exists "$grepCmd"; then
     exit 1
 fi
 
+invert_flag=""
+header_flag="-e '^#'"
+if $invert; then
+    # note: use -v instead of --invert-match for grepcidr compatibility
+    invert_flag="-v"
+    header_flag=""
+fi
+
 # TODO: Test if you can have too many files passed in. Might have to pipe from find directly.
 filterCmd=""
 isFirstSearch=true
@@ -190,18 +198,11 @@ for term in "${search[@]}"; do
             # disable unicode to avoid taking a speed hit
             # https://github.com/BurntSushi/ripgrep/issues/1860
             # https://github.com/BurntSushi/ripgrep/issues/1760
-            filterCmd="rg ${extra_args[@]} --no-filename --no-line-number --no-unicode --search-zip -e '^#' -e '$term' $files"
-            if $invert; then
-                filterCmd="rg ${extra_args[@]} --no-filename --no-line-number --no-unicode --search-zip --invert-match -e '$term' $files"
-            fi
+            filterCmd="rg ${extra_args[@]} --no-filename --no-line-number --no-unicode --search-zip $invert_flag $header_flag -e '$term' $files"
             isFirstSearch=false
         else
             if [ "$condition" = "and" ]; then      # prefer and
-                if $invert; then
-                    filterCmd="$filterCmd | rg ${extra_args[@]} --invert-match -e '$term'"
-                else
-                    filterCmd="$filterCmd | rg ${extra_args[@]} -e '^#' -e '$term'"
-                fi
+                filterCmd="$filterCmd | rg ${extra_args[@]} $invert_flag $header_flag -e '$term'"
             elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd -e '$term'"
             fi
@@ -210,16 +211,13 @@ for term in "${search[@]}"; do
     ug)
         # special case the first search term
         if $isFirstSearch; then
-            filterCmd="ug ${extra_args[@]} --no-filename --decompress --bool '^# OR ($term"
-            if $invert; then
-                filterCmd="ug ${extra_args[@]} --no-filename --decompress --invert-match --bool '($term"
-            fi
+            filterCmd="ug ${extra_args[@]} --no-filename --decompress $invert_flag --bool '${header_flag:+^# OR }($term"
             isFirstSearch=false
         else
             if [ "$condition" = "and" ]; then
-                filterCmd="$filterCmd AND '$term'"
+                filterCmd="$filterCmd AND $term"
             elif [ "$condition" = "or" ]; then
-                filterCmd="$filterCmd OR '$term'"
+                filterCmd="$filterCmd OR $term"
             fi
         fi
     ;;
@@ -227,19 +225,12 @@ for term in "${search[@]}"; do
         # special case the first search term
         if $isFirstSearch; then
             # use xargs to parallelize zgrep
-            #TODO test for race conditions like you get with zcat and xargs
-            filterCmd="echo $files | $parallel zgrep ${extra_args[@]} -e '^#' -e '$term'"
-            if $invert; then
-                filterCmd="echo $files | $parallel zgrep ${extra_args[@]} --invert-match -e '$term'"
-            fi
+            #TODO test for race conditions like you get with xargs zcat
+            filterCmd="echo $files | $parallel zgrep ${extra_args[@]} $invert_flag $header_flag -e '$term'"
             isFirstSearch=false
         else
             if [ "$condition" = "and" ]; then
-                if $invert; then
-                    filterCmd="$filterCmd | zgrep ${extra_args[@]} --invert-match -e '$term'"
-                else
-                    filterCmd="$filterCmd | zgrep ${extra_args[@]} -e '^#' -e '$term'"
-                fi
+                filterCmd="$filterCmd | zgrep ${extra_args[@]} $invert_flag $header_flag -e '$term'"
             elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd -e '$term'"
             fi
@@ -256,20 +247,16 @@ for term in "${search[@]}"; do
 
         # special case the first search term
         if $isFirstSearch; then
-            invert_flag=
-            if $invert; then
-                invert_flag="-v"
-            fi
             # if data comes from stdin, then just run grepcidr
             if $readFromStdin; then
                 filterCmd=""
             # if data comes from only zip files, then zcat and pipe to grepcidr
             elif isNotEmpty "$zipFiles" && isEmpty "$logFiles"; then
-                # note: grepcidr strips headers logs being interleaved is ok
+                # note: grepcidr strips headers so interleaving logs with xargs is ok
                 filterCmd="echo $zipFiles | $parallel zcat |"
             # if data comes from both zip files and log files, then cat them both to grepcidr
             elif isNotEmpty "$zipFiles" && isNotEmpty "$logFiles"; then
-                # note: grepcidr strips headers logs being interleaved is ok
+                # note: grepcidr strips headers so interleaving logs with xargs is ok
                 # note: there's no parallel speed increase for cat since it's not CPU-bound
                 filterCmd="( echo $zipFiles | $parallel zcat; cat $logFiles ) |"
             # if data only comes from log files, then we can parallelize grepcidr
@@ -280,11 +267,7 @@ for term in "${search[@]}"; do
             isFirstSearch=false
         else
             if [ "$condition" = "and" ]; then
-                if $invert; then
-                    filterCmd="$filterCmd | grepcidr ${extra_args[@]} -v -e '$term'"
-                else
-                    filterCmd="$filterCmd | grepcidr ${extra_args[@]} -e '$term'"
-                fi
+                filterCmd="$filterCmd | grepcidr ${extra_args[@]} $invert_flag -e '$term'"
             elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd -e '$term'"
             fi
@@ -295,7 +278,7 @@ done
 # special case after search terms when needed
 case $grepCmd in
     ug)
-        if $isFirstSearch; then
+        if ! $isFirstSearch; then
             filterCmd="$filterCmd)' $files"
         fi
     ;;
