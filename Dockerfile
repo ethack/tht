@@ -72,8 +72,7 @@ FROM ubuntu:hirsute as c-builder
      && gcc --static -o /tmp/zeek-cut /tmp/zeek-cut.c
 
 # Package Installer Stage #
-# Pick 20.04 to get the latest possible version of each tool
-FROM ubuntu:20.04 as base
+FROM ubuntu:21.04 as base
 ARG GO_BIN
 ARG RUST_BIN
 ARG BIN=/usr/local/bin
@@ -95,6 +94,7 @@ ARG BIN=/usr/local/bin
 
 ## System Utils ##
     RUN apt-get -y install curl
+    RUN apt-get -y install wget
     # docker cli
     COPY --from=docker:20.10 /usr/local/bin/docker $BIN
     # exa - ls alternative
@@ -113,6 +113,7 @@ ARG BIN=/usr/local/bin
     # navi - cheatsheet
     RUN apt-get -y install git
     COPY --from=rust-builder $RUST_BIN/navi $BIN
+    # /root/.local/share/navi/
     # pspg - Pager
     RUN apt-get -y install pspg
     # RUN apt-get -y install parallel # problems installing sysstat
@@ -120,7 +121,6 @@ ARG BIN=/usr/local/bin
     RUN wget -nv -O /tmp/skim.tar.gz https://github.com/lotabout/skim/releases/download/v0.9.4/skim-v0.9.4-x86_64-unknown-linux-musl.tar.gz \
      && tar -xz -f /tmp/skim.tar.gz -C $BIN
     RUN apt-get -y install unzip
-    RUN apt-get -y install wget
     RUN apt-get -y install vim
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
@@ -159,8 +159,6 @@ ARG BIN=/usr/local/bin
     # install pysubnettree dependency with pip
     RUN apt-get -y install python3-pip
     RUN python3 -m pip install pysubnettree
-    # remove pip (and auto dependencies further down) to save space
-    RUN apt-get -y remove python3-pip
     RUN wget -nv -O $BIN/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary
     RUN chmod +x $BIN/trace-summary
 
@@ -170,7 +168,14 @@ ARG BIN=/usr/local/bin
     COPY --from=go-builder $GO_BIN/json-cut $BIN
     COPY --from=go-builder $GO_BIN/gron $BIN
 
-    ### IP Addresses ###
+    ### IP Addresses and OSINT ###
+    # harpoon - OSINT
+    RUN apt-get -y install --no-install-recommends python3
+    RUN apt-get -y install python3-pip git sudo
+    RUN pip install git+https://github.com/Te-k/harpoon#egg=harpoon git+https://github.com/Te-k/harpoontools#egg=harpoontools
+    # /root/.config/harpoon/config
+
+    # ipcalc
     RUN apt-get -y install ipcalc
 
     # SiLK IPSet
@@ -211,6 +216,8 @@ ARG BIN=/usr/local/bin
     RUN apt-get -y install binutils
     RUN find /usr/local/bin -type f -exec strip {} \; || true
     RUN apt-get -y remove binutils
+    # Remove pip
+    RUN apt-get -y remove python3-pip
     # Remove unecessary packages
     RUN apt-get -y autoremove
     RUN rm -rf /tmp/*
