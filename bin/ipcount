@@ -1,0 +1,3 @@
+#!/bin/bash
+
+rwsetcat --count-ips <(rwsetbuild --ip-ranges "${1:-stdin}")

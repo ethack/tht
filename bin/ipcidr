@@ -1,0 +1,3 @@
+#!/bin/bash
+
+rwsetcat --cidr-blocks <(rwsetbuild --ip-ranges "${1:-stdin}")

@@ -1,0 +1,27 @@
+#!/bin/bash
+
+inputs=()
+# for temp filenames
+ipsets=()
+
+# if there's data on stdin then make that the first input file
+if [ ! -t 0 ]; then
+    ipset="$(mktemp -u)"
+    ipsets+=("$ipset")
+    inputs+=("-")
+fi
+
+while [ $# -gt 0 ]; do
+    ipset="$(mktemp -u)"
+    ipsets+=("$ipset")
+    inputs+=("$1")
+    shift
+done
+trap "rm -f ${ipsets[*]}" EXIT
+
+# convert all input files to ipset files
+for i in "${!inputs[@]}"; do
+    rwsetbuild --ip-ranges "${inputs[$i]}" > "${ipsets[$i]}"
+done
+
+rwsetcat <(rwsettool --union "${ipsets[@]}")
