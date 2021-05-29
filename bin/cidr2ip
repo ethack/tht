@@ -1,0 +1,3 @@
+#!/bin/bash
+
+rwsetcat <(rwsetbuild --ip-ranges "${1:-stdin}")
