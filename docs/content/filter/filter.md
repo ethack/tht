@@ -120,6 +120,10 @@ filter 1.2.3.4 | conn-summary
 # TODO zq example with a grouping
 ```
 
+```bash
+cat patterns.txt | xargs filter --conn --or
+```
+
 ## Performance
 
 {{% notice tip %}}
