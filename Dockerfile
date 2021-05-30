@@ -121,9 +121,14 @@ ARG BIN=/usr/local/bin
     RUN wget -nv -O /tmp/skim.tar.gz https://github.com/lotabout/skim/releases/download/v0.9.4/skim-v0.9.4-x86_64-unknown-linux-musl.tar.gz \
      && tar -xz -f /tmp/skim.tar.gz -C $BIN
     RUN apt-get -y install unzip
-    RUN apt-get -y install vim
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
+
+## Editors ##
+    RUN apt-get -y install kakoune
+    RUN apt-get -y install nano
+    RUN (cd $BIN; curl https://getmic.ro | bash)
+    RUN apt-get -y install vim-tiny
 
 ## Data Processing ##
     # lightweight stats

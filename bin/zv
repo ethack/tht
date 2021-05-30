@@ -10,4 +10,4 @@ lines="${1:-1000}"
 # column widths and totals.
 
 # use fields line for headers, ignore all comment lines, and truncate to the first x lines
-sed -e '0,/^#fields\t/s///' | grep -v '^#' | head -n "$lines" | pspg --tsv --vertical-cursor
+sed -e '0,/^#fields\t/s///' | grep -v '^#' | head -n "$lines" | pspg --tsv --vertical-cursor --freezecols=0
