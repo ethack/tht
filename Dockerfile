@@ -109,6 +109,8 @@ ARG BIN=/usr/local/bin
     COPY --from=go-builder $GO_BIN/godu $BIN
     # htop - process monitor
     RUN apt-get -y install htop
+    # hyperfine - command benchmarking; like time on steroids
+    COPY --from=rust-builder $RUST_BIN/hyperfine $BIN
     RUN apt-get -y install less
     # navi - cheatsheet
     RUN apt-get -y install git
@@ -128,7 +130,7 @@ ARG BIN=/usr/local/bin
     RUN apt-get -y install kakoune
     RUN apt-get -y install nano
     RUN (cd $BIN; curl https://getmic.ro | bash)
-    RUN apt-get -y install vim-tiny
+    RUN apt-get -y install --no-install-recommends vim
 
 ## Data Processing ##
     # lightweight stats

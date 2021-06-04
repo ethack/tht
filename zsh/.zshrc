@@ -10,6 +10,10 @@ autoload -U colors && colors
 PS1="%{$fg[red]%}%n%{$reset_color%}@%{$fg[blue]%}%m %{$fg[yellow]%}%~ %{$reset_color%}
 $ "
 
+if ! exists vim && exists vi; then
+  alias vim=vi
+fi
+
 if exists vim; then
   export EDITOR=vim
 fi
@@ -113,21 +117,23 @@ alias live_fzf="\
 alias live=live_skim
 
 ## Zeek Aliases/Functions ##
-function zeek2csv() { zq -f csv "${1:-cat}" - }
+function zeek2csv() { zq -f csv ${@:-} - }
 function zeek2tsv() { 
   if [  -n "$1" ]; then 
-    zq -f zeek "${1}" - | sed -e '0,/^#fields\t/s///' | grep -v '^#'
+    zq -f zeek $@ - | sed -e '0,/^#fields\t/s///' | grep -v '^#'
   else
     # doing this without zq is much faster and leaves the header row intact
     sed -e '0,/^#fields\t/s///' | grep -v '^#'
   fi
 }
-function zeek2zeek() { zq -f zeek "${1:-cat}" - }
-function zeek2json() { zq -f ndjson "${1:-cat}" - }
+function zeek2zeek() { zq -f zeek ${@:-} - }
+function zeek2json() { zq -f ndjson ${@:-} - }
+function zeek2table() { zq -f table ${@:-} - }
 alias z2c=zeek2csv
 alias z2t=zeek2tsv
 alias z2z=zeek2zeek
 alias z2j=zeek2json
+alias z2table=zeek2table
 
 ## ZSH Setup; must be last ##
 autoload -Uz compinit
