@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# zv = zeek viewer
+# tv = tsv viewer
 
 # -t returns true if file descriptor (stdout) is a tty,
 # which means it is connected to the terminal;
@@ -18,11 +18,4 @@ lines="${1:-1000}"
 # On top of that, pspg waits until all input is available before displaying in order to calculate
 # column widths and totals.
 
-head -n "$lines" | zq -f csv - | pspg --csv --csv-header=on --vertical-cursor --freezecols=0 $ni
-
-# note: the options below don't convert timestamps to human readable format
-# faster option for TSV
-#sed -e '0,/^#fields\t/s///' | grep -v '^#' | head -n 1000 | pspg --tsv --vertical-cursor --freezecols=0
-# faster option for JSON
-#head -n 1000 | mlr --j2c unsparsify then regularize | pspg --csv --csv-header=on --vertical-cursor --freezecols=0
-# downside is having to know format ahead of time
+head -n "$lines" | pspg --tsv --csv-header=on --vertical-cursor --freezecols=0 $ni
