@@ -119,6 +119,8 @@ ARG BIN=/usr/local/bin
     # pspg - Pager
     RUN apt-get -y install pspg
     # RUN apt-get -y install parallel # problems installing sysstat
+    # pv - Pipeviewer
+    RUN apt-get -y install pv
     # skim - run commands interactively and fzf alternative
     RUN wget -nv -O /tmp/skim.tar.gz https://github.com/lotabout/skim/releases/download/v0.9.4/skim-v0.9.4-x86_64-unknown-linux-musl.tar.gz \
      && tar -xz -f /tmp/skim.tar.gz -C $BIN
@@ -139,6 +141,10 @@ ARG BIN=/usr/local/bin
     ARG MILLER_VERSION=5.10.2
     RUN wget -nv -O $BIN/mlr https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
      && chmod +x $BIN/mlr
+    # CSV to Sqlite conversion
+    RUN apt-get -y install --no-install-recommends python3
+    RUN apt-get -y install python3-pip
+    RUN python3 -m pip install csvs-to-sqlite
 
     ### Grep ###
     # grep, sed, awk, etc
@@ -163,7 +169,7 @@ ARG BIN=/usr/local/bin
 
     # trace-summary
     RUN apt-get -y install --no-install-recommends python3
-    # install pysubnettree dependency with pip
+    # install pysubnettree dependency
     RUN apt-get -y install python3-pip
     RUN python3 -m pip install pysubnettree
     RUN wget -nv -O $BIN/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary
