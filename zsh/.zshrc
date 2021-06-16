@@ -123,6 +123,7 @@ function zeek2tsv() {
     zq -f zeek $@ - | sed -e '0,/^#fields\t/s///' | grep -v '^#'
   else
     # doing this without zq is much faster and leaves the header row intact
+    # note: unlike the others, this only works for Zeek TSV input
     sed -e '0,/^#fields\t/s///' | grep -v '^#'
   fi
 }
@@ -134,6 +135,9 @@ alias z2t=zeek2tsv
 alias z2z=zeek2zeek
 alias z2j=zeek2json
 alias z2table=zeek2table
+
+# convert timestamps to human-readable by default
+alias zeek-cut="zeek-cut -U '%FT%TZ'"
 
 ## ZSH Setup; must be last ##
 autoload -Uz compinit
