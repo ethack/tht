@@ -82,8 +82,13 @@ fi
 
 echo Connections:
 echo ============
-trace-summary "${args[@]}" "${logs[@]}" | head -15
+trace-summary "${args[@]}" "${logs[@]}" 2> >(grep -v "exceeds bandwidth" 1>&2) | head -15
 
 echo Bytes:
 echo ======
-trace-summary --bytes "${args[@]}" "${logs[@]}" | head -15
+trace-summary --bytes "${args[@]}" "${logs[@]}" 2> >(grep -v "exceeds bandwidth" 1>&2) | head -15
+
+# Note on: 2> >(grep -v "exceeds bandwidth" 1>&2) 
+# This redirects stderr to an anonymous pipe, 
+# which then uses grep to exclude a specific all-too-common error message
+# and finally sends grep's stdout back to stderr.
