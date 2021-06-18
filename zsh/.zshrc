@@ -17,6 +17,16 @@ fi
 if exists vim; then
   export EDITOR=vim
 fi
+
+if exists kak; then
+  # https://github.com/mawww/kakoune/issues/2590#issuecomment-747710930
+  cat << EOF >> /usr/share/kak/kakrc
+map global normal x <a-x>   
+map global normal X giGl    
+map global normal <a-x> ghGl
+EOF
+fi
+
 if exists pspg; then
   export PAGER="pspg --quit-if-one-screen"
 fi
@@ -61,6 +71,8 @@ if exists fzf; then
   fi
 
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
+
+  [ -f "/usr/share/zsh/fzf/key-bindings.zsh" ] && source "/usr/share/zsh/fzf/key-bindings.zsh"
 fi
 
 if exists navi; then
@@ -97,9 +109,19 @@ alias df="df -h --total"
 alias dud="du -h -d 1 --total"
 alias digs="dig +short"
 alias less="less -S"       # side-scrolling by default
+alias history="history 0"  # make history show all entries by default
 
 # set stdin to /dev/null to prevent skim from hanging when running a command that reads stdin
-alias live_skim='sk --layout=reverse --no-sort --ansi --interactive --print-cmd --cmd-prompt="$ " --show-cmd-error --cmd="0</dev/null FILTER_NO_STDIN=1 {}"'
+alias live_skim='sk \
+  --layout=reverse \
+  --no-sort \
+  --ansi \
+  --interactive \
+  --print-cmd \
+  --cmd-prompt="$ " \
+  --show-cmd-error \
+  --cmd="0</dev/null \
+  FILTER_NO_STDIN=1 {}"'
 # BUG: Can't use single quotes in the live view.
 # BUG: Can't use zsh aliases or functions.
 alias live_fzf="\
