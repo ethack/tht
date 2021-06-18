@@ -73,12 +73,13 @@ isStdoutRedir() {
     # the opposite is if it is redirected or piped
     [ ! -t 1 ]
 }
+
 toRegex() {
     term="$1"
     prefix="$2"
     suffix="$3"
     # escape periods and put in word boundaries
-    echo "$term" | sed 's/\./\\\\./g' | xargs -n 1 printf "${prefix}%s${suffix}"
+    echo -n "$term" | sed 's/\./\\\\./g' | xargs -0 -n 1 printf "${prefix}%s${suffix}"
 }
 
 # defaults
@@ -169,7 +170,7 @@ fi
 
 if ! exists "$grepCmd"; then
     error "Could not find a grep program."
-    exit 1
+    exit 2
 fi
 
 invert_flag=""
@@ -188,7 +189,7 @@ parallel="xargs -n 1 -P $(nproc)"
 for term in "${search[@]}"; do 
     # if regex flag was not given then escape the search term
     if ! $regex; then
-        term="$(toRegex $term $termPrefix $termSuffix)"
+        term="$(toRegex "$term" "$termPrefix" "$termSuffix")"
     fi
     case $grepCmd in
     rg)
