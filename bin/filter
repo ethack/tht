@@ -153,17 +153,16 @@ if isNotEmpty "$logType" || ! isStdinRedir || isNotEmpty "$FILTER_NO_STDIN"; the
     fi
 fi
 
-
 # pick the best search tool available
 if isNotEmpty "$grepCmd"; then
     : # grep command forced via flag
 elif [ ${#search[@]} -eq 0 ] && [ ${#extra_args[@]} -eq 0 ]; then
     # use cat if there are no search terms and no extra arguments
     grepCmd="cat"
-elif exists rg; then
-    grepCmd="rg"
 elif exists ug; then
     grepCmd="ug"
+elif exists rg; then
+    grepCmd="rg"
 elif exists zgrep; then
     grepCmd="zgrep"
 fi
