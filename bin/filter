@@ -22,6 +22,8 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
     -v|--invert-match  will invert the matching
     -n|--dry-run       print out the final search command rather than execute it
 
+    -f|--file     file containing newline separated search terms
+
     $(basename "$0") will pick the best search tool for the situation. Use the following options to force a specific tool.
     --rg          force use of ripgrep
     --ug          force use of ugrep
@@ -79,7 +81,7 @@ toRegex() {
     prefix="$2"
     suffix="$3"
     # escape periods and put in word boundaries
-    echo -n "$term" | sed 's/\./\\\\./g' | xargs -0 -n 1 printf "${prefix}%s${suffix}"
+    echo -n "$term" | sed 's/\./\\./g' | xargs -0 -n 1 printf "${prefix}%s${suffix}"
 }
 
 # defaults
@@ -113,6 +115,23 @@ while [[ $# -gt 0 ]]; do
         --cat|--zcat)           grepCmd="cat" ;;
         --cidr|--grepcidr)      grepCmd="grepcidr" 
                                 regex=true ;;
+        -f|--file)
+            shift
+            patternfile="$1"
+            if [ ! -r "$patternfile" ]; then
+                error "Cannot read patternfile '$patternfile'"
+            else
+                # load all lines from file as search terms
+                # https://stackoverflow.com/a/1521498
+                while IFS="" read -r pattern || isNotEmpty "$pattern"; do
+                    # skip empty lines (we don't want grep's behavior of matching all on an empty line)
+                    if isEmpty "$pattern"; then
+                        continue
+                    fi
+                    search+=("$pattern")
+                done < "$patternfile"
+            fi
+        ;;
         --)
             shift
             # pass through args after "--" to search tool
@@ -209,6 +228,8 @@ for term in "${search[@]}"; do
         fi
     ;;
     ug)
+        # ugrep --bool needs special treatment of spaces
+        term="$(printf "%s" "$term" | sed 's/ /\\x20/g')"
         # special case the first search term
         if $isFirstSearch; then
             filterCmd="ug ${extra_args[@]} --no-filename --decompress $invert_flag --bool '${header_flag:+^# OR }($term"
@@ -309,7 +330,7 @@ if ! isStdoutRedir; then
 fi
 
 if $dryRun; then
-    echo $filterCmd
+    printf "%s\n" "$filterCmd"
 else
     eval $filterCmd
 fi
@@ -323,3 +344,22 @@ fi
 # write some unit tests
 
 # make a way to select files to search. maybe with fuzzy finder.
+# --files
+#
+# --rfc1918 or maybe --preset|-p rfc1918
+# auto-add --starts-with so don't do anything when that is used.
+# \w(10\.[0-9]{1,3}|172\.1[6-9]|172\.2[0-9]|172\.3[0-1]|192\.168)\.[0-9]{1,3}\.[0-9]{1,3}\w
+# Other useful presets? IPv6? Look in rita for ideas.
+# Multicast, link-local 169.254.
+# \w169\.254\.[0-9]{1,3}\.[0-9]{1,3}\w
+# local_orig & local_resp
+# ipv4, ipv6, possibly with -o to extract IPs from files
+# ipv4cidr, ipv6cidr
+# look at pre-existing groks
+
+# --csv|--header|--keep-lines=1 to pass through header line for csv/tsv logs
+# without ^# to search for this gets back into the original problem
+# could have sed prepend #, grep to include # and then sed to remove it again at the end
+
+# use \Q and \E instead of escaping periods
+# grep -P, rg -P, ug, or ug -P support this
