@@ -114,6 +114,9 @@ Where `filter` really shines is when you combine it with other tools that can pa
 # find all source IPs that queried evil.com
 filter --dns evil.com | zeek-cut id.orig_h | sort -V | uniq
 
+# find all IPs there were resolved by evil.com queries
+filter --dns evil.com | zeek-cut answers | filter -p ipv4 -- -o | sort -V | uniq
+
 # show a summary of traffic involving a specific IP address
 filter 1.2.3.4 | conn-summary
 
@@ -121,6 +124,8 @@ filter 1.2.3.4 | conn-summary
 ```
 
 ```bash
+filter --or -f patterns.txt
+# or using xargs; note that --conn or other file specification is necessary here
 cat patterns.txt | xargs filter --conn --or
 ```
 
@@ -217,5 +222,5 @@ Q: Why use `filter` over tools like `awk`, `grep`, `jq`, [`zq`](https://github.c
 
 A: `filter` complements or enhances many of these tools. 
 - For instance, using a regex search tool is nearly always faster than using `awk`, `zq`, or `jq` to perform equality testing. 
-- By assuming a specific use case (searching Zeek logs for things like IP addresses) `filter` can automate a bunch of boilerplate like escaping periods in regexes, passing through Zeek headers, and not printing filenames.
-- `grep` on its own does not utilize paralell processing. This means either replacing it with an alternative or remembering the correct syntax to combine it with something like `parallel` or `xargs`.
+- By assuming a specific use case (searching Zeek logs for things like IP addresses) `filter` can automate a bunch of boilerplate like escaping periods in regexes, passing through Zeek headers, and recursively searching compressed files of one log type.
+- `grep` on its own does not utilize parallel processing. This means either replacing it with an alternative or remembering the correct syntax to combine it with something like `parallel` or `xargs`.
