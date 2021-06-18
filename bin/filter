@@ -100,8 +100,8 @@ while [[ $# -gt 0 ]]; do
             print_usage
             exit
         ;;
-        -s|--starts-with)       termPrefix='["\\t]' ;;
-        -e|--ends-with)         termSuffix='["\\t]' ;;
+        -s|--starts-with)       termPrefix='[,"\\t]' ;;
+        -e|--ends-with)         termSuffix='[,"\\t]' ;;
         -r|--regex)             regex=true ;;
         -o|--or)                condition="or" ;;
         -n|--dry-run)           dryRun=true ;;
