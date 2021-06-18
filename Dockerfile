@@ -85,7 +85,7 @@ ARG BIN=/usr/local/bin
     ENV DEBCONF_NONINTERACTIVE_SEEN true
 
     # Used for cache busting
-    # COPY Dockerfile /tmp/
+    COPY .cache-buster /tmp/
     RUN apt-get update
 
     # set default shell to zsh so apt automatically detects and adds zsh completions
@@ -101,10 +101,13 @@ ARG BIN=/usr/local/bin
     COPY --from=rust-builder $RUST_BIN/exa $BIN
     # fd - find alternative
     COPY --from=rust-builder $RUST_BIN/fd $BIN
+    RUN apt-get -y install file
     # fzf - fuzzy finder
-    ARG FZF_VERSION=0.27.1
+    ARG FZF_VERSION=0.27.2
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
-     && tar -xz -f /tmp/fzf.tar.gz -C $BIN
+     && tar -xz -f /tmp/fzf.tar.gz -C $BIN \
+     && mkdir -p /usr/share/zsh/fzf \
+     && wget -nv -O /usr/share/zsh/fzf/key-bindings.zsh https://raw.githubusercontent.com/junegunn/fzf/${FZF_VERSION}/shell/key-bindings.zsh
     # godu - du alternative
     COPY --from=go-builder $GO_BIN/godu $BIN
     # htop - process monitor
@@ -141,16 +144,13 @@ ARG BIN=/usr/local/bin
     ARG MILLER_VERSION=5.10.2
     RUN wget -nv -O $BIN/mlr https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
      && chmod +x $BIN/mlr
-    # CSV to Sqlite conversion
-    RUN apt-get -y install --no-install-recommends python3
-    RUN apt-get -y install python3-pip
-    RUN python3 -m pip install csvs-to-sqlite
 
     ### Grep ###
     # grep, sed, awk, etc
     RUN apt-get -y install coreutils
     # RUN apt-get -y install ripgrep
     COPY --from=rust-builder $RUST_BIN/rg $BIN
+    RUN wget -nv -O /usr/share/zsh/vendor-completions/_rg https://raw.githubusercontent.com/BurntSushi/ripgrep/master/complete/_rg
     # RUN apt-get -y install ugrep
     COPY --from=c-builder /tmp/ugrep/bin/ugrep $BIN
     COPY --from=c-builder /tmp/ugrep/bin/ug $BIN
