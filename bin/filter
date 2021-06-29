@@ -34,7 +34,6 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
     --ug          force use of ugrep
     --zgrep       force use of zgrep
     --cat         force use of cat (useful for testing)
-    --grepcidr    force use of grepcidr
 
     Any arguments given after -- will be passed to the underlying search command.
 
@@ -120,8 +119,6 @@ while [[ $# -gt 0 ]]; do
         --ug|--ugrep)           grepCmd="ug" ;;
         --zgrep|--grep)         grepCmd="zgrep" ;;
         --cat|--zcat)           grepCmd="cat" ;;
-        --cidr|--grepcidr)      grepCmd="grepcidr" 
-                                escape=false ;;
         -f|--file)
             shift
             patternfile="$1"
@@ -226,8 +223,7 @@ fi
 invert_flag=""
 header_flag="-e '^#'"
 if $invert; then
-    # note: use -v instead of --invert-match for grepcidr compatibility
-    invert_flag="-v"
+    invert_flag="--invert-match"
     header_flag=""
 fi
 
@@ -279,43 +275,6 @@ for regex in "${regexes[@]}"; do
         else
             if [ "$condition" = "and" ]; then
                 filterCmd="$filterCmd | zgrep ${extra_args[@]} $invert_flag $header_flag -e '$regex'"
-            elif [ "$condition" = "or" ]; then
-                filterCmd="$filterCmd -e '$regex'"
-            fi
-        fi
-    ;;
-    grepcidr)
-        # TODO preserve zeek headers; grepcidr doesn't keep comments
-        # idea: use sed to condense all leading # lines into one, 
-        # use tail -n +1 for every stage,
-        # use sed at the end to expand line back out
-        # idea: use mktemp to create temporary file for the headers,
-        # use tee >(head -100 > tmp) # not likely to work,
-        # prepend grep -e '^#' tmp; to the filterCmd
-
-        # special case the first search regex
-        if $isFirstSearch; then
-            # if data comes from stdin, then just run grepcidr
-            if $readFromStdin; then
-                filterCmd=""
-            # if data comes from only zip files, then zcat and pipe to grepcidr
-            elif isNotEmpty "$zipFiles" && isEmpty "$logFiles"; then
-                # note: grepcidr strips headers so interleaving logs with xargs is ok
-                filterCmd="echo $zipFiles | $parallel zcat |"
-            # if data comes from both zip files and log files, then cat them both to grepcidr
-            elif isNotEmpty "$zipFiles" && isNotEmpty "$logFiles"; then
-                # note: grepcidr strips headers so interleaving logs with xargs is ok
-                # note: there's no parallel speed increase for cat since it's not CPU-bound
-                filterCmd="( echo $zipFiles | $parallel zcat; cat $logFiles ) |"
-            # if data only comes from log files, then we can parallelize grepcidr
-            elif isEmpty "$zipFiles" && isNotEmpty "$logFiles"; then
-                filterCmd="echo $logFiles | $parallel"
-            fi
-            filterCmd="$filterCmd grepcidr ${extra_args[@]} $invert_flag -e '$regex'"
-            isFirstSearch=false
-        else
-            if [ "$condition" = "and" ]; then
-                filterCmd="$filterCmd | grepcidr ${extra_args[@]} $invert_flag -e '$regex'"
             elif [ "$condition" = "or" ]; then
                 filterCmd="$filterCmd -e '$regex'"
             fi
