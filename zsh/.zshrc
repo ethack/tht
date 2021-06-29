@@ -75,6 +75,16 @@ if exists fzf; then
   [ -f "/usr/share/zsh/fzf/key-bindings.zsh" ] && source "/usr/share/zsh/fzf/key-bindings.zsh"
 fi
 
+if exists mcfly; then
+  eval "$(mcfly init zsh)"
+  export MCFLY_FUZZY=true
+fi
+
+if exists mtr; then
+  alias traceroute=mtr
+  alias tracert=mtr
+fi
+
 if exists navi; then
   eval "$(navi widget zsh)"
 fi

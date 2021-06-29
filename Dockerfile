@@ -27,6 +27,7 @@ FROM rust:buster as rust-builder
     RUN cargo install fd-find
     RUN cargo install grex
     RUN cargo install hyperfine
+    RUN cargo install mcfly
     RUN cargo install navi
     RUN cargo install ripgrep
     RUN cargo install zoxide
@@ -105,9 +106,7 @@ ARG BIN=/usr/local/bin
     # fzf - fuzzy finder
     ARG FZF_VERSION=0.27.2
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
-     && tar -xz -f /tmp/fzf.tar.gz -C $BIN \
-     && mkdir -p /usr/share/zsh/fzf \
-     && wget -nv -O /usr/share/zsh/fzf/key-bindings.zsh https://raw.githubusercontent.com/junegunn/fzf/${FZF_VERSION}/shell/key-bindings.zsh
+     && tar -xz -f /tmp/fzf.tar.gz -C $BIN
     # godu - du alternative
     COPY --from=go-builder $GO_BIN/godu $BIN
     # htop - process monitor
@@ -115,6 +114,7 @@ ARG BIN=/usr/local/bin
     # hyperfine - command benchmarking; like time on steroids
     COPY --from=rust-builder $RUST_BIN/hyperfine $BIN
     RUN apt-get -y install less
+    COPY --from=rust-builder $RUST_BIN/mcfly $BIN
     # navi - cheatsheet
     RUN apt-get -y install git
     COPY --from=rust-builder $RUST_BIN/navi $BIN
@@ -214,15 +214,16 @@ ARG BIN=/usr/local/bin
      COPY --from=c-builder /tmp/grepcidr/grepcidr $BIN
 
 ## Network Utils ##
-    RUN apt-get -y install netcat
-    RUN apt-get -y install whois
-    # ping
-    RUN apt-get -y install iputils-ping
     # dig
     RUN apt-get -y install dnsutils
     # dog - dig replacement
     RUN apt-get -y install libc6
     COPY --from=rust-builder $RUST_BIN/dog $BIN
+    RUN apt-get -y install mtr
+    RUN apt-get -y install netcat
+    # ping
+    RUN apt-get -y install iputils-ping
+    RUN apt-get -y install whois
 
 ## Cleanup ##
     # Strip binaries
