@@ -22,7 +22,8 @@ The `filter` script is tailored for searching IP addresses and domains in Zeek l
 ```txt
 filter [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPTIONS]]
 
-    --<logtype>   is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
+    --<logtype>         is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
+    -d|--dir <dirglob>  will search logs in <dirglob> instead of current directory
 
     Specify one or more [search_terms] to filter either STDIN or log files. If you don't specify any search terms, all lines will be printed.
     
@@ -30,16 +31,24 @@ filter [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPTIONS]]
     -o|--or       at least one search term is required to appear in a line (as opposed to all terms matching)
 
     Search terms will match on word boundaries by default.
-    -s|--starts-with  anchor search term to beginning of field (e.g. 192.168)
-    -e|--ends-with    anchor search term to end of field (e.g. google.com)
-    -r|--regex        signifies that [search_term(s)] should be treated as regexes
+    -s|--starts-with   anchor search term to beginning of field (e.g. 192.168)
+    -e|--ends-with     anchor search term to end of field (e.g. google.com)
+    -r|--regex         signifies that [search_term(s)] should be treated as regexes
+    -v|--invert-match  will invert the matching
+    -n|--dry-run       print out the final search command rather than execute it
 
-    -n|--dry-run      print out the final search command rather than execute it
+    You can specify search terms in other ways as well.
+    -f|--file <patternfile.txt>   file containing newline separated search terms
+    -p|--preset <preset>          use a common preset regex with current options being:
+                rfc1918           matches private IPv4 addresses defined in RFC1918
+                ipv4              matches any IPv4 address
 
-    filter will find the first search tool available. Use the following options to force a specific tool.
+    filter will pick the best search tool for the situation. Use the following options to force a specific tool.
     --rg          force use of ripgrep
     --ug          force use of ugrep
     --zgrep       force use of zgrep
+    --cat         force use of cat (useful for testing)
+    --grepcidr    force use of grepcidr
 
     Any arguments given after -- will be passed to the underlying search command.
 ```
@@ -104,7 +113,7 @@ filter --dns --or 8.8.8.8 8.8.4.4 1.1.1.1 1.0.0.1
 filter --http google.com
 
 # conn JSON entries where the origin host is 192.168.1.1
-filter --regex '"id.orig_h":"192.168.1.1"'
+filter -r '"id.orig_h":"192.168.1.1"'
 ```
 
 Where `filter` really shines is when you combine it with other tools that can parse Zeek logs, such as `zeek-cut`, `conn-summary`, and `zq`.
@@ -123,10 +132,19 @@ filter 1.2.3.4 | conn-summary
 # TODO zq example with a grouping
 ```
 
+You can also specify search terms inside a file. These search terms are given the same escaping treatment as if they were specified on the commandline.
+
 ```bash
 filter --or -f patterns.txt
-# or using xargs; note that --conn or other file specification is necessary here
-cat patterns.txt | xargs filter --conn --or
+```
+
+If you'd like to restrict the search directory to something more than the current directory tree you can.
+
+```bash
+filter -d 2021-06-29 1.1.1.1
+# globbing and bash brace expansion work as well (note: you'll need quotes around the argument)
+filter -d '2021-06-*' 1.1.1.1
+filter -d '2021-06-{01..15}' 1.1.1.1
 ```
 
 ## Performance
