@@ -8,13 +8,14 @@ Filters Zeek logs based on the search terms with output that can be piped to zee
 
 $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPTIONS]]
 
-    --<logtype>         is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
-    -d|--dir <dirglob>  will search logs in <dirglob> instead of current directory
+    Specify one or more [search_terms] to search either STDIN or log files. If you don't specify any search terms, all lines will be printed.
 
-    Specify one or more [search_terms] to filter either STDIN or log files. If you don't specify any search terms, all lines will be printed.
+    --<logtype>         is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
+    -|--stdin           reads filenames to search from stdin instead
+    -d|--dir <dirglob>  will search logs in <dirglob> instead of current directory
     
     Lines must match all search terms by default.
-    -o|--or       at least one search term is required to appear in a line (as opposed to all terms matching)
+    --or       at least one search term is required to appear in a line (as opposed to all terms matching)
 
     Search terms will match on word boundaries by default.
     -s|--starts-with   anchor search term to beginning of field (e.g. 192.168)
@@ -101,6 +102,11 @@ termSuffix='\\b'
 terms=()
 regexes=()
 searchDir=.
+logFiles=
+zipFiles=
+# default to reading from stdin
+files=-
+findFiles=true
 
 # process command args
 while [[ $# -gt 0 ]]; do
@@ -112,7 +118,7 @@ while [[ $# -gt 0 ]]; do
         -s|--starts-with)       termPrefix='[,"\\t]' ;;
         -e|--ends-with)         termSuffix='[,"\\t]' ;;
         -r|--regex)             escape=false ;;
-        -o|--or)                condition="or" ;;
+        --or)                   condition="or" ;;
         -n|--dry-run)           dryRun=true ;;
         -v|--invert-match)      invert=true ;;
         --rg|--ripgrep)         grepCmd="rg" ;;
@@ -127,7 +133,7 @@ while [[ $# -gt 0 ]]; do
             else
                 # load all lines from file as search terms
                 # https://stackoverflow.com/a/1521498
-                while IFS="" read -r pattern || isNotEmpty "$pattern"; do
+                while IFS= read -r pattern || isNotEmpty "$pattern"; do
                     # skip empty lines (we don't want grep's behavior of matching all on an empty line)
                     if isEmpty "$pattern"; then
                         continue
@@ -148,6 +154,20 @@ while [[ $# -gt 0 ]]; do
             shift
             searchDir="$1"
         ;;
+        -|--stdin)
+            findFiles=false
+            files=()
+            # search files passed on stdin
+            # TODO will this work if they aren't newline separated?
+            while IFS= read -r file; do
+                files+=("$file")
+                if [[ $file = *.gz ]]; then
+                    zipFiles+=("$file")
+                else
+                    logFiles+=("$file")
+                fi
+            done
+        ;;
         --)
             shift
             # pass through args after "--" to search tool
@@ -166,24 +186,17 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-logFiles=
-zipFiles=
-# default to reading from stdin
-files=-
-readFromStdin=true
 # FILTER_NO_STDIN is a special environment variable that can be set to force disabling reading from stdin (e.g. fzf)
-if isNotEmpty "$logType" || ! isStdinRedir || isNotEmpty "$FILTER_NO_STDIN"; then
-    readFromStdin=false
+if $findFiles && (isNotEmpty "$logType" || ! isStdinRedir || isNotEmpty "$FILTER_NO_STDIN"); then
     logType=${logType:-conn}
     # performs brace expansion (e.g. {0..10}) and glob expansion (e.g. conn*)
     # Note: will likely choke on filenames containing spaces
     searchDir=($(bash -c "echo $searchDir"))
     # note: regex matches entire path, not just filename
     # note: never include conn-summary files and always return a success exit code
-    logFiles="$(find "${searchDir[@]}" -regextype egrep -iregex ".*/${logType}(\b|_).*\.log$" | grep -v conn-summary | sort || true)"
-    zipFiles="$(find "${searchDir[@]}" -regextype egrep -iregex ".*/${logType}(\b|_).*\.log.gz$" | grep -v conn-summary | sort || true)"
-    files="$(echo $logFiles $zipFiles | sort)"
-    # TODO: test for files/paths with spaces; maybe use -print0; maybe loop through adding each to an array
+    IFS=$'\n' logFiles=($(find "${searchDir[@]}" -regextype egrep -iregex ".*/${logType}(\b|_).*\.log$" | grep -v conn-summary | sort || true))
+    IFS=$'\n' zipFiles=($(find "${searchDir[@]}" -regextype egrep -iregex ".*/${logType}(\b|_).*\.log.gz$" | grep -v conn-summary | sort || true))
+    files=("${logFiles[@]}" "${zipFiles[@]}")
     
     # if no log files are found then exit
     if isEmpty "$files"; then
@@ -240,7 +253,8 @@ for regex in "${regexes[@]}"; do
             # disable unicode to avoid taking a speed hit
             # https://github.com/BurntSushi/ripgrep/issues/1860
             # https://github.com/BurntSushi/ripgrep/issues/1760
-            filterCmd="rg ${extra_args[@]} --no-filename --no-line-number --no-unicode --search-zip $invert_flag $header_flag -e '$regex' $files"
+            filterCmd="rg ${extra_args[@]} --no-filename --no-line-number --no-unicode --search-zip $invert_flag $header_flag -e '$regex' ${files[@]}"
+            # TODO test files with spaces
             isFirstSearch=false
         else
             if [ "$condition" = "and" ]; then      # prefer and
@@ -270,7 +284,8 @@ for regex in "${regexes[@]}"; do
         if $isFirstSearch; then
             # use xargs to parallelize zgrep
             #TODO test for race conditions like you get with xargs zcat
-            filterCmd="echo $files | $parallel zgrep ${extra_args[@]} $invert_flag $header_flag -e '$regex'"
+            filterCmd="echo ${files[@]} | $parallel zgrep ${extra_args[@]} $invert_flag $header_flag -e '$regex'"
+            # TODO test files with spaces
             isFirstSearch=false
         else
             if [ "$condition" = "and" ]; then
@@ -286,7 +301,8 @@ done
 case $grepCmd in
     ug)
         if ! $isFirstSearch; then
-            filterCmd="$filterCmd)' $files"
+            filterCmd="$filterCmd)' ${files[@]}"
+            # TODO test files with spaces
         fi
     ;;
     cat)
@@ -297,10 +313,12 @@ case $grepCmd in
             filterCmd="cat"
         else
             if isNotEmpty "$logFiles"; then
-                filterCmd="cat $logFiles;"
+                filterCmd="cat ${logFiles[@]};"
+                # TODO test files with spaces
             fi
             if isNotEmpty "$zipFiles"; then
-                filterCmd="$filterCmd zcat $zipFiles"
+                filterCmd="$filterCmd zcat ${zipFiles[@]}"
+                # TODO test files with spaces
             fi
         fi
         # note: xargs causes race conditions with line output; 
@@ -323,20 +341,9 @@ fi
 
 
 # TODO
-# Specify multiple types of logs? e.g.
-# filter --http --ssl --dns google.com
-# Wouldn't really be useful for zeek-cut. But would be useful for jq and JSON logs.
-
 # write some unit tests
 
-# make a way to select files to search. maybe with fuzzy finder.
-# --files, can't use files as it conflicts with zeek's log name
-# --fd|--find and then 
-# how to lock to certain (one or more) directories
-# how to lock to certain files
-# stdin won't be used in these cases. could use it for passing in files instead.
-# can I just use the --glob builtin to ripgrep and ugrep? grep needs an alternative though
-# I'd like for {00..02} to work as well
+# can I use the --glob builtin to ripgrep and ugrep? grep needs an alternative though
 
 # Other useful presets
 # Multicast, link-local 169.254.

@@ -28,7 +28,7 @@ filter [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPTIONS]]
     Specify one or more [search_terms] to filter either STDIN or log files. If you don't specify any search terms, all lines will be printed.
     
     Lines must match all search terms by default.
-    -o|--or       at least one search term is required to appear in a line (as opposed to all terms matching)
+    --or       at least one search term is required to appear in a line (as opposed to all terms matching)
 
     Search terms will match on word boundaries by default.
     -s|--starts-with   anchor search term to beginning of field (e.g. 192.168)
@@ -147,6 +147,12 @@ filter -d '2021-06-*' 1.1.1.1
 filter -d '2021-06-{01..15}' 1.1.1.1
 ```
 
+If you need to get even more granular in the files that `filter` searches you can pass them in on stdin by specifying `-`.
+
+```bash
+find . -name 'unknown*.log' | filter - 1.1.1.1
+```
+
 ## Performance
 
 {{% notice tip %}}
@@ -159,7 +165,7 @@ By design, `filter` will match the search string anywhere in the line. This mean
 # TODO awk example
 
 # for JSON logs you can do something like this
-filter --regex '"id.orig_h":"192.168.1.1"'
+filter -r '"id.orig_h":"192.168.1.1"'
 # or this
 filter 192.168.1.1 | jq 'select(."id.orig_h"=="192.168.1.1")'
 
