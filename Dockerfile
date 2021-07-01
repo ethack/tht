@@ -1,10 +1,14 @@
+# go get installs tools to /go/bin/
 ARG GO_BIN=/go/bin
+# cargo installs tools to /usr/local/cargo/bin/
 ARG RUST_BIN=/usr/local/cargo/bin
 
 # Golang Builder Stage #
 FROM golang:buster as go-builder
 
-    # go get installs tools to /go/bin/
+    # Used for cache busting
+    COPY .cache-buster /tmp/
+
     RUN go get -v -u github.com/zmap/zannotate/cmd/zannotate
     # RUN go get -v -u github.com/brimdata/zed/cmd/zq
     RUN go get -v -u github.com/JustinAzoff/json-cut
@@ -12,12 +16,14 @@ FROM golang:buster as go-builder
     RUN go get -v -u github.com/tomnomnom/gron
     # du alternative
     RUN go get -v -u github.com/viktomas/godu
-    # TODO fzf https://github.com/junegunn/fzf/blob/master/BUILD.md or https://github.com/junegunn/fzf/blob/master/install
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
     ARG RUST_BIN
-    # cargo installs tools to /usr/local/cargo/bin/
+
+    # Used for cache busting
+    COPY .cache-buster /tmp/
+
     RUN git clone https://github.com/ogham/dog.git /tmp/dog \
      && cd /tmp/dog \
      && cargo build --release \
