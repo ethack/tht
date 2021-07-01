@@ -21,6 +21,7 @@ docker_cmd=(
     "--mount" "source=/etc/localtime,destination=/etc/localtime,type=bind"
     "--mount" "source=/var/run/docker.sock,destination=/var/run/docker.sock,type=bind"
     "--mount" "source=/,destination=/host,type=bind"
+    # TODO: resolve the current path in case you're in a symlinked directory 
     "--workdir" "/host/$(pwd)"
 )
 

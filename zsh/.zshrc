@@ -1,5 +1,11 @@
+# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
+# Initialization code that may require console input (password prompts, [y/n]
+# confirmations, etc.) must go above this block; everything else may go below.
+# if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
+#   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
+# fi
+
 exists () {
-	#type $1 &> /dev/null
   command -v $1 >/dev/null 2>&1
 }
 
@@ -10,54 +16,10 @@ autoload -U colors && colors
 PS1="%{$fg[red]%}%n%{$reset_color%}@%{$fg[blue]%}%m %{$fg[yellow]%}%~ %{$reset_color%}
 $ "
 
-if ! exists vim && exists vi; then
-  alias vim=vi
-fi
-
-if exists vim; then
-  export EDITOR=vim
-fi
-
-if exists kak; then
-  # https://github.com/mawww/kakoune/issues/2590#issuecomment-747710930
-  cat << EOF >> /usr/share/kak/kakrc
-map global normal x <a-x>   
-map global normal X giGl    
-map global normal <a-x> ghGl
-EOF
-fi
-
-if exists pspg; then
-  export PAGER="pspg --quit-if-one-screen"
-fi
 export TMPDIR=/tmp
 export SHELL=/usr/bin/zsh
 
-# set history size
-export HISTSIZE=10000
-# save history after logout
-export SAVEHIST=10000
-# history file
-export HISTFILE=$PERSISTENT/.zhistory
-# append into history file
-setopt INC_APPEND_HISTORY
-# save only one command if 2 common are same and consistent
-setopt HIST_IGNORE_DUPS
-# add timestamp for each entry; note: don't do this so it can double as fzf history
-#setopt EXTENDED_HISTORY
-
 ## Specific Tool Setup ##
-
-if exists exa; then
-  if [ -f "$HOME/.local/share/fonts/Regular/Hack Regular Nerd Font Complete.ttf" ]; then
-    alias ls="exa --classify --header --group --icons"
-  else
-    alias ls="exa --classify --header --group"
-  fi
-  alias lt='ls --long --tree --level 3'
-else
-  alias ls="ls --human-readable --classify --group-directories-first --color=auto"
-fi
 
 if exists fzf; then
   export FZF_HISTORY_DIR="$PERSISTENT/fzf"
@@ -71,13 +33,33 @@ if exists fzf; then
   fi
 
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-
-  [ -f "/usr/share/zsh/fzf/key-bindings.zsh" ] && source "/usr/share/zsh/fzf/key-bindings.zsh"
 fi
 
-if exists mcfly; then
-  eval "$(mcfly init zsh)"
-  export MCFLY_FUZZY=true
+if [ -f "$HOME/.zinit/zinit.zsh" ]; then
+  source ~/.zinit/zinit.zsh
+  # install zsh plugins with zinit turbo mode
+  zinit wait lucid depth=1 for \
+    https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh \
+    atinit"ZINIT[COMPINIT_OPTS]=-C; zicompinit; zicdreplay" \
+      zdharma/fast-syntax-highlighting \
+    blockf \
+      zsh-users/zsh-completions \
+    atload"!_zsh_autosuggest_start" \
+      zsh-users/zsh-autosuggestions
+  # powerlevel10k theme
+  # zinit light-mode depth=1 for \
+  #   romkatv/powerlevel10k
+fi
+
+if exists exa; then
+  if [ -f "$HOME/.local/share/fonts/Regular/Hack Regular Nerd Font Complete.ttf" ]; then
+    alias ls="exa --classify --header --group --icons"
+  else
+    alias ls="exa --classify --header --group"
+  fi
+  alias lt='ls --long --tree --level 3'
+else
+  alias ls="ls --human-readable --classify --group-directories-first --color=auto"
 fi
 
 if exists mtr; then
@@ -106,6 +88,42 @@ if exists zoxide; then
   }
 fi
 
+if ! exists vim && exists vi; then
+  alias vim=vi
+fi
+
+if exists vim; then
+  export EDITOR=vim
+fi
+
+if exists kak; then
+  # https://github.com/mawww/kakoune/issues/2590#issuecomment-747710930
+  cat << EOF >> /usr/share/kak/kakrc
+map global normal x <a-x>   
+map global normal X giGl    
+map global normal <a-x> ghGl
+EOF
+fi
+
+if exists pspg; then
+  export PAGER="pspg --quit-if-one-screen"
+fi
+
+## History ##
+
+# set history size
+export HISTSIZE=10000
+# save history after logout
+export SAVEHIST=10000
+# history file
+export HISTFILE=$PERSISTENT/.zhistory
+# append into history file
+setopt INC_APPEND_HISTORY
+# save only one command if 2 common are same and consistent
+setopt HIST_IGNORE_DUPS
+# add timestamp for each entry; note: don't do this so it can double as fzf history
+#setopt EXTENDED_HISTORY
+
 ## General Aliases ##
 alias l='ls'
 alias ll='ls -l'
@@ -120,33 +138,8 @@ alias dud="du -h -d 1 --total"
 alias digs="dig +short"
 alias less="less -S"       # side-scrolling by default
 alias history="history 0"  # make history show all entries by default
-
-# set stdin to /dev/null to prevent skim from hanging when running a command that reads stdin
-alias live_skim='sk \
-  --layout=reverse \
-  --no-sort \
-  --ansi \
-  --interactive \
-  --print-cmd \
-  --cmd-prompt="$ " \
-  --show-cmd-error \
-  --cmd="0</dev/null \
-  FILTER_NO_STDIN=1 {}"'
-# BUG: Can't use single quotes in the live view.
-# BUG: Can't use zsh aliases or functions.
-alias live_fzf="\
-  FZF_DEFAULT_COMMAND=: \
-  fzf --ansi \
-    --no-sort \
-    --disabled \
-    --print-query \
-    --no-info \
-    --no-bold \
-    --preview \"0</dev/null FILTER_NO_STDIN=1 '{q}'\" \
-    --preview-window 'down:99%' \
-    --prompt '$ ' \
-    --bind 'change:reload:sleep 0.3'"
-alias live=live_skim
+alias h="head"
+alias t="tail -f"
 
 ## Zeek Aliases/Functions ##
 function zeek2csv() { zq -f csv ${@:-} - }
@@ -176,3 +169,6 @@ autoload -Uz compinit
 compinit
 # autocompletion with an arrow-key driven interface
 zstyle ':completion:*' menu select
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+# [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

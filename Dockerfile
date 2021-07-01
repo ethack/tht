@@ -33,7 +33,6 @@ FROM rust:buster as rust-builder
     RUN cargo install fd-find
     RUN cargo install grex
     RUN cargo install hyperfine
-    RUN cargo install mcfly
     RUN cargo install navi
     RUN cargo install ripgrep
     RUN cargo install zoxide
@@ -96,12 +95,10 @@ ARG BIN=/usr/local/bin
     RUN apt-get update
 
     # set default shell to zsh so apt automatically detects and adds zsh completions
-    RUN apt-get -y install zsh
+    RUN apt-get -y install zsh git curl wget
     SHELL ["zsh", "-c"]
 
 ## System Utils ##
-    RUN apt-get -y install curl
-    RUN apt-get -y install wget
     # docker cli
     COPY --from=docker:20.10 /usr/local/bin/docker $BIN
     # exa - ls alternative
@@ -120,9 +117,7 @@ ARG BIN=/usr/local/bin
     # hyperfine - command benchmarking; like time on steroids
     COPY --from=rust-builder $RUST_BIN/hyperfine $BIN
     RUN apt-get -y install less
-    COPY --from=rust-builder $RUST_BIN/mcfly $BIN
     # navi - cheatsheet
-    RUN apt-get -y install git
     COPY --from=rust-builder $RUST_BIN/navi $BIN
     # /root/.local/share/navi/
     # pspg - Pager
@@ -188,12 +183,6 @@ ARG BIN=/usr/local/bin
     COPY --from=go-builder $GO_BIN/gron $BIN
 
     ### IP Addresses and OSINT ###
-    # harpoon - OSINT
-    RUN apt-get -y install --no-install-recommends python3
-    RUN apt-get -y install python3-pip git sudo
-    RUN pip install git+https://github.com/Te-k/harpoon#egg=harpoon git+https://github.com/Te-k/harpoontools#egg=harpoontools
-    # /root/.config/harpoon/config
-
     # ipcalc
     RUN apt-get -y install ipcalc
 
@@ -240,13 +229,26 @@ ARG BIN=/usr/local/bin
     RUN apt-get -y remove python3-pip
     # Remove unecessary packages
     RUN apt-get -y autoremove
-    RUN rm -rf /tmp/*
 
-## Local scripts (moved to end for efficient caching)
+## Local scripts
     COPY bin/* $BIN/
 
 ## Customization ##
-    COPY zsh/.zshrc /root/.zshrc
+    # cache file that powerline10k will grab on startup
+    ARG GITSTATUSD_VERSION=1.5.1
+    RUN wget -nv -O /tmp/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v${GITSTATUSD_VERSION}/gitstatusd-linux-x86_64.tar.gz \
+     && mkdir -p /root/.cache/gitstatus \
+     && tar -xz -C /root/.cache/gitstatus -f /tmp/gitstatusd-linux-x86_64.tar.gz
+    
+    COPY zsh/.zshrc /root/
+    # zinit - plugin manager for zsh
+    RUN git clone https://github.com/zdharma/zinit.git /root/.zinit
+    # https://github.com/zdharma/zinit/issues/484#issuecomment-785665617
+    RUN TERM=${TERM:-screen-256color} zsh -isc "@zinit-scheduler burst"
+    COPY zsh/.p10k.zsh /root/
+
+## Final cleanup ##
+    RUN rm -rf /tmp/*
 
 # Squash Layers Stage #
 FROM scratch
