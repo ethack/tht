@@ -43,13 +43,15 @@ while [ $# -gt 0 ]; do
     dev|--dev)
         # change to directory this script is in, following any symlinks
         pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" > /dev/null
-        if [ -d "bin" ]; then
-            # loop through dynamically to prevent having to update on ever tool addition
-            while IFS=  read -r -d $'\0' PROG; do
-                # volume mount repo scripts for development
-                docker_cmd+=("--mount" "source=$(pwd)/${PROG},destination=/usr/local/${PROG},type=bind")
-            done < <(find bin -type f -print0 2>/dev/null)
-        fi
+        # loop through dynamically to prevent having to update on every new addition
+        while IFS=  read -r -d $'\0' PROG; do
+            # volume mount repo scripts for development
+            docker_cmd+=("--mount" "source=$(pwd)/${PROG},destination=/usr/local/bin/${PROG#"bin"},type=bind")
+        done < <(find bin -type f -print0 2>/dev/null)
+        while IFS=  read -r -d $'\0' CONF; do
+            # volume mount repo scripts for development
+            docker_cmd+=("--mount" "source=$(pwd)/${CONF},destination=/root/${CONF#"zsh"},type=bind")
+        done < <(find zsh -type f -print0 2>/dev/null)
         popd > /dev/null
     ;;
     esac
