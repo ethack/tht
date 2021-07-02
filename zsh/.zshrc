@@ -53,7 +53,13 @@ if [ -f "$HOME/.zinit/zinit.zsh" ]; then
 fi
 
 if exists bro-pdns; then
-  alias zeek-pdns=bro-pdns
+  alias pdns=bro-pdns
+  alias pd=bro-pdns
+  alias pdi="bro-pdns index"
+  alias pdli="bro-pdns like individual"
+  alias pdlt="bro-pdns like tuple"
+  alias pdfi="bro-pdns find individual"
+  alias pdft="bro-pdns find tuple"
 fi
 
 if exists exa; then
@@ -155,6 +161,14 @@ alias history="history 0"  # make history show all entries by default
 alias h="head"
 alias t="tail -f"
 
+alias cv="viewer csv"
+alias tv="viewer tsv"
+alias zv="viewer zeek" 
+# these print out tables instead of opening a viewer
+function cvt() { viewer csv "$@" | cat }
+function tvt() { viewer tsv "$@" | cat }
+function zvt() { viewer zeek "$@" | cat }
+
 ## Zeek Aliases/Functions ##
 function zeek2csv() { zq -f csv ${@:-} - }
 function zeek2tsv() { 
@@ -168,12 +182,10 @@ function zeek2tsv() {
 }
 function zeek2zeek() { zq -f zeek ${@:-} - }
 function zeek2json() { zq -f ndjson ${@:-} - }
-function zeek2table() { zq -f table ${@:-} - }
 alias z2c=zeek2csv
 alias z2t=zeek2tsv
 alias z2z=zeek2zeek
 alias z2j=zeek2json
-alias z2table=zeek2table
 
 # convert timestamps to human-readable by default
 alias zeek-cut="zeek-cut -U '%FT%TZ'"

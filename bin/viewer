@@ -1,0 +1,119 @@
+#!/bin/bash
+
+if [ -n "$DEBUG" ]; then set -x; set -e; fi
+
+printUsage() {
+    cat << EOF
+View data from STDIN as a table.
+
+$(basename "$0") zeek|csv|tsv [<filename>] [<rows to display>]
+
+    <rows to display>   number of rows to print in output, use -1 for all rows (default: 1000)
+    <filename>          read from filename instead of stdin (only applicable when stdin is not redirected)
+
+Examples:
+    cat file.csv | $(basename "$0") csv         display first 1000 lines of file.csv
+    $(basename "$0") csv file.csv               display first 1000 lines of file.csv
+    cat file.tsv | $(basename "$0") tsv 10      display first 10 lines of file.tsv    
+    $(basename "$0") tsv file.tsv 10            display first 10 lines of file.tsv
+    cat conn.log | $(basename "$0") zeek        display first 1000 lines of zeek conn.log
+    
+EOF
+}
+
+isEmpty() {
+    # -z return true if unset or set to the empty string
+    [ -z "$1" ]
+}
+
+isNotEmpty() {
+    # -n return true if set to a non-empty string
+    [ -n "$1" ]
+}
+
+stdinRedir() {
+    # -t returns true if file descriptor (stdin) is a tty,
+    # which means it is connected to the terminal;
+    # the opposite is if it is redirected or piped
+    [ ! -t 0 ]
+}
+
+stdoutRedir() {
+    # -t returns true if file descriptor (stdout) is a tty,
+    # which means it is connected to the terminal;
+    # the opposite is if it is redirected or piped
+    [ ! -t 1 ]
+}
+
+requireMoreArgs() {
+    if [[ $# -eq 0 ]]; then
+        printUsage
+        exit
+    fi
+}
+
+# first argument is always the logtype
+requireMoreArgs "$@"
+logtype="$1"
+shift
+
+cmd=
+# next argument is filename, but only if there's nothing on STDIN
+if ! stdinRedir; then
+    requireMoreArgs "$@"
+    cmd="cat \"$1\" |"
+    shift
+fi
+
+# final line number argument is optional; -1 shows all lines
+lines=
+if [[ $1 != -1 ]]; then
+    # Rationale for piping to head is a large number of results is not useful to browse manually.
+    # On top of that, pspg waits until all input is available before displaying in order to calculate
+    # column widths and totals.
+    lines=${1:-1000}
+fi
+
+case "$logtype" in
+csv)
+    if ! isEmpty "$lines"; then
+        # add one to account for the header row
+        cmd="$cmd head -n $((lines+1)) |"
+    fi
+    cmd="$cmd pspg --csv --csv-header=on --vertical-cursor --freezecols=0" 
+;;
+tsv)
+    if ! isEmpty "$lines"; then
+        # add one to account for the header row
+        cmd="$cmd head -n $((lines+1)) |"
+    fi
+    cmd="$cmd pspg --tsv --csv-header=on --vertical-cursor --freezecols=0" 
+;;
+zeek) 
+    if ! isEmpty "$lines"; then
+        cmd="$cmd zq -f csv 'head $lines' - | pspg --csv --csv-header=on --vertical-cursor --freezecols=0"
+    else
+        cmd="$cmd zq -f csv - | pspg --csv --csv-header=on --vertical-cursor --freezecols=0"
+    fi
+
+    # note: the options below don't convert timestamps to human readable format
+    # faster option for TSV
+    #sed -e '0,/^#fields\t/s///' | grep -v '^#' | head -n 1000 | pspg --tsv --vertical-cursor --freezecols=0
+    # faster option for JSON
+    #head -n 1000 | mlr --j2c unsparsify then regularize | pspg --csv --csv-header=on --vertical-cursor --freezecols=0
+    # downside is having to know format ahead of time
+;;
+*)
+    echo "Invalid input type: $logtype"
+    printUsage
+    exit 1
+;;
+esac
+
+# if redirecting to stdout then we just want a plain ascii table
+if stdoutRedir; then
+    # disable pager and just print table
+    cmd="$cmd --ni"
+fi
+
+eval "$cmd"
