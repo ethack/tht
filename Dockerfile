@@ -79,6 +79,12 @@ FROM ubuntu:hirsute as c-builder
     RUN wget -nv -O /tmp/zeek-cut.c https://raw.githubusercontent.com/zeek/zeek-aux/master/zeek-cut/zeek-cut.c \
      && gcc --static -o /tmp/zeek-cut /tmp/zeek-cut.c
 
+    # nq
+    RUN apt-get update && apt-get -y install --no-install-recommends git gcc make
+    RUN git clone https://github.com/leahneukirchen/nq.git /tmp/nq \
+     && cd /tmp/nq \
+     && make all
+
 # Package Installer Stage #
 FROM ubuntu:21.04 as base
 ARG GO_BIN
@@ -122,6 +128,8 @@ ARG BIN=/usr/local/bin
     # navi - cheatsheet
     COPY --from=rust-builder $RUST_BIN/navi $BIN
     # /root/.local/share/navi/
+    # nq
+    COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
     # pspg - Pager
     RUN apt-get -y install pspg
     # RUN apt-get -y install parallel # problems installing sysstat
