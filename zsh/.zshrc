@@ -45,6 +45,8 @@ if [ -f "$HOME/.zinit/zinit.zsh" ]; then
       zdharma/fast-syntax-highlighting \
     blockf \
       zsh-users/zsh-completions \
+    svn \
+      OMZ::plugins/history-substring-search \
     atload"!_zsh_autosuggest_start" \
       zsh-users/zsh-autosuggestions
   # powerlevel10k theme
@@ -144,7 +146,10 @@ setopt HIST_IGNORE_DUPS
 # add timestamp for each entry; note: don't do this so it can double as fzf history
 #setopt EXTENDED_HISTORY
 
+
 ## General Aliases ##
+setopt complete_aliases # Treat aliases as distinct commands.
+
 alias l='ls'
 alias ll='ls -l'
 alias la='ls -la'

@@ -250,13 +250,15 @@ ARG BIN=/usr/local/bin
 
 ## Customization ##
     # cache file that powerline10k will grab on startup
-    ARG GITSTATUSD_VERSION=1.5.1
-    RUN wget -nv -O /tmp/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v${GITSTATUSD_VERSION}/gitstatusd-linux-x86_64.tar.gz \
-     && mkdir -p /root/.cache/gitstatus \
-     && tar -xz -C /root/.cache/gitstatus -f /tmp/gitstatusd-linux-x86_64.tar.gz
+    # ARG GITSTATUSD_VERSION=1.5.1
+    # RUN wget -nv -O /tmp/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v${GITSTATUSD_VERSION}/gitstatusd-linux-x86_64.tar.gz \
+    #  && mkdir -p /root/.cache/gitstatus \
+    #  && tar -xz -C /root/.cache/gitstatus -f /tmp/gitstatusd-linux-x86_64.tar.gz
     
     COPY zsh/.zshrc /root/
     # zinit - plugin manager for zsh
+    # svn required for some zinit functions
+    RUN apt-get -y install subversion
     RUN git clone https://github.com/zdharma/zinit.git /root/.zinit
     # https://github.com/zdharma/zinit/issues/484#issuecomment-785665617
     RUN TERM=${TERM:-screen-256color} zsh -isc "@zinit-scheduler burst"
