@@ -1,6 +1,6 @@
 #!/bin/bash
 
-if [ ! -z "$DEBUG" ]; then set -x; set -e; fi
+if [ -n "$DEBUG" ]; then set -x; set -e; fi
 
 print_usage() {
     cat << EOF
@@ -265,8 +265,8 @@ for regex in "${regexes[@]}"; do
         fi
     ;;
     ug)
-        # ugrep --bool needs special treatment of spaces
-        regex="$(printf "%s" "$regex" | sed 's/ /\\x20/g')"
+        # ugrep --bool needs special treatment of spaces and quotes
+        regex="$(printf "%s" "$regex" | sed -e 's/ /\\x20/g' -e 's/"/\\x22/g')"
         # special case the first search regex
         if $isFirstSearch; then
             filterCmd="ug ${extra_args[@]} --no-filename --decompress $invert_flag --bool '${header_flag:+^# OR }($regex"
@@ -342,6 +342,7 @@ fi
 
 # TODO
 # write some unit tests
+# run through ShellCheck
 
 # can I use the --glob builtin to ripgrep and ugrep? grep needs an alternative though
 
@@ -362,3 +363,12 @@ fi
 
 # use \Q and \E instead of escaping periods
 # grep -P, rg -P, ug, or ug -P support this
+# There are still problems with []. e.g. ["] or [ ]. Can't escape these characters in brackets and ugrep will puke.
+
+# Goals:
+# unify the --dns, --stdin, and --dir into a single,  or more unified mechanism
+# support other log types than just zeek
+# maybe make aliases like filterssl or filterdns to mimic filter --ssl and filter --dns
+# similar to --preset, a --find ssl, or --find 'some pattern'
+# maybe make an env varialbe like FILTER_FLAVOR=zeek for working with different types of logs
+# could change whether to search for ^# or not too
