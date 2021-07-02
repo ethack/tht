@@ -131,6 +131,10 @@ if exists pspg; then
   export PAGER="pspg --quit-if-one-screen"
 fi
 
+if exists dog; then
+  alias dig=dog
+fi
+
 ## History ##
 
 # set history size

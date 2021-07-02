@@ -18,6 +18,8 @@ FROM golang:buster as go-builder
     RUN go get -v -u github.com/viktomas/godu
     # zeek passive dns
     RUN go get -v github.com/JustinAzoff/bro-pdns
+    # rush - paralell alternative
+    RUN go get -v -u github.com/shenwei356/rush
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
@@ -89,7 +91,9 @@ FROM ubuntu:hirsute as c-builder
 FROM ubuntu:21.04 as base
 ARG GO_BIN
 ARG RUST_BIN
-ARG BIN=/usr/local/bin
+ENV BIN=/usr/local/bin
+ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
+
 
 # NOTE: Intentionally written with many layers for efficient caching
 # and readability. All layers are squashed at the end.
@@ -132,12 +136,10 @@ ARG BIN=/usr/local/bin
     COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
     # pspg - Pager
     RUN apt-get -y install pspg
-    # RUN apt-get -y install parallel # problems installing sysstat
     # pv - Pipeviewer
     RUN apt-get -y install pv
-    # skim - run commands interactively and fzf alternative
-    RUN wget -nv -O /tmp/skim.tar.gz https://github.com/lotabout/skim/releases/download/v0.9.4/skim-v0.9.4-x86_64-unknown-linux-musl.tar.gz \
-     && tar -xz -f /tmp/skim.tar.gz -C $BIN
+    # rush - parallel alternative
+    COPY --from=go-builder $GO_BIN/rush $BIN
     RUN apt-get -y install unzip
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
@@ -161,7 +163,7 @@ ARG BIN=/usr/local/bin
     RUN apt-get -y install coreutils
     # RUN apt-get -y install ripgrep
     COPY --from=rust-builder $RUST_BIN/rg $BIN
-    RUN wget -nv -O /usr/share/zsh/vendor-completions/_rg https://raw.githubusercontent.com/BurntSushi/ripgrep/master/complete/_rg
+    RUN wget -nv -O $ZSH_COMPLETIONS/_rg https://raw.githubusercontent.com/BurntSushi/ripgrep/master/complete/_rg
     # RUN apt-get -y install ugrep
     COPY --from=c-builder /tmp/ugrep/bin/ugrep $BIN
     COPY --from=c-builder /tmp/ugrep/bin/ug $BIN
@@ -171,7 +173,7 @@ ARG BIN=/usr/local/bin
     ### Zeek ###
     # bro-pdns - Passive DNS for Zeek logs
     COPY --from=go-builder $GO_BIN/bro-pdns $BIN
-    RUN bro-pdns completion zsh >/usr/share/zsh/vendor-completions/_bro-pdns
+    RUN bro-pdns completion zsh >$ZSH_COMPLETIONS/_bro-pdns
 
     # zeek-cut
     COPY --from=c-builder /tmp/zeek-cut $BIN
@@ -224,10 +226,9 @@ ARG BIN=/usr/local/bin
      || echo "Failed to download Maxmind ASN data. Skipping."
 
 ## Network Utils ##
-    # dig
-    RUN apt-get -y install dnsutils
     # dog - dig replacement
-    RUN apt-get -y install libc6
+    RUN apt-get -y install libc6 \
+     && wget -nv -O $ZSH_COMPLETIONS/_dog https://raw.githubusercontent.com/ogham/dog/master/completions/dog.zsh
     COPY --from=rust-builder $RUST_BIN/dog $BIN
     RUN apt-get -y install mtr
     RUN apt-get -y install netcat
