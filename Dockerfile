@@ -16,6 +16,8 @@ FROM golang:buster as go-builder
     RUN go get -v -u github.com/tomnomnom/gron
     # du alternative
     RUN go get -v -u github.com/viktomas/godu
+    # zeek passive dns
+    RUN go get -v github.com/JustinAzoff/bro-pdns
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
@@ -159,6 +161,11 @@ ARG BIN=/usr/local/bin
     COPY --from=rust-builder $RUST_BIN/grex $BIN
 
     ### Zeek ###
+    # bro-pdns - Passive DNS for Zeek logs
+    COPY --from=go-builder $GO_BIN/bro-pdns $BIN
+    RUN bro-pdns completion zsh >/usr/share/zsh/vendor-completions/_bro-pdns
+
+    # zeek-cut
     COPY --from=c-builder /tmp/zeek-cut $BIN
 
     # zq - zeek file processor
@@ -183,6 +190,9 @@ ARG BIN=/usr/local/bin
     COPY --from=go-builder $GO_BIN/gron $BIN
 
     ### IP Addresses and OSINT ###
+    # grepcidr
+    COPY --from=c-builder /tmp/grepcidr/grepcidr $BIN
+
     # ipcalc
     RUN apt-get -y install ipcalc
 
@@ -204,9 +214,6 @@ ARG BIN=/usr/local/bin
      && tar -xz -f /tmp/geoip-asn.tar.gz -C /tmp/ \
      && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/ \
      || echo "Failed to download Maxmind ASN data. Skipping."
-
-     # grepcidr
-     COPY --from=c-builder /tmp/grepcidr/grepcidr $BIN
 
 ## Network Utils ##
     # dig

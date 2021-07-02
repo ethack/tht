@@ -7,6 +7,7 @@
 
 exists () {
   command -v $1 >/dev/null 2>&1
+  #(( $+commands[$1] )) # this is zsh
 }
 
 PERSISTENT="/usr/local/share/zsh/"
@@ -51,6 +52,10 @@ if [ -f "$HOME/.zinit/zinit.zsh" ]; then
   #   romkatv/powerlevel10k
 fi
 
+if exists bro-pdns; then
+  alias zeek-pdns=bro-pdns
+fi
+
 if exists exa; then
   if [ -f "$HOME/.local/share/fonts/Regular/Hack Regular Nerd Font Complete.ttf" ]; then
     alias ls="exa --classify --header --group --icons"
@@ -84,7 +89,16 @@ if exists zoxide; then
   __zoxide_unset 'zq'
 
   function g() {
-    z "$@" && ls
+    case "$1" in
+    -) cd - && ls ;; # hard-code - to be previous cwd
+    *) 
+      # if z fails to find a directory, then try again in the /host/ filesystem
+      # if both fail then print the error message from the original command instead
+      {z "$*" 2>/dev/null && ls} || \
+      {z "/host/$*" 2>/dev/null && ls} || \
+      z "$*"
+    ;;
+    esac
   }
 fi
 
