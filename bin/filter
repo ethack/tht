@@ -105,7 +105,7 @@ searchDir=.
 logFiles=
 zipFiles=
 # default to reading from stdin
-files=-
+files=
 findFiles=true
 
 # process command args
@@ -282,9 +282,11 @@ for regex in "${regexes[@]}"; do
     zgrep)
         # special case the first search regex
         if $isFirstSearch; then
-            # use xargs to parallelize zgrep
-            #TODO test for race conditions like you get with xargs zcat
-            filterCmd="echo ${files[@]} | $parallel zgrep ${extra_args[@]} $invert_flag $header_flag -e '$regex'"
+            if ! isEmpty "$files"; then
+                # use xargs to parallelize zgrep
+                filterCmd="echo ${files[@]} | $parallel"
+            fi
+            filterCmd="$filterCmd zgrep ${extra_args[@]} $invert_flag $header_flag -e '$regex'"
             # TODO test files with spaces
             isFirstSearch=false
         else
@@ -329,7 +331,8 @@ esac
 # if stdout is not redirected, get rid of zeek headers
 if ! isStdoutRedir; then
     # only do this if printing to stdout to avoid a performance hit anywhere else
-    # printing to stdout implies user expects few results
+    # printing to stdout implies user expects few results and isn't going to use
+    # the results anywhere that would need the zeek headers
     filterCmd="$filterCmd | grep -v '^#'"
 fi
 
