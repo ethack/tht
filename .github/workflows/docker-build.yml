@@ -1,4 +1,4 @@
-name: Publish Docker Images
+name: Build THT Release
 
 on:
   push:
@@ -53,8 +53,12 @@ jobs:
         platforms: linux/amd64 #,linux/arm64,linux/arm/v7
         tags: |
           ethack/tht:latest
+          ethack/tht:${{ github.sha }}
           ghcr.io/ethack/tht:latest
-        build-args: MAXMIND_LICENSE=${{ secrets.MAXMIND_LICENSE }}
+          ghcr.io/ethack/tht:${{ github.sha }}
+        build-args: |
+          MAXMIND_LICENSE=${{ secrets.MAXMIND_LICENSE }}
+          THT_HASH=${{ github.sha }}
         push: true
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,mode=max,dest=/tmp/.buildx-cache

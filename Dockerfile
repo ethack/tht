@@ -6,7 +6,7 @@ ARG RUST_BIN=/usr/local/cargo/bin
 # Golang Builder Stage #
 FROM golang:buster as go-builder
 
-    # Used for cache busting
+    # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
 
     RUN go get -v -u github.com/zmap/zannotate/cmd/zannotate
@@ -25,7 +25,7 @@ FROM golang:buster as go-builder
 FROM rust:buster as rust-builder
     ARG RUST_BIN
 
-    # Used for cache busting
+    # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
 
     RUN git clone https://github.com/ogham/dog.git /tmp/dog \
@@ -40,12 +40,16 @@ FROM rust:buster as rust-builder
     RUN cargo install navi
     RUN cargo install ripgrep
     RUN cargo install zoxide
+    RUN cargo install bat
 
 # C/C++ Builder Stage #
 FROM ubuntu:hirsute as c-builder
 
     ENV DEBIAN_FRONTEND noninteractive
     ENV DEBCONF_NONINTERACTIVE_SEEN true
+
+    # Used for cache busting to grab latest version of tools
+    COPY .cache-buster /tmp/
 
     # SiLK IPSet
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ libpcap-dev python python-dev libglib2.0-dev ca-certificates
@@ -102,7 +106,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ENV DEBIAN_FRONTEND noninteractive
     ENV DEBCONF_NONINTERACTIVE_SEEN true
 
-    # Used for cache busting
+    # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
     RUN apt-get update
 
@@ -111,8 +115,12 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     SHELL ["zsh", "-c"]
 
 ## System Utils ##
+    # bat - fancy cat
+    COPY --from=rust-builder $RUST_BIN/bat $BIN
     # docker cli
     COPY --from=docker:20.10 /usr/local/bin/docker $BIN
+    # entr - perform action on file change
+    RUN apt-get -y install entr
     # exa - ls alternative
     COPY --from=rust-builder $RUST_BIN/exa $BIN
     # fd - find alternative
@@ -145,7 +153,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
 
 ## Editors ##
-    RUN apt-get -y install kakoune
     RUN apt-get -y install nano
     RUN (cd $BIN; curl https://getmic.ro | bash)
     RUN apt-get -y install --no-install-recommends vim
@@ -214,12 +221,14 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
     # zannotate
     COPY --from=go-builder $GO_BIN/zannotate $BIN
+
+    # Maxmind geolocation data
     ARG MAXMIND_LICENSE
     RUN mkdir -p /usr/share/GeoIP
-    RUN wget -nv -O /tmp/geoip-country.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
-     && tar -xz -f /tmp/geoip-country.tar.gz -C /tmp/ \
-     && mv -f /tmp/GeoLite2-Country_*/GeoLite2-Country.mmdb /usr/share/GeoIP/ \
-     || echo "Failed to download Maxmind Country data. Skipping."
+    RUN wget -nv -O /tmp/geoip-city.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
+     && tar -xz -f /tmp/geoip-city.tar.gz -C /tmp/ \
+     && mv -f /tmp/GeoLite2-City_*/GeoLite2-City.mmdb /usr/share/GeoIP/ \
+     || echo "Failed to download Maxmind City data. Skipping."
     RUN wget -nv -O /tmp/geoip-asn.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
      && tar -xz -f /tmp/geoip-asn.tar.gz -C /tmp/ \
      && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/ \
@@ -249,13 +258,17 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 ## Local scripts
     COPY bin/* $BIN/
 
-## Customization ##
+## Shell customization ##
     # cache file that powerline10k will grab on startup
     # ARG GITSTATUSD_VERSION=1.5.1
     # RUN wget -nv -O /tmp/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v${GITSTATUSD_VERSION}/gitstatusd-linux-x86_64.tar.gz \
     #  && mkdir -p /root/.cache/gitstatus \
     #  && tar -xz -C /root/.cache/gitstatus -f /tmp/gitstatusd-linux-x86_64.tar.gz
     
+    # Install a .vimrc file with nice defaults
+    RUN wget -nv -O /root/.vimrc https://raw.githubusercontent.com/nickmccurdy/sane-defaults/master/home/.vimrc \
+     && mkdir -p /root/.vim/backup /root/.vim/backupf
+    #RUN wget -nv -O /root/.vimrc https://raw.githubusercontent.com/tpope/vim-sensible/master/plugin/sensible.vim
     COPY zsh/.zshrc /root/
     # zinit - plugin manager for zsh
     # svn required for some zinit functions
@@ -264,6 +277,12 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # https://github.com/zdharma/zinit/issues/484#issuecomment-785665617
     RUN TERM=${TERM:-screen-256color} zsh -isc "@zinit-scheduler burst"
     COPY zsh/.p10k.zsh /root/
+
+## Version info ##
+    ARG THT_HASH=undefined
+    RUN echo NAME="Threat Hunting Toolkit" > /etc/tht-release \
+     && echo HASH=$THT_HASH >> /etc/tht-release \
+     && echo DATE=$(date +%Y.%m.%d) >> /etc/tht-release
 
 ## Final cleanup ##
     RUN rm -rf /tmp/*

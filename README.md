@@ -5,9 +5,11 @@
 Container image with a suite of tools useful for threat hunting. Download a pre-configured environment onto any system rather than struggling to install and configure everything yourself.
 
 ## Goals
+
 - Small - Keep download size under 500 MB.
 - Portable - Be able to load it up on a variety of systems.
-- Useful - Prune anything that doesn't get used. Provide guides and documentation on how to use the tools.
+- Useful - Prune anything that doesn't get used. 
+- Documented - Provide guides and documentation on how to use the tools.
 
 ## Running
 

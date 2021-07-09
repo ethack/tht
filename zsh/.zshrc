@@ -10,7 +10,7 @@ exists () {
   #(( $+commands[$1] )) # this is zsh
 }
 
-PERSISTENT="/usr/local/share/zsh/"
+PERSISTENT="/usr/local/share/zsh"
 mkdir -p "$PERSISTENT"
 
 autoload -U colors && colors
@@ -19,6 +19,21 @@ $ "
 
 export TMPDIR=/tmp
 export SHELL=/usr/bin/zsh
+
+## History ##
+
+# set history size
+export HISTSIZE=10000
+# save history after logout
+export SAVEHIST=10000
+# history file
+export HISTFILE=$PERSISTENT/.zhistory
+# append into history file
+setopt INC_APPEND_HISTORY
+# save only one command if 2 common are same and consistent
+setopt HIST_IGNORE_DUPS
+# add timestamp for each entry
+setopt EXTENDED_HISTORY
 
 ## Specific Tool Setup ##
 
@@ -93,7 +108,7 @@ if exists zoxide; then
   export _ZO_DATA_DIR="$PERSISTENT/zoxide"
   mkdir -p "$_ZO_DATA_DIR"
   eval "$(zoxide init zsh)"
-  # remove conflict
+  # remove alias conflict
   __zoxide_unset 'zq'
 
   function g() {
@@ -118,38 +133,9 @@ if exists vim; then
   export EDITOR=vim
 fi
 
-if exists kak; then
-  # https://github.com/mawww/kakoune/issues/2590#issuecomment-747710930
-  cat << EOF >> /usr/share/kak/kakrc
-map global normal x <a-x>   
-map global normal X giGl    
-map global normal <a-x> ghGl
-EOF
-fi
-
-if exists pspg; then
-  export PAGER="pspg --quit-if-one-screen"
-fi
-
 if exists dog; then
   alias dig=dog
 fi
-
-## History ##
-
-# set history size
-export HISTSIZE=10000
-# save history after logout
-export SAVEHIST=10000
-# history file
-export HISTFILE=$PERSISTENT/.zhistory
-# append into history file
-setopt INC_APPEND_HISTORY
-# save only one command if 2 common are same and consistent
-setopt HIST_IGNORE_DUPS
-# add timestamp for each entry; note: don't do this so it can double as fzf history
-#setopt EXTENDED_HISTORY
-
 
 ## General Aliases ##
 setopt complete_aliases # Treat aliases as distinct commands.
