@@ -220,9 +220,11 @@ if isNotEmpty "$grepCmd"; then
 elif [ ${#regexes[@]} -eq 0 ] && [ ${#extra_args[@]} -eq 0 ]; then
     # use cat if there are no search terms and no extra arguments
     grepCmd="cat"
-elif exists ug; then
+elif exists ug && (cat /proc/cpuinfo | grep -q avx); then
+    # ugrep is compiled with AVX2 so if your CPU doesn't support it don't use it
     grepCmd="ug"
 elif exists rg; then
+    # ripgrep also uses AVX2 but it enables it at runtime based on your CPU
     grepCmd="rg"
 elif exists zgrep; then
     grepCmd="zgrep"
