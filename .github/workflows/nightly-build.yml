@@ -1,0 +1,31 @@
+name: Nightly build
+
+# This workflow simply updates the .cache-buster file, which then:
+# - triggers the docker build workflow for the image to be rebuilt
+# - busts the docker build cache so all tools are pulled fresh
+
+on:
+  schedule:
+    # run this daily (i.e. nightly build)
+    - cron:  '0 0 * * *'
+
+jobs:
+  build:
+    name: Nightly build
+    runs-on: ubuntu-latest
+
+    # Only run on the main branch of the main repo (TODO test this)
+    if: ${{ github.repository == "ethack/tht" && github.ref == "refs/heads/main" }}
+
+    steps:
+    - 
+      name: Checkout code
+      uses: actions/checkout@v2
+    -
+      name: Overwrite .cache-buster
+      run: date --utc --rfc-email > .cache-buster
+    -
+      name: Push code
+      uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: Nightly build
