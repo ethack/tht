@@ -43,7 +43,7 @@ FROM rust:buster as rust-builder
     RUN cargo install bat
 
 # C/C++ Builder Stage #
-FROM ubuntu:hirsute as c-builder
+FROM ubuntu:21.04 as c-builder
 
     ENV DEBIAN_FRONTEND noninteractive
     ENV DEBCONF_NONINTERACTIVE_SEEN true
@@ -63,7 +63,7 @@ FROM ubuntu:hirsute as c-builder
      && make install
 
      # grepcidr
-    RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git
+    RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git ca-certificates
     # Version 3; change to "main" for latest
     ARG GREPCIDR_VERSION=b80b0c6ad1fce7f81bef0457a3e3b1208a3d76e3
     RUN git clone https://github.com/jrlevine/grepcidr3.git /tmp/grepcidr \
@@ -75,7 +75,7 @@ FROM ubuntu:hirsute as c-builder
     # TODO pspg
 
     # ugrep
-    RUN apt-get update && apt-get -y install --no-install-recommends git gcc g++ make libpcre2-dev libz-dev
+    RUN apt-get update && apt-get -y install --no-install-recommends git ca-certificates gcc g++ make libpcre2-dev libz-dev
     RUN git clone https://github.com/Genivia/ugrep.git /tmp/ugrep \
      && cd /tmp/ugrep \
      && ./build.sh
@@ -86,7 +86,7 @@ FROM ubuntu:hirsute as c-builder
      && gcc --static -o /tmp/zeek-cut /tmp/zeek-cut.c
 
     # nq
-    RUN apt-get update && apt-get -y install --no-install-recommends git gcc make
+    RUN apt-get update && apt-get -y install --no-install-recommends git ca-certificates gcc make
     RUN git clone https://github.com/leahneukirchen/nq.git /tmp/nq \
      && cd /tmp/nq \
      && make all
