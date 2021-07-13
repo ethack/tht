@@ -3,12 +3,12 @@ name: Build THT Release
 on:
   push:
     branches: [ main ]
-    paths-ignore:
-      - 'README.md'
-      - 'LICENSE'
-      - 'docs/**'
-      - '.github/workflows/docs.yml'
-      - 'tht'
+    paths:
+      - '.github/workflows/docker-build.yml'
+      - '.cache-buster'
+      - 'Dockerfile'
+      - 'bin/**'
+      - 'zsh/**'
 
 jobs:
   build:
