@@ -14,8 +14,8 @@ jobs:
     name: Nightly build
     runs-on: ubuntu-latest
 
-    # Only run on the main branch of the main repo (TODO test this)
-    if: ${{ github.repository == "ethack/tht" && github.ref == "refs/heads/main" }}
+    # Only run on the main branch of the main repo
+    if: github.repository == "ethack/tht" && github.ref == "refs/heads/main"
 
     steps:
     - 
