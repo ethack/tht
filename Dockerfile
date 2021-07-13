@@ -280,9 +280,9 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
 ## Version info ##
     ARG THT_HASH=undefined
-    RUN echo NAME="Threat Hunting Toolkit" > /etc/tht-release \
-     && echo HASH=$THT_HASH >> /etc/tht-release \
-     && echo DATE=$(date +%Y.%m.%d) >> /etc/tht-release
+    RUN echo 'NAME="Threat Hunting Toolkit"' > /etc/tht-release \
+     && echo "HASH=$THT_HASH" >> /etc/tht-release \
+     && echo "DATE=$(date +%Y.%m.%d)" >> /etc/tht-release
 
 ## Final cleanup ##
     RUN rm -rf /tmp/*

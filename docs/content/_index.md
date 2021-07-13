@@ -39,3 +39,97 @@ TODO: Combine view/visualize
 
 Batch processing
 Streaming -->
+
+## Installing THT
+
+The Threat Hunting Toolkit (THT) is the name of the project, a docker image, as well as a wrapper script for launching. While you can use the docker image manually, the recommended way is through the wrapper script.
+
+This will install the `tht` script in `/usr/local/bin/tht`.
+
+```bash
+sudo curl -o /usr/local/bin/tht https://raw.githubusercontent.com/ethack/tht/main/tht && sudo chmod +x /usr/local/bin/tht
+```
+
+## Running THT
+
+This is the simplest way to launch THT.
+
+```bash
+tht
+```
+
+This will give you a `zsh` shell inside a new THT container. All the tools and examples from this documentation can now be used.
+
+### Advanced Usage
+
+With `tht` you can also run one-off commands or even give it scripts to execute within the context of the container. This is useful if you want to automate or schedule certain tasks from the host system.
+
+The basic usage is `tht run <command>`.
+
+```bash
+tht run "echo hello world"
+```
+**Result:**
+
+    hello world
+
+This will run existing script.
+
+```bash
+cat my_script.sh | tht run
+```
+
+You can also specify multiple commands or an entire script like this.
+
+```bash
+tht run <<\SCRIPT
+message=GREAT!
+echo -n "Running multiple commands "
+echo -n "without escaping feels $message "
+echo {1..3}
+SCRIPT
+```
+**Result:**
+
+    Running multiple commands without escaping feels GREAT! 1 2 3
+
+```bash
+tht run <<\SCRIPT
+#!/usr/bin/env python3
+
+print('Here is an example python program')
+
+SCRIPT
+```
+**Result:**
+
+    Here is an example python program
+
+For instance, you might want to put a script like this in your host's cron scheduler `/etc/cron.hourly/bro-pdns.sh`.
+
+```bash
+#!/bin/bash
+
+tht run <<\SCRIPT
+cd /host/opt/zeek/logs/
+fd 'dns.*log' | xargs -n 24 bro-pdns index
+SCRIPT
+```
+
+
+## Updating THT
+
+This will pull the latest image as well as latest `tht` script.
+
+```bash
+tht update
+```
+**Result:**
+
+    Downloading latest THT image...
+    Using default tag: latest
+    latest: Pulling from ethack/tht
+    Digest: sha256:ef98d36e379fb0f2d9537c39b9e53fcb8f349e2cbde9d9d37eb15d4299e0ac41
+    Status: Image is up to date for ethack/tht:latest
+    docker.io/ethack/tht:latest
+    Self-updating THT script...
