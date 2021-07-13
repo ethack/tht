@@ -41,6 +41,7 @@ FROM rust:buster as rust-builder
     RUN cargo install ripgrep
     RUN cargo install zoxide
     RUN cargo install bat
+    RUN cargo install xsv
 
 # C/C++ Builder Stage #
 FROM ubuntu:21.04 as c-builder
@@ -160,10 +161,12 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 ## Data Processing ##
     # lightweight stats
     RUN apt-get -y install datamash
-    # CSV/TSV/JSON parser and lightweight streaming stats
+    # CSV/TSV/JSON toolkit and lightweight streaming stats
     ARG MILLER_VERSION=5.10.2
     RUN wget -nv -O $BIN/mlr https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
      && chmod +x $BIN/mlr
+    # CSV/TSV toolkit
+    COPY --from=rust-builder $RUST_BIN/xsv $BIN
 
     ### Grep ###
     # grep, sed, awk, etc
@@ -183,7 +186,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN bro-pdns completion zsh >$ZSH_COMPLETIONS/_bro-pdns
 
     # zeek-cut
-    COPY --from=c-builder /tmp/zeek-cut $BIN
+    COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
     ARG ZQ_VERSION=0.29.0

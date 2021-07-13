@@ -113,7 +113,7 @@ if exists zoxide; then
 
   function g() {
     case "$1" in
-    -) cd - && ls ;; # hard-code - to be previous cwd
+    #-) cd - && ls ;; # hard-code - to be previous cwd # not needed
     *) 
       # if z fails to find a directory, then try again in the /host/ filesystem
       # if both fail then print the error message from the original command instead
@@ -183,7 +183,8 @@ alias z2z=zeek2zeek
 alias z2j=zeek2json
 
 # convert timestamps to human-readable by default
-alias zeek-cut="zeek-cut -U '%FT%TZ'"
+alias zeek-cut="zeek-cut -u"
+export ZEEK_CUT_TIMEFMT="%FT%TZ"
 
 ## ZSH Setup; must be last ##
 autoload -Uz compinit

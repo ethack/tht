@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# read the first line in order to detect the type of zeek log
+read -r LINE
+
+# pass stdin along to appropriate command
+if echo "$LINE" | grep -q '^#'; then          # zeek tsv
+    (echo "$LINE"; cat) | zeek-cut -u "$@"
+elif echo "$LINE" | grep -q '^\{.*\}$'; then  # ndjson
+    (echo "$LINE"; cat) | json-cut "$@"
+    # note: json-cut is several orders of magnitude faster than zq v0.29.0
+elif echo "$LINE" | grep -q '.*	.*'; then     # generic tsv
+    (echo "$LINE"; cat) | xsv select -d '\t' $(echo $* | tr ' ' ',') | mlr --c2t cat
+    # note: xsv is an order of magnitude faster than miller
+    # note: xsv only outputs in csv and not tsv; piping to miller after is a slight performance hit (2x)
+elif echo "$LINE" | grep -q '.*,.*'; then     # generic csv
+    (echo "$LINE"; cat) | xsv select $(echo $* | tr ' ' ',')
+    # note: xsv is an order of magnitude faster than miller
+else                                          # unknown
+    echo "Not a recognizable log."
+    exit 1
+fi
+
+<<TODO
+allow specifying columns like cut
+work with both space and comma separated arguments
+TODO
