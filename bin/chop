@@ -5,9 +5,9 @@ read -r LINE
 
 # pass stdin along to appropriate command
 if echo "$LINE" | grep -q '^#'; then          # zeek tsv
-    (echo "$LINE"; cat) | zeek-cut -u "$@"
+    (echo "$LINE"; cat) | zeek-cut -u $(echo $* | tr ',' ' ')
 elif echo "$LINE" | grep -q '^\{.*\}$'; then  # ndjson
-    (echo "$LINE"; cat) | json-cut "$@"
+    (echo "$LINE"; cat) | json-cut $(echo $* | tr ',' ' ')
     # note: json-cut is several orders of magnitude faster than zq v0.29.0
 elif echo "$LINE" | grep -q '.*	.*'; then     # generic tsv
     (echo "$LINE"; cat) | xsv select -d '\t' $(echo $* | tr ' ' ',') | mlr --c2t cat
@@ -23,5 +23,9 @@ fi
 
 <<TODO
 allow specifying columns like cut
-work with both space and comma separated arguments
+xsv already supports this so it works as-is for csv/tsv
+choose is another option https://github.com/theryangeary/choose
+biggest issues are
+- passing through zeek headers and only including correct fields, when they will be off by one
+- indexes don't make sense for json files
 TODO
