@@ -1,10 +1,12 @@
 #!/bin/bash
 
+if [ -n "$DEBUG" ]; then set -x; set -e; fi
+
 IMAGE=ethack/tht
 # switch to ghcr.io if dockerhub fails due to rate limits
 #IMAGE=ghcr.io/ethack/tht
 
-# If the current user doesn't have docker permissions run with sudo
+# if the current user doesn't have docker permissions run with sudo
 DOCKER=docker
 if [ ! -w "/var/run/docker.sock" ]; then	
     DOCKER="sudo --preserve-env docker"	
@@ -13,17 +15,16 @@ fi
 docker_cmd=(
     "container" "run"
     "--rm"
-    "--interactive"
-    "--tty"
     "--hostname" "$(hostname)"
     "--init"
     "--pid" "host"
     "--mount" "source=/etc/localtime,destination=/etc/localtime,type=bind"
     "--mount" "source=/var/run/docker.sock,destination=/var/run/docker.sock,type=bind"
     "--mount" "source=/,destination=/host,type=bind"
-    # TODO: resolve the current path in case you're in a symlinked directory 
-    "--workdir" "/host/$(pwd)"
+    # resolve the current path in case it's in a symlinked directory 
+    "--workdir" "/host/$(pwd | xargs realpath)"
 )
+CMD=
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -36,9 +37,37 @@ while [ $# -gt 0 ]; do
         fi
         echo "Self-updating THT script..."
         $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht > "$0"
+        # run the updated script with the same parameters minus the one that triggered the update
         shift
-        # run the updated script instead with the same parameters minus the one that triggered the update
         exec "$0" "$@"
+    ;;
+    run)
+        # create temporary file to store commands/script
+        SCRIPT=$(mktemp -u)
+        trap "rm -f $SCRIPT" EXIT
+
+        # get command from an argument, if specified
+        if [ -n "$2" ]; then
+            echo "$2" > $SCRIPT
+            shift
+        # otherwise read commands from stdin
+        else
+            cat > $SCRIPT
+        fi
+
+        # mount the temp file in the container and execute it
+        docker_cmd+=("--mount" "source=$SCRIPT,destination=/run.sh,type=bind")
+        if head -n 1 $SCRIPT | grep -q '^#!'; then
+            # script has a shebang; execute it directly with the defined interpreter
+            # TODO: this will fail if tmpfs is mounted as noexec
+            # could strip off #! and run interpreter directly
+            # or copy script into container instead, but that would mean creating the container first
+            chmod +x $SCRIPT
+            CMD="/run.sh"
+        else
+            # run script using zsh
+            CMD="zsh /run.sh"
+        fi
     ;;
     dev|--dev)
         # change to directory this script is in, following any symlinks
@@ -62,4 +91,9 @@ done
 $DOCKER volume create tht_zsh-cache >/dev/null && \
     docker_cmd+=("--mount" "source=tht_zsh-cache,destination=/usr/local/share/zsh/,type=volume")
 
-$DOCKER "${docker_cmd[@]}" "$IMAGE"
+# connect a tty when not running a command/script
+if [ -z "$CMD" ]; then
+    docker_cmd+=("--interactive" "--tty")
+fi
+
+$DOCKER "${docker_cmd[@]}" "$IMAGE" $CMD
