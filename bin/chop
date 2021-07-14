@@ -4,41 +4,58 @@
 read -r LINE
 
 match() {
-    local pattern="$1"
-    echo "$LINE" | grep -q "$pattern"
+    [[ $LINE =~ $1 ]]
 }
 
 stdin() {
     (echo "$LINE"; cat)
 }
 
+# default to not including headers in output
+zeek_cut="zeek-cut"
+mlr="mlr --headerless-csv-output"
+tail="tail -n +2" # chop off first row
+if [[ $1 =~ -h|--headers ]]; then
+    shift
+    zeek_cut="zeek-cut -c" # include full zeek headers
+    mlr="mlr" # miller includes headers by default
+    tail="cat" # xsv includes headers by default
+fi
+
+if [[ $# -eq 0 ]]; then
+    2>&1 echo "Usage: $0 [-h|--headers] <fields>"
+    exit 2
+fi
+
 # pass stdin along to appropriate command
 if match '^#'; then          # zeek tsv
-    stdin | zeek-cut -u $(echo $* | tr ',' ' ')
+    stdin | $zeek_cut -u $(echo $* | tr ',' ' ')
 elif match '^\{.*\}$'; then  # ndjson
     stdin | json-cut $(echo $* | tr ',' ' ')
     # note: json-cut is several orders of magnitude faster than zq v0.29.0
-elif match '.*	.*'; then     # generic tsv
-    stdin | xsv select -d '\t' $(echo $* | tr ' ' ',') | mlr --c2t cat
+elif match '.*	.*'; then    # generic tsv
+    stdin | xsv select -d '\t' $(echo $* | tr ' ' ',') | $mlr --c2t cat
     # note: xsv is an order of magnitude faster than miller
     # note: xsv only outputs csv, not tsv; piping to miller after is a slight performance hit (2x)
 elif match '.*,.*'; then     # generic csv
-    stdin | xsv select $(echo $* | tr ' ' ',')
+    stdin | xsv select $(echo $* | tr ' ' ',') | $tail
     # note: xsv is an order of magnitude faster than miller
-else                                          # unknown
-    echo "Not a recognizable log."
+else                          # unknown
+    2>&1 echo "Not a recognizable log."
     exit 1
 fi
 
 <<TODO
-allow specifying columns like cut
+allow specifying columns indexes like cut
 xsv already supports this so it works as-is for csv/tsv
 choose is another option https://github.com/theryangeary/choose
 biggest issues are
 - passing through zeek headers and only including correct fields, when they will be off by one
 - indexes don't make sense for json files
-
-default to not keeping headers (xsv --no-headers; mlr --headerless-csv-output)
-flag to keep header
-currently, zeek does not keep header (-c); csv/tsv keep their headers; json is n/a
+idea: 
+- /dev/shm
+- grep for # lines except fields and types
+- sed to convert to tsv
+- send to xsv
+- sed to convert fields and types back
 TODO
