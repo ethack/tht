@@ -74,9 +74,9 @@ if exists bro-pdns; then
   alias pd=bro-pdns
   alias pdi="bro-pdns index"
   alias pdli="bro-pdns like individual"
-  alias pdlt="bro-pdns like tuple"
+  alias pdlt="bro-pdns like tuples"
   alias pdfi="bro-pdns find individual"
-  alias pdft="bro-pdns find tuple"
+  alias pdft="bro-pdns find tuples"
 fi
 
 if exists exa; then
@@ -183,8 +183,7 @@ alias z2z=zeek2zeek
 alias z2j=zeek2json
 
 # convert timestamps to human-readable by default
-alias zeek-cut="zeek-cut -u"
-export ZEEK_CUT_TIMEFMT="%FT%TZ"
+alias zeek-cut="zeek-cut -U '%FT%TZ'"
 
 ## ZSH Setup; must be last ##
 autoload -Uz compinit
