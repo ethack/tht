@@ -1,5 +1,19 @@
 #!/bin/bash
 
+if [ -n "$DEBUG" ]; then set -x; set -e; fi
+
+if [[ $# -eq 0 ]]; then
+    2>&1 echo "Usage: $0 [-h|--headers] <fields>"
+    2>&1 echo "  -h|--headers  request headers be maintained in the output (default omitted where possible)"
+    exit 2
+fi
+
+headerFlag=false
+if [[ $1 =~ -h|--headers ]]; then
+    shift
+    headerFlag=true
+fi
+
 # read the first line in order to detect the type of zeek log
 read -r LINE
 
@@ -11,20 +25,18 @@ stdin() {
     (echo "$LINE"; cat)
 }
 
-# default to not including headers in output
-zeek_cut="zeek-cut"
-mlr="mlr --headerless-csv-output"
-tail="tail -n +2" # chop off first row
-if [[ $1 =~ -h|--headers ]]; then
-    shift
-    zeek_cut="zeek-cut -c" # include full zeek headers
-    mlr="mlr" # miller includes headers by default
-    tail="cat" # xsv includes headers by default
-fi
+# default to including headers / first row in output
+zeek_cut="zeek-cut -c" # include full zeek headers
+conditionalHeader="cat" # xsv includes headers by default
 
-if [[ $# -eq 0 ]]; then
-    2>&1 echo "Usage: $0 [-h|--headers] <fields>"
-    exit 2
+if ! $headerFlag; then
+    # assume the input has a header row if the arguments don't look like indexes
+    if ! (echo $* | grep -q '^[0-9, -]*$'); then
+        # only in the case where we're reasonably sure there is a header row
+        # and the user did not specify the header flag can we omit the headers
+        zeek_cut="zeek-cut"
+        conditionalHeader="tail -n +2" # omit first row
+    fi
 fi
 
 # pass stdin along to appropriate command
@@ -34,11 +46,12 @@ elif match '^\{.*\}$'; then  # ndjson
     stdin | json-cut $(echo $* | tr ',' ' ')
     # note: json-cut is several orders of magnitude faster than zq v0.29.0
 elif match '.*	.*'; then    # generic tsv
-    stdin | xsv select -d '\t' $(echo $* | tr ' ' ',') | $mlr --c2t cat
+    stdin | xsv select -d '\t' $(echo $* | tr ' ' ',') | mlr --c2t cat | $conditionalHeader
     # note: xsv is an order of magnitude faster than miller
     # note: xsv only outputs csv, not tsv; piping to miller after is a slight performance hit (2x)
+    # TODO: should just use sed 's/,/\t/g' or tr ',' '\t'? won't handle cases of quoted commas
 elif match '.*,.*'; then     # generic csv
-    stdin | xsv select $(echo $* | tr ' ' ',') | $tail
+    stdin | xsv select $(echo $* | tr ' ' ',') | $conditionalHeader
     # note: xsv is an order of magnitude faster than miller
 else                          # unknown
     2>&1 echo "Not a recognizable log."
@@ -58,4 +71,5 @@ idea:
 - sed to convert to tsv
 - send to xsv
 - sed to convert fields and types back
+
 TODO
