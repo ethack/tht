@@ -3,18 +3,27 @@
 # read the first line in order to detect the type of zeek log
 read -r LINE
 
+match() {
+    local pattern="$1"
+    echo "$LINE" | grep -q "$pattern"
+}
+
+stdin() {
+    (echo "$LINE"; cat)
+}
+
 # pass stdin along to appropriate command
-if echo "$LINE" | grep -q '^#'; then          # zeek tsv
-    (echo "$LINE"; cat) | zeek-cut -u $(echo $* | tr ',' ' ')
-elif echo "$LINE" | grep -q '^\{.*\}$'; then  # ndjson
-    (echo "$LINE"; cat) | json-cut $(echo $* | tr ',' ' ')
+if match '^#'; then          # zeek tsv
+    stdin | zeek-cut -u $(echo $* | tr ',' ' ')
+elif match '^\{.*\}$'; then  # ndjson
+    stdin | json-cut $(echo $* | tr ',' ' ')
     # note: json-cut is several orders of magnitude faster than zq v0.29.0
-elif echo "$LINE" | grep -q '.*	.*'; then     # generic tsv
-    (echo "$LINE"; cat) | xsv select -d '\t' $(echo $* | tr ' ' ',') | mlr --c2t cat
+elif match '.*	.*'; then     # generic tsv
+    stdin | xsv select -d '\t' $(echo $* | tr ' ' ',') | mlr --c2t cat
     # note: xsv is an order of magnitude faster than miller
-    # note: xsv only outputs in csv and not tsv; piping to miller after is a slight performance hit (2x)
-elif echo "$LINE" | grep -q '.*,.*'; then     # generic csv
-    (echo "$LINE"; cat) | xsv select $(echo $* | tr ' ' ',')
+    # note: xsv only outputs csv, not tsv; piping to miller after is a slight performance hit (2x)
+elif match '.*,.*'; then     # generic csv
+    stdin | xsv select $(echo $* | tr ' ' ',')
     # note: xsv is an order of magnitude faster than miller
 else                                          # unknown
     echo "Not a recognizable log."
@@ -28,4 +37,8 @@ choose is another option https://github.com/theryangeary/choose
 biggest issues are
 - passing through zeek headers and only including correct fields, when they will be off by one
 - indexes don't make sense for json files
+
+default to not keeping headers (xsv --no-headers; mlr --headerless-csv-output)
+flag to keep header
+currently, zeek does not keep header (-c); csv/tsv keep their headers; json is n/a
 TODO
