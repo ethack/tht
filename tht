@@ -25,7 +25,7 @@ docker_cmd=(
     # resolve the current path in case it's in a symlinked directory 
     "--workdir" "/host/$(pwd | xargs realpath)"
 )
-CMD=
+CMD=()
 
 while [ $# -gt 0 ]; do
     case $1 in
@@ -41,6 +41,10 @@ while [ $# -gt 0 ]; do
         # run the updated script with the same parameters minus the one that triggered the update
         shift
         exec "$0" "$@"
+    ;;
+    version)
+        CMD=(zsh -c "cat /etc/tht-release")
+        break
     ;;
     run)
         # TODO: give a tht prefix to mktemp
@@ -69,10 +73,10 @@ while [ $# -gt 0 ]; do
             # could strip off #! and run interpreter directly
             # or copy script into container instead, but that would mean creating the container first
             chmod +x $SCRIPT
-            CMD="/run.sh"
+            CMD+=(/run.sh)
         else
             # run script using zsh
-            CMD="zsh /run.sh"
+            CMD+=(zsh /run.sh)
         fi
     ;;
     dev|--dev)
@@ -102,7 +106,7 @@ if [ -z "$CMD" ]; then
     docker_cmd+=("--interactive" "--tty")
 fi
 
-$DOCKER "${docker_cmd[@]}" "$IMAGE" $CMD
+$DOCKER "${docker_cmd[@]}" "$IMAGE" "${CMD[@]}"
 
 
 # TODO: create a service option for long running processes (e.g. vector), that have healthchecks and restart policy
