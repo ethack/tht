@@ -1,9 +1,4 @@
-<h1 align="center">
-    <a id="user-content-threat-hunting-toolkit" class="anchor" aria-hidden="true" href="#threat-hunting-toolkit">
-        <svg class="octicon octicon-link" viewBox="0 0 16 16" version="1.1" width="16" height="16" aria-hidden="true"><path fill-rule="evenodd" d="M7.775 3.275a.75.75 0 001.06 1.06l1.25-1.25a2 2 0 112.83 2.83l-2.5 2.5a2 2 0 01-2.83 0 .75.75 0 00-1.06 1.06 3.5 3.5 0 004.95 0l2.5-2.5a3.5 3.5 0 00-4.95-4.95l-1.25 1.25zm-4.69 9.64a2 2 0 010-2.83l2.5-2.5a2 2 0 012.83 0 .75.75 0 001.06-1.06 3.5 3.5 0 00-4.95 0l-2.5 2.5a3.5 3.5 0 004.95 4.95l1.25-1.25a.75.75 0 00-1.06-1.06l-1.25 1.25a2 2 0 01-2.83 0z"></path></svg>
-    </a>
-    Threat Hunting Toolkit
-</h1>
+<h1 align="center">Threat Hunting Toolkit</h1>
 
 <p align="center">
   <a href="https://github.com/ethack/tht">GitHub</a> | 
@@ -13,7 +8,7 @@
 
 The Threat Hunting Toolkit (<span title="Think Happy Thoughts  (⌒‿⌒)">THT</span>) is a Swiss Army knife for threat hunting, log processing, and security-focused data science. Deploy the pre-configured container image onto any system rather than struggling with installation, configuration, or environment differences. You can be cleaning, filtering, sorting, data stacking, and more in no time.
 
-## Goals
+## Features
 
 **Easy to Install**
 
@@ -23,7 +18,6 @@ The Threat Hunting Toolkit (<span title="Think Happy Thoughts  (⌒‿⌒)">THT<
 **Fast to Learn**
 
 - Consistent - You get the same environment configuration on every system, which means you can have a familiar environment everywhere.
-<!-- - Bring your existing knowledge - Know SQL, Pandas, or R? Are you a grep/sed/awk wizard? Use the skills you already have and gradually introduce new ones into your existing workflow. -->
 - Format Agnostic - Use the same processes to work with a variety of data formats including Zeek, CSV, TSV, and JSON. Avoid swapping between similar tools with annoying syntax variations for different formats.
 - Remove Boilerplate - Remove the boilerplate for common use cases with the included custom scripts, shell functions, and aliases.
 - Documented - There are guides, examples, and documentation available to get started right away.
