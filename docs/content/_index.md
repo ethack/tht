@@ -105,14 +105,16 @@ SCRIPT
 
     Here is an example python program
 
-For instance, you might want to put a script like this in your host's cron scheduler `/etc/cron.hourly/bro-pdns.sh`.
+For instance, you might want to put a script like this in your host's cron scheduler `/etc/cron.hourly/pdns`.
 
 ```bash
 #!/bin/bash
 
 tht run <<\SCRIPT
 cd /host/opt/zeek/logs/
-fd 'dns.*log' | xargs -n 24 bro-pdns index
+
+nice flock -n "/host/tmp/pdns.lock" \
+fd 'dns.*.log' | sort | xargs -n 24 bro-pdns index
 SCRIPT
 ```
 

@@ -4,7 +4,7 @@ if [ ! -z "$DEBUG" ]; then set -x; set -e; fi
 
 set -e
 
-if ! command -v trace-summary; then
+if ! command -v trace-summary >/dev/null 2>&1; then
     echo "This script requires trace-summary to be installed."
     echo "https://gist.github.com/ethack/6bd3a9551c02bbf8b404af0d2023114d#file-trace-summary-md"
     exit 1

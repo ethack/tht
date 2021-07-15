@@ -21,6 +21,10 @@ jobs:
     - 
       name: Checkout code
       uses: actions/checkout@v2
+      with:
+        # use a custom PAT in order to trigger other workflows with the push event
+        # https://github.com/stefanzweifel/git-auto-commit-action#commits-made-by-this-action-do-not-trigger-new-workflow-runs
+        token: ${{ secrets.GH_PAT }}
     -
       name: Overwrite .cache-buster
       run: date --utc --rfc-email > .cache-buster

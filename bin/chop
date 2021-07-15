@@ -58,18 +58,18 @@ else                          # unknown
     exit 1
 fi
 
-<<TODO
-allow specifying columns indexes like cut
-xsv already supports this so it works as-is for csv/tsv
-choose is another option https://github.com/theryangeary/choose
-biggest issues are
-- passing through zeek headers and only including correct fields, when they will be off by one
-- indexes don't make sense for json files
-idea: 
-- /dev/shm
-- grep for # lines except fields and types
-- sed to convert to tsv
-- send to xsv
-- sed to convert fields and types back
+# TODO
+# allow specifying columns indexes like cut
+# xsv already supports this so it works as-is for csv/tsv
+# choose is another option https://github.com/theryangeary/choose
+# biggest issues are
+# - passing through zeek headers and only including correct fields, when they will be off by one
+# - indexes don't make sense for json files
+# idea: 
+# - /dev/shm
+# - grep for # lines except fields and types
+# - sed to convert to tsv
+# - send to xsv
+# - sed to convert fields and types back
 
-TODO
+# json doesn't output json format

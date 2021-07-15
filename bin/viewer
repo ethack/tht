@@ -67,7 +67,7 @@ fi
 
 # final line number argument is optional; -1 shows all lines
 lines=
-if [[ $1 != -1 ]]; then
+if [[ $1 -ne -1 ]]; then
     # Rationale for piping to head is a large number of results is not useful to browse manually.
     # On top of that, pspg waits until all input is available before displaying in order to calculate
     # column widths and totals.
@@ -117,3 +117,6 @@ if stdoutRedir; then
 fi
 
 eval "$cmd"
+
+# TODO
+# Make usage generic using ideas from chop to intelligently pick the right format/options.

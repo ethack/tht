@@ -2,9 +2,10 @@
 
 if [ -n "$DEBUG" ]; then set -x; set -e; fi
 
-IMAGE=ethack/tht
+IMAGE=${IMAGE:-ethack/tht}
 # switch to ghcr.io if dockerhub fails due to rate limits
 #IMAGE=ghcr.io/ethack/tht
+PERSISTENT=/usr/local/share/zsh/
 
 # if the current user doesn't have docker permissions run with sudo
 DOCKER=docker
@@ -42,6 +43,7 @@ while [ $# -gt 0 ]; do
         exec "$0" "$@"
     ;;
     run)
+        # TODO: give a tht prefix to mktemp
         # create temporary file to store commands/script
         SCRIPT=$(mktemp -u)
         trap "rm -f $SCRIPT" EXIT
@@ -56,6 +58,8 @@ while [ $# -gt 0 ]; do
         fi
 
         # TODO: allow passing in a script file to run directly instead of piping on stdin
+        # TODO: --flock and --nice options; flock lock must be stored in /host volume or else a docker volume (e.g. zsh cache)
+        # flock lock must be deterministic; maybe per identical input (md5 of script); or specified manually
 
         # mount the temp file in the container and execute it
         docker_cmd+=("--mount" "source=$SCRIPT,destination=/run.sh,type=bind")
@@ -91,7 +95,7 @@ done
 
 # create and use a persistent volume
 $DOCKER volume create tht_zsh-cache >/dev/null && \
-    docker_cmd+=("--mount" "source=tht_zsh-cache,destination=/usr/local/share/zsh/,type=volume")
+    docker_cmd+=("--mount" "source=tht_zsh-cache,destination=${PERSISTENT},type=volume")
 
 # connect a tty when not running a command/script
 if [ -z "$CMD" ]; then
@@ -99,3 +103,6 @@ if [ -z "$CMD" ]; then
 fi
 
 $DOCKER "${docker_cmd[@]}" "$IMAGE" $CMD
+
+
+# TODO: create a service option for long running processes (e.g. vector), that have healthchecks and restart policy
