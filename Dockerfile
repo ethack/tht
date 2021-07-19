@@ -14,8 +14,6 @@ FROM golang:buster as go-builder
     RUN go get -v -u github.com/JustinAzoff/json-cut
     # Help find the path to the data you want
     RUN go get -v -u github.com/tomnomnom/gron
-    # du alternative
-    RUN go get -v -u github.com/viktomas/godu
     # zeek passive dns
     RUN go get -v github.com/JustinAzoff/bro-pdns
     # rush - paralell alternative
@@ -42,6 +40,7 @@ FROM rust:buster as rust-builder
     RUN cargo install zoxide
     RUN cargo install bat
     RUN cargo install xsv
+    RUN cargo install du-dust --bin dust
 
 # C/C++ Builder Stage #
 FROM ubuntu:21.04 as c-builder
@@ -66,7 +65,7 @@ FROM ubuntu:21.04 as c-builder
      # grepcidr
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git ca-certificates
     # Version 3; change to "main" for latest
-    ARG GREPCIDR_VERSION=b80b0c6ad1fce7f81bef0457a3e3b1208a3d76e3
+    ARG GREPCIDR_VERSION=main
     RUN git clone https://github.com/jrlevine/grepcidr3.git /tmp/grepcidr \
      && cd /tmp/grepcidr \
      && git checkout $GREPCIDR_VERSION \
@@ -77,8 +76,10 @@ FROM ubuntu:21.04 as c-builder
 
     # ugrep
     RUN apt-get update && apt-get -y install --no-install-recommends git ca-certificates gcc g++ make libpcre2-dev libz-dev
+    ARG UGREP_VERSION=master
     RUN git clone https://github.com/Genivia/ugrep.git /tmp/ugrep \
      && cd /tmp/ugrep \
+     && git checkout $UGREP_VERSION \
      && ./build.sh
 
      # zeek-cut
@@ -88,8 +89,10 @@ FROM ubuntu:21.04 as c-builder
 
     # nq
     RUN apt-get update && apt-get -y install --no-install-recommends git ca-certificates gcc make
+    ARG NQ_VERSION=master
     RUN git clone https://github.com/leahneukirchen/nq.git /tmp/nq \
      && cd /tmp/nq \
+     && git checkout $NQ_VERSION \
      && make all
 
 # Package Installer Stage #
@@ -120,6 +123,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=rust-builder $RUST_BIN/bat $BIN
     # docker cli
     COPY --from=docker:20.10 /usr/local/bin/docker $BIN
+    # dust - du alternative
+    COPY --from=rust-builder $RUST_BIN/dust $BIN
     # entr - perform action on file change
     RUN apt-get -y install entr
     # exa - ls alternative
@@ -131,24 +136,23 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ARG FZF_VERSION=0.27.2
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
      && tar -xz -f /tmp/fzf.tar.gz -C $BIN
-    # godu - du alternative
-    COPY --from=go-builder $GO_BIN/godu $BIN
     # htop - process monitor
     RUN apt-get -y install htop
     # hyperfine - command benchmarking; like time on steroids
     COPY --from=rust-builder $RUST_BIN/hyperfine $BIN
     RUN apt-get -y install less
     # navi - cheatsheet
-    COPY --from=rust-builder $RUST_BIN/navi $BIN
+    #COPY --from=rust-builder $RUST_BIN/navi $BIN
     # /root/.local/share/navi/
     # nq
     COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
+    #RUN apt-get -y install parallel
     # pspg - Pager
     RUN apt-get -y install pspg
     # pv - Pipeviewer
     RUN apt-get -y install pv
     # rush - parallel alternative
-    COPY --from=go-builder $GO_BIN/rush $BIN
+    #COPY --from=go-builder $GO_BIN/rush $BIN
     RUN apt-get -y install unzip
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
@@ -200,8 +204,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # install pysubnettree dependency
     RUN apt-get -y install python3-pip
     RUN python3 -m pip install pysubnettree
-    RUN wget -nv -O $BIN/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary
-    RUN chmod +x $BIN/trace-summary
+    RUN wget -nv -O $BIN/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary \
+     && chmod +x $BIN/trace-summary
 
     ### JSON ###
     RUN apt-get -y install jq
