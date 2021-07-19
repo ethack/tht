@@ -1,17 +1,17 @@
-name: Nightly build
+name: Weekly build
 
 # This workflow simply updates the .cache-buster file, which then:
 # - triggers the docker build workflow for the image to be rebuilt
-# - busts the docker build cache so all tools are pulled fresh
+# - busts the docker build cache so each tool is built at its newest version
 
 on:
   schedule:
-    # run this daily (i.e. nightly build)
-    - cron:  '0 0 * * *'
+    # run weekly
+    - cron:  '0 0 * * SUN'
 
 jobs:
   build:
-    name: Nightly build
+    name: Weekly build
     runs-on: ubuntu-latest
 
     # Only run on the main branch of the main repo
@@ -32,4 +32,4 @@ jobs:
       name: Push code
       uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: Nightly build
+        commit_message: Weekly build
