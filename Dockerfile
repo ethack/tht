@@ -295,7 +295,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN rm -rf /tmp/*
 
 # Squash Layers Stage #
-FROM scratch
+FROM ubuntu:21.04
 COPY --from=base / /
 CMD ["zsh"]
 
