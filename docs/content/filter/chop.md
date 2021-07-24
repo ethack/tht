@@ -31,6 +31,8 @@ Can you pre-process and post-process data and make most of these tools work? Sur
 
 The best way to illustrate this is with examples.
 
+## Examples
+
 Let's say you want to pull out the destination IPs and ports from a Zeek TSV file. Here are some traditional ways you might do this.
 
 ```bash
@@ -57,7 +59,7 @@ chop 6-7
 
 
 {{% notice tip %}}
-`chop` lets you keep using the syntax you are comfortable with. Separate your fields with spaces, commas, or both!
+`chop` lets you specify fields with spaces, commas, or both!
 {{% /notice %}}
 
 Now let's say you want to do the same thing (pull out the destination IPs and ports) but this time from a Zeek JSON file.
@@ -70,7 +72,7 @@ mlr --json cut -f id.resp_h,id.resp_p
 ```
 
 {{% notice note %}}
-Since JSON objects are sparse and un-ordered it doesn't make sense to specify a field by its index.
+Since JSON objects are sparse and un-ordered it doesn't make sense to specify a field by its numerical index.
 {{% /notice %}}
 
 Unless you're using `zq` you've already had to dust off a new tool and learn/remember its syntax. `chop` lets you use the same simple syntax you've already learned.
@@ -79,7 +81,7 @@ Unless you're using `zq` you've already had to dust off a new tool and learn/rem
 chop id.resp_h id.resp_p
 ```
 
-Next, let's say you want the `src` (1st column) and `dst` (3rd column) fields from a firewall log CSV file.
+Next, let's say you want the `src` (1st column) and `dst` (3rd column) fields from a firewall log CSV file. Once again, starting with the traditional methods.
 
 ```bash
 awk -F, '{print $1,$3}'
@@ -96,24 +98,28 @@ chop src dst
 chop 1,3
 ```
 
+{{% notice tip %}}
+`chop` lets you use numerical indexes in CSV/TSV files (e.g. `1,3` or `1-5`).
+{{% /notice %}}
+
 And what if those `src` and `dst` columns were whitespace separated?
 
 ```bash
 awk '{print $1,$3}'
-cut -d' ' -f1,3    # only works if spaces used
-cut -d$'\t' -f1,3  # only works if tabs used
+cut -d' ' -f1,3    # only if space separated, not both
+cut -d$'\t' -f1,3  # only if tab separated, not both
 mlr --pprint cut -f src,dst
 ```
 
-By now you've guessed it. `chop` remains the same. Not only can you keep the same syntax between file formats, but you don't have to even think about what separators are used.
+By now, you've guessed it. `chop`'s syntax remains the same. Not only can you keep the same syntax between file formats, but you don't have to think about which separators are used.
 
 ```bash
 chop src dst
 chop 1,3
 ```
 
-Before `chop`, each scenario would require you to reach for a different tool and then figure out the syntax or transformations to get it working. In the end, you'll have a command that's cumbersome to type and likely cannot be used as-is for another log format.
+Before `chop`, each scenario would require you to reach for a different tool and then figure out the syntax or transformations to get it working with your data. In the end, you'd have a command that's cumbersome to type and unlikely to be used as-is for another log format.
 
 {{% notice info %}}
-`chop` does not yet support specifying a custom delimeter. So if your data is `|`-separated, for example, you'll have to reach for `cut -d'|'` for now.
+`chop` does not yet support specifying a custom delimeter. For example, if your data is `|` separated you'll have to reach for `cut -d'|'` for now.
 {{% /notice %}}
