@@ -23,7 +23,7 @@ docker_cmd=(
     "--mount" "source=/var/run/docker.sock,destination=/var/run/docker.sock,type=bind"
     "--mount" "source=/,destination=/host,type=bind"
     # resolve the current path in case it's in a symlinked directory 
-    "--workdir" "/host/$(pwd | xargs realpath)"
+    "--workdir" "/host/$(realpath "$(pwd)")"
 )
 CMD=()
 
@@ -37,7 +37,7 @@ while [ $# -gt 0 ]; do
             SUDO="sudo"
         fi
         echo "Self-updating THT script..."
-        $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht > "$0"
+        $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht -o "$0"
         # run the updated script with the same parameters minus the one that triggered the update
         shift
         exec "$0" "$@"
