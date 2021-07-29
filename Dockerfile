@@ -273,14 +273,17 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN wget -nv -O /root/.vimrc https://raw.githubusercontent.com/nickmccurdy/sane-defaults/master/home/.vimrc \
      && mkdir -p /root/.vim/backup /root/.vim/backupf
     #RUN wget -nv -O /root/.vimrc https://raw.githubusercontent.com/tpope/vim-sensible/master/plugin/sensible.vim
+    
     COPY zsh/.zshrc /root/
+    COPY zsh/.zlogout /root/
+    COPY zsh/.p10k.zsh /root/
+    
     # zinit - plugin manager for zsh
     # svn required for some zinit functions
     RUN apt-get -y install subversion
     RUN git clone https://github.com/zdharma/zinit.git /root/.zinit
     # https://github.com/zdharma/zinit/issues/484#issuecomment-785665617
     RUN TERM=${TERM:-screen-256color} zsh -isc "@zinit-scheduler burst"
-    COPY zsh/.p10k.zsh /root/
 
 ## Final cleanup ##
     RUN rm -rf /tmp/*

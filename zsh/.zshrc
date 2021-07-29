@@ -10,7 +10,7 @@ exists () {
   #(( $+commands[$1] )) # this is zsh
 }
 
-PERSISTENT="/usr/local/share/zsh"
+export PERSISTENT="/usr/local/share/zsh"
 mkdir -p "$PERSISTENT"
 
 autoload -U colors && colors
@@ -19,6 +19,10 @@ $ "
 
 export TMPDIR=/tmp
 export SHELL=/usr/bin/zsh
+
+# allow cd - to work across sessions
+touch "$PERSISTENT/.oldpwd"
+source "$PERSISTENT/.oldpwd"
 
 ## History ##
 
@@ -200,6 +204,10 @@ alias z2j=zeek2json
 
 # convert timestamps to human-readable by default
 alias zeek-cut="zeek-cut -U '%FT%TZ'"
+
+# fix home and end keys in some terminals
+bindkey  "^[[1~"   beginning-of-line
+bindkey  "^[[4~"   end-of-line
 
 ## ZSH Setup; must be last ##
 autoload -Uz compinit
