@@ -53,9 +53,12 @@ elif match '.*	.*'; then    # generic tsv
 elif match '.*,.*'; then     # generic csv
     stdin | xsv select $(echo $* | tr ' ' ',') | $conditionalHeader
     # note: xsv is an order of magnitude faster than miller
-else                          # unknown
-    2>&1 echo "Not a recognizable log."
-    exit 1
+else                          # unknown; fallback to splitting on whitespace
+    # trim all leading and trailing whitespace and replace consecutive whitespace with a single comma
+    # TODO: converts output to csv
+    stdin | sed -E -e 's/^[ \t]*//;s/[ \t]*$//' -e 's/[ \t]+/,/g' | xsv select $(echo $* | tr ' ' ',') | $conditionalHeader
+    # 2>&1 echo "Not a recognizable log."
+    # exit 1
 fi
 
 # TODO
@@ -72,4 +75,10 @@ fi
 # - send to xsv
 # - sed to convert fields and types back
 
-# json doesn't output json format
+# json doesn't output json format; decide if that's desirable; maybe allow specifying output type
+
+# allow inverting columns
+
+# allow specifying delimeter; maybe detect if first parameter is a number or header; if it's a single character and not a number; allow 
+
+# fallback to spliting on whitespace
