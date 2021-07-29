@@ -14,7 +14,16 @@ if [[ $1 =~ -h|--headers ]]; then
     headerFlag=true
 fi
 
-# read the first line in order to detect the type of zeek log
+# true if the arguments passed in all look like indexes (not field names)
+indexArgs=false
+if echo $* | grep -q '^[0-9, -]*$'; then
+    indexArgs=true
+fi
+
+commaArgs="$(echo $* | tr ' ' ',')"
+spaceArgs="$(echo $* | tr ',' ' ')"
+
+# read the first line in order to detect the type of log
 read -r LINE
 
 match() {
@@ -26,48 +35,55 @@ stdin() {
 }
 
 # default to including headers / first row in output
-zeek_cut="zeek-cut -c" # include full zeek headers
+zeek_cut="zeek-cut -c"  # include full zeek headers
 conditionalHeader="cat" # xsv includes headers by default
 
 if ! $headerFlag; then
-    # assume the input has a header row if the arguments don't look like indexes
-    if ! (echo $* | grep -q '^[0-9, -]*$'); then
+    # assume the input has a header row if the arguments are field names
+    if ! $indexArgs; then
         # only in the case where we're reasonably sure there is a header row
         # and the user did not specify the header flag can we omit the headers
-        zeek_cut="zeek-cut"
-        conditionalHeader="tail -n +2" # omit first row
+        zeek_cut="zeek-cut"            # don't include zeek headers
+        conditionalHeader="tail -n +2" # omit first row (header)
     fi
 fi
 
-# pass stdin along to appropriate command
-if match '^#'; then          # zeek tsv
-    stdin | $zeek_cut -u $(echo $* | tr ',' ' ')
-elif match '^\{.*\}$'; then  # ndjson
-    stdin | json-cut $(echo $* | tr ',' ' ')
+# zeek tsv
+if match '^#'; then
+    if $indexArgs; then
+        # convert to straight TSV
+        if $headerFlag; then
+            # with headers
+            stdin | sed -e '0,/^#fields\t/s///' | grep -v '^#'| xsv select -d '\t' $commaArgs | mlr --c2t cat
+        else
+            # without headers
+            stdin | grep -v '^#' | xsv select --no-headers -d '\t' $commaArgs | mlr --c2t cat
+        fi
+    else
+        stdin | $zeek_cut -u $spaceArgs
+    fi
+# ndjson
+elif match '^\{.*\}$'; then
+    # note: output is tsv
+    stdin | json-cut $spaceArgs
     # note: json-cut is several orders of magnitude faster than zq v0.29.0
-elif match '.*	.*'; then    # generic tsv
-    stdin | xsv select -d '\t' $(echo $* | tr ' ' ',') | mlr --c2t cat | $conditionalHeader
+# generic tsv
+elif match '.*	.*'; then
+    stdin | xsv select -d '\t' $commaArgs | mlr --c2t cat | $conditionalHeader
     # note: xsv is an order of magnitude faster than miller
-    # note: xsv only outputs csv, not tsv; piping to miller after is a slight performance hit (2x)
-    # TODO: should just use sed 's/,/\t/g' or tr ',' '\t'? won't handle cases of quoted commas
-elif match '.*,.*'; then     # generic csv
-    stdin | xsv select $(echo $* | tr ' ' ',') | $conditionalHeader
+    # note: xsv only outputs csv, not tsv; piping to miller after is a slight performance hit, depending on number of columns
+# generic csv
+elif match '.*,.*'; then
+    stdin | xsv select $commaArgs | $conditionalHeader
     # note: xsv is an order of magnitude faster than miller
-else                          # unknown; fallback to splitting on whitespace
+# unknown; fallback to splitting on whitespace
+else
     # trim all leading and trailing whitespace and replace consecutive whitespace with a single comma
-    # TODO: converts output to csv
-    stdin | sed -E -e 's/^[ \t]*//;s/[ \t]*$//' -e 's/[ \t]+/,/g' | xsv select $(echo $* | tr ' ' ',') | $conditionalHeader
-    # 2>&1 echo "Not a recognizable log."
-    # exit 1
+    # note: converts output to csv
+    stdin | sed -E -e 's/^[ \t]*//;s/[ \t]*$//' -e 's/[ \t]+/,/g' | xsv select $commaArgs | $conditionalHeader
 fi
 
 # TODO
-# allow specifying columns indexes like cut
-# xsv already supports this so it works as-is for csv/tsv
-# choose is another option https://github.com/theryangeary/choose
-# biggest issues are
-# - passing through zeek headers and only including correct fields, when they will be off by one
-# - indexes don't make sense for json files
 # idea: 
 # - /dev/shm
 # - grep for # lines except fields and types
@@ -75,10 +91,13 @@ fi
 # - send to xsv
 # - sed to convert fields and types back
 
-# json doesn't output json format; decide if that's desirable; maybe allow specifying output type
+# output is inconsistent
+# zeek tsv -> tsv (or zeek tsv)
+# json -> tsv
+# tsv -> tsv
+# csv -> csv
+# whitespace -> csv
 
-# allow inverting columns
+# allow inverting columns with -v
 
-# allow specifying delimeter; maybe detect if first parameter is a number or header; if it's a single character and not a number; allow 
-
-# fallback to spliting on whitespace
+# allow specifying delimeter with -d
