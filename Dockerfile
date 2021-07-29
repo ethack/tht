@@ -17,7 +17,7 @@ FROM golang:buster as go-builder
     # zeek passive dns
     RUN go get -v github.com/JustinAzoff/bro-pdns
     # rush - paralell alternative
-    RUN go get -v -u github.com/shenwei356/rush
+    # RUN go get -v -u github.com/shenwei356/rush
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
@@ -262,9 +262,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # Remove unecessary packages
     RUN apt-get -y autoremove
 
-## Local scripts
-    COPY bin/* $BIN/
-
 ## Shell customization ##
     # cache file that powerline10k will grab on startup
     # ARG GITSTATUSD_VERSION=1.5.1
@@ -285,18 +282,22 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN TERM=${TERM:-screen-256color} zsh -isc "@zinit-scheduler burst"
     COPY zsh/.p10k.zsh /root/
 
+## Final cleanup ##
+    RUN rm -rf /tmp/*
+
+# Squash layers #
+FROM ubuntu:21.04
+COPY --from=base / /
+
+## Local scripts ##
+    COPY bin/* $BIN/
+
 ## Version info ##
     ARG THT_HASH=undefined
     RUN echo 'NAME="Threat Hunting Toolkit"' > /etc/tht-release \
      && echo "HASH=$THT_HASH" >> /etc/tht-release \
      && echo "DATE=$(date +%Y.%m.%d)" >> /etc/tht-release
 
-## Final cleanup ##
-    RUN rm -rf /tmp/*
-
-# Squash Layers Stage #
-FROM ubuntu:21.04
-COPY --from=base / /
 CMD ["zsh"]
 
 # Metadata #

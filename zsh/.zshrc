@@ -71,7 +71,6 @@ fi
 
 if exists bro-pdns; then
   alias pdns=bro-pdns
-  alias pd=bro-pdns
   alias pdi="bro-pdns index"
   alias pdli="bro-pdns like individual"
   alias pdlt="bro-pdns like tuples"
@@ -138,7 +137,9 @@ if exists dog; then
 fi
 
 ## General Aliases ##
-setopt complete_aliases # Treat aliases as distinct commands.
+#setopt complete_aliases # Unintuitively, disabling this option allows tab completion of alias arguments but does not complete the alias itself
+
+alias reload="source ~/.zshrc"
 
 alias l='ls'
 alias ll='ls -l'
@@ -146,7 +147,7 @@ alias la='ls -la'
 alias ..='cd ..'
 alias ...='cd ../..'
 alias mv='mv -i'
-alias mb='mv'              # common typo
+alias mb='mv -i'           # common typo
 alias mkdir="mkdir -p"     # create parent directories by default
 alias df="df -h --total"
 alias dud="du -h -d 1 --total"
@@ -155,6 +156,21 @@ alias less="less -S"       # side-scrolling by default
 alias history="history 0"  # make history show all entries by default
 alias h="head"
 alias t="tail -f"
+
+alias distinct="sort | uniq"
+alias countdistinct="sort | uniq | wc -l"
+# most frequent occurrence (show all by default)
+function mfo() {
+  sort | uniq -c | sort -nr | head --lines=${1:--0}
+}
+# least frequent occurrence (show all by default)
+function lfo() {
+  sort | uniq -c | sort -n | head --lines=${1:--0}
+}
+# split by domain level (default 2)
+function domain() {
+  rev | cut -d. -f1-${1:-2} | rev
+}
 
 alias cv="viewer csv"
 alias tv="viewer tsv"
