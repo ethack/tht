@@ -161,8 +161,8 @@ alias history="history 0"  # make history show all entries by default
 alias h="head"
 alias t="tail -f"
 
-alias distinct="sort | uniq"
-alias countdistinct="sort | uniq | wc -l"
+alias distinct="sort -V | uniq"
+alias countdistinct="sort -V | uniq | wc -l"
 # most frequent occurrence (show all by default)
 function mfo() {
   sort | uniq -c | sort -nr | head --lines=${1:--0}

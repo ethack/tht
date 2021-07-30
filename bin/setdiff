@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# uniq -u prints only lines that appear once
+# by duplicating all but the first argument, it guarantees only the first argument's lines can be unique
+sort "$@" "${@:2}" | uniq -u
