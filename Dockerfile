@@ -163,8 +163,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install --no-install-recommends vim
 
 ## Data Processing ##
-    # lightweight stats
-    RUN apt-get -y install datamash
     # CSV/TSV/JSON toolkit and lightweight streaming stats
     ARG MILLER_VERSION=5.10.2
     RUN wget -nv -O $BIN/mlr https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
@@ -293,7 +291,7 @@ FROM ubuntu:21.04
 COPY --from=base / /
 
 ## Local scripts ##
-    COPY bin/* $BIN/
+    COPY bin/* /usr/local/bin/
 
 ## Version info ##
     ARG THT_HASH=undefined
