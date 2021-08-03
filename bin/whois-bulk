@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Reads a list of IP addresses from stdin.
+# Outputs a TSV of whois ASN and Org for each IP
+
+printf 'asn\tip\torg\n'
+cat | 
+  netcat whois.cymru.com 43 | 
+  grep -v 'AS Name' |
+  sed -e 's/,//g' -e 's/\s*|\s*/\t/g'
