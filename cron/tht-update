@@ -1,0 +1,5 @@
+#!/bin/bash
+# Downloads the latest THT image and launch script.
+# Suggested frequency: daily
+
+tht update
