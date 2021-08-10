@@ -161,16 +161,25 @@ alias history="history 0"  # make history show all entries by default
 alias h="head"
 alias t="tail -f"
 
-alias distinct="sort -V | uniq"
-alias countdistinct="sort -V | uniq | wc -l"
+# note: --version-sort works well on dates and IP addresses
+# note: --buffer-size=2G is recommended here for allowing pipeline sort to be parallelized
+# https://github.com/eBay/tsv-utils/blob/master/docs/TipsAndTricks.md#set-the-buffer-size-for-reading-from-standard-input
+alias distinct="sort --version-sort --buffer-size=2G | uniq"
+alias countdistinct="sort --version-sort --buffer-size=2G | uniq | wc -l"
+alias distinctcount="sort --version-sort --buffer-size=2G | uniq | wc -l"
+alias freq="sort --version-sort --buffer-size=2G | uniq -c"
 # most frequent occurrence (show all by default)
 function mfo() {
-  sort | uniq -c | sort -nr | head --lines=${1:--0}
+  sort --buffer-size=2G | uniq -c | sort -nr --buffer-size=2G | head --lines=${1:--0}
 }
 # least frequent occurrence (show all by default)
 function lfo() {
-  sort | uniq -c | sort -n | head --lines=${1:--0}
+  sort --buffer-size=2G | uniq -c | sort -n --buffer-size=2G | head --lines=${1:--0}
 }
+# other names people might like better
+alias stackcount=mfo
+alias shorttail=mfo
+alias longtail=lfo
 # split by domain level (default 2)
 function domain() {
   rev | cut -d. -f1-${1:-2} | rev
