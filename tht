@@ -29,7 +29,7 @@ CMD=()
 
 while [ $# -gt 0 ]; do
     case $1 in
-    update|pull|--pull)
+    update)
         echo "Downloading latest THT image..."
         $DOCKER pull $IMAGE
         SUDO=
@@ -38,6 +38,20 @@ while [ $# -gt 0 ]; do
         fi
         echo "Self-updating THT script..."
         $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht -o "$0"
+        # run the updated script with the same parameters minus the one that triggered the update
+        shift
+        exec "$0" "$@"
+    ;;
+    pull|--pull)
+        echo "Downloading latest THT image..."
+        $DOCKER pull $IMAGE
+        SUDO=
+        if [ ! -w "$0" ]; then
+            SUDO="sudo"
+        fi
+        # Don't update the THT script
+        # echo "Self-updating THT script..."
+        # $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht -o "$0"
         # run the updated script with the same parameters minus the one that triggered the update
         shift
         exec "$0" "$@"
