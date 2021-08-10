@@ -1,3 +1,12 @@
 [submodule "docs/themes/hugo-theme-learn"]
 	path = docs/themes/hugo-theme-learn
 	url = https://github.com/matcornic/hugo-theme-learn.git
+[submodule "test/bats"]
+	path = test/bats
+	url = https://github.com/bats-core/bats-core.git
+[submodule "test/helper/bats-support"]
+	path = test/helper/bats-support
+	url = https://github.com/bats-core/bats-support.git
+[submodule "test/helper/bats-assert"]
+	path = test/helper/bats-assert
+	url = https://github.com/bats-core/bats-assert.git
