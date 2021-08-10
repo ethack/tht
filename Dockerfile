@@ -122,7 +122,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # bat - fancy cat
     COPY --from=rust-builder $RUST_BIN/bat $BIN
     # docker cli
-    COPY --from=docker:20.10 /usr/local/bin/docker $BIN
+    # COPY --from=docker:20.10 /usr/local/bin/docker $BIN
     # dust - du alternative
     COPY --from=rust-builder $RUST_BIN/dust $BIN
     # entr - perform action on file change
