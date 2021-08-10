@@ -26,7 +26,7 @@ docker_cmd=(
     "--workdir" "/host/$(realpath "$(pwd)")"
 )
 CMD=()
-
+BACKGROUNDJOB=false
 while [ $# -gt 0 ]; do
     case $1 in
     update)
@@ -61,6 +61,7 @@ while [ $# -gt 0 ]; do
         break
     ;;
     run)
+        BACKGROUNDJOB=true
         # TODO: give a tht prefix to mktemp
         # create temporary file to store commands/script
         SCRIPT=$(mktemp -u)
@@ -106,7 +107,14 @@ while [ $# -gt 0 ]; do
             docker_cmd+=("--mount" "source=$(pwd)/${CONF},destination=/root/${CONF#"zsh"},type=bind")
         done < <(find zsh -type f -print0 2>/dev/null)
         popd >/dev/null
+        docker_cmd+=("--mount" "source=$(pwd)/test,destination=/usr/local/test,type=bind")
     ;;
+    --)
+        # anything after -- is treated as a command to run in interactive mode
+        shift
+        CMD+=(zsh -c "$*")
+        break
+    ;; 
     esac
     shift
 done
@@ -115,8 +123,8 @@ done
 $DOCKER volume create tht_zsh-cache >/dev/null && \
     docker_cmd+=("--mount" "source=tht_zsh-cache,destination=${PERSISTENT},type=volume")
 
-# connect a tty when not running a command/script
-if [ -z "$CMD" ]; then
+# connect a tty when not running a background command/script
+if ! $BACKGROUNDJOB; then
     docker_cmd+=("--interactive" "--tty")
 fi
 
