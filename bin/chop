@@ -2,36 +2,63 @@
 
 if [ -n "$DEBUG" ]; then set -x; set -e; fi
 
+print_usage() {
+    2>&1 cat <<EOF
+Usage: $0 [-H|--headers] <fields>
+  -H|--header             request headers be maintained in the output (default omitted where possible)
+  -d|--delimiter <CHR>    custom character to use as a delimiter
+EOF
+}
+
 if [[ $# -eq 0 ]]; then
-    2>&1 echo "Usage: $0 [-H|--headers] <fields>"
-    2>&1 echo "  -H|--headers  request headers be maintained in the output (default omitted where possible)"
-    exit 2
+    print_usage
+    exit 0
 fi
 
 headerFlag=false
-if [[ $1 =~ -H|--headers ]]; then
+customDelim=
+args=()
+# Parse through command args to override values
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    -h|--help)
+        print_usage
+        exit 0
+        ;;
+    -H|--header|--headers)
+        headerFlag=true
+        ;;
+    -d|--delimiter)
+        customDelim="$2"
+        shift
+        ;;
+    *)
+        args+=("$1")
+        ;;
+    esac
     shift
-    headerFlag=true
-fi
+done
 
 # true if the arguments passed in all look like indexes (not field names)
 indexArgs=false
-if echo $* | grep -q '^[0-9, -]*$'; then
+if echo ${args[*]} | grep -q '^[0-9, -]*$'; then
     indexArgs=true
 fi
 
-commaArgs="$(echo $* | tr ' ' ',')"
-spaceArgs="$(echo $* | tr ',' ' ')"
+commaArgs="$(echo "${args[*]}" | tr ' ' ',')"
+spaceArgs="$(echo "${args[*]}" | tr ',' ' ')"
 
 # read the first line in order to detect the type of log
-read -r LINE
+IFS= read -r LINE
 
+# perform regex match on first line
 match() {
     [[ $LINE =~ $1 ]]
 }
 
+# pass through original stdin to stdout
 stdin() {
-    (echo "$LINE"; cat)
+    (printf "%s\n" "$LINE"; cat)
 }
 
 # default to including headers / first row in output
@@ -48,10 +75,13 @@ if ! $headerFlag; then
     fi
 fi
 
+# custom delimiter
+if [[ -n $customDelim ]]; then
+    stdin | xsv select -d "$customDelim" $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
 # zeek tsv
-if match '^#'; then
+elif match '^#'; then
     if $indexArgs; then
-        # convert to straight TSV
+        # convert to straight TSV if index arguments were provided
         if $headerFlag; then
             # with headers
             stdin | sed -e '0,/^#fields\t/s///' | grep -v '^#'| xsv select -d $'\t' $commaArgs | xsv fmt -t $'\t'
@@ -69,7 +99,7 @@ elif match '^\{.*\}$'; then
     # note: json-cut is several orders of magnitude faster than zq v0.29.0
 # generic tsv
 elif match '.*	.*'; then
-    stdin | xsv select -d '\t' $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
+    stdin | xsv select -d $'\t' $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
     # note: xsv is an order of magnitude faster than miller
     # note: xsv only outputs csv, not tsv; piping to miller after is a slight performance hit, depending on number of columns
 # generic csv
@@ -78,9 +108,9 @@ elif match '.*,.*'; then
     # note: xsv is an order of magnitude faster than miller
 # unknown; fallback to splitting on whitespace
 else
-    # trim all leading and trailing whitespace and replace consecutive whitespace with a single comma
-    # note: converts output to csv
-    stdin | sed -E -e 's/^[ \t]*//;s/[ \t]*$//' -e 's/[ \t]+/,/g' | xsv select $commaArgs | $conditionalHeader
+    # trim all leading and trailing whitespace and replace consecutive whitespace with a single tab
+    # note: converts output to tsv
+    stdin | sed -E -e 's/^[ \t]*//;s/[ \t]*$//' -e 's/[ \t]+/\t/g' | xsv select -d $'\t' $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
 fi
 
 # TODO
@@ -92,14 +122,16 @@ fi
 # - sed to convert fields and types back
 
 # output is inconsistent; just convert everything to tsv
+# do I actually want to pass zeek headers on to anything?
 # zeek tsv -> tsv (or zeek tsv)
 # json -> tsv
 # tsv -> tsv
 # csv -> csv
 # whitespace -> csv
 
-# use tsv-utils for TSV
+# use tsv-utils instead of xsv if benchmark is faster
+# benchmark converting to tsv vs using xsv directly
 
 # allow inverting columns with -v
 
-# allow specifying delimeter with -d
+# auto-run tests
