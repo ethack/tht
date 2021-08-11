@@ -1,4 +1,4 @@
-name: Monthly build
+name: Monthly Build
 
 # This workflow simply updates the .cache-buster file, which then:
 # - triggers the docker build workflow for the image to be rebuilt

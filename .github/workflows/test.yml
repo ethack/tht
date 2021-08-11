@@ -11,7 +11,6 @@ on:
   registry_package:
     action:
       - published
-      - updated
 
 jobs:
   test:
@@ -30,4 +29,5 @@ jobs:
         # Use Github Container Registry THT image
         IMAGE: ghcr.io/ethack/tht:latest
       run: |
+        ./tht version
         ./tht --dev run "/usr/local/test/bats/bin/bats /usr/local/test"
