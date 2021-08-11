@@ -62,3 +62,19 @@ jobs:
         push: true
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
+
+  test:
+    name: Run BATS tests
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - 
+      name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        submodules: true
+    - 
+      name: BATS 
+      run: |
+        ./tht --dev run /usr/local/test/bats/bin/bats /usr/local/test 
