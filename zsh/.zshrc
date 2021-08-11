@@ -35,7 +35,7 @@ export HISTFILE=$PERSISTENT/.zhistory
 # append into history file
 setopt INC_APPEND_HISTORY
 # save only one command if 2 common are same and consistent
-setopt HIST_IGNORE_DUPS
+# setopt HIST_IGNORE_DUPS
 # add timestamp for each entry
 setopt EXTENDED_HISTORY
 
@@ -71,6 +71,9 @@ if [ -f "$HOME/.zinit/zinit.zsh" ]; then
   # powerlevel10k theme
   # zinit light-mode depth=1 for \
   #   romkatv/powerlevel10k
+
+  export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,underline"
+  export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd history)
 fi
 
 if exists bro-pdns; then
