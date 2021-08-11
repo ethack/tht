@@ -38,14 +38,14 @@ jobs:
         registry: ghcr.io
         username: ${{ secrets.GHCR_USERNAME }}
         password: ${{ secrets.GHCR_TOKEN }}
-    -
-      name: Cache Docker layers
-      uses: actions/cache@v2.1.6
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx
-        restore-keys: |
-          ${{ runner.os }}-buildx
+    # -
+    #   name: Cache Docker layers
+    #   uses: actions/cache@v2.1.6
+    #   with:
+    #     path: /tmp/.buildx-cache
+    #     key: ${{ runner.os }}-buildx
+    #     restore-keys: |
+    #       ${{ runner.os }}-buildx
     - 
       name: Build and push
       uses: docker/build-push-action@v2.6.1
@@ -60,8 +60,12 @@ jobs:
           MAXMIND_LICENSE=${{ secrets.MAXMIND_LICENSE }}
           THT_HASH=${{ github.sha }}
         push: true
-        cache-from: type=local,src=/tmp/.buildx-cache
-        cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
+        # Use experimental GitHub Cache API
+        # https://github.com/docker/build-push-action/blob/master/docs/advanced/cache.md#cache-backend-api
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        # cache-from: type=local,src=/tmp/.buildx-cache
+        # cache-to: type=local,mode=max,dest=/tmp/.buildx-cache
 
   test:
     name: Run BATS tests
