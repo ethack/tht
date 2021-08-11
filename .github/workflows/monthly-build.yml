@@ -1,4 +1,4 @@
-name: Weekly build
+name: Monthly build
 
 # This workflow simply updates the .cache-buster file, which then:
 # - triggers the docker build workflow for the image to be rebuilt
@@ -7,11 +7,13 @@ name: Weekly build
 on:
   schedule:
     # run weekly
-    - cron:  '0 0 * * SUN'
+    # - cron:  '0 0 * * SUN'
+    # run monthly
+    - cron:  '0 0 1 * *'
 
 jobs:
   build:
-    name: Weekly build
+    name: Monthly build
     runs-on: ubuntu-latest
 
     # Only run on the main branch of the main repo
@@ -32,4 +34,4 @@ jobs:
       name: Push code
       uses: stefanzweifel/git-auto-commit-action@v4
       with:
-        commit_message: Weekly build
+        commit_message: Monthly build
