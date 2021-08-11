@@ -285,11 +285,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     #  && mkdir -p /root/.cache/gitstatus \
     #  && tar -xz -C /root/.cache/gitstatus -f /tmp/gitstatusd-linux-x86_64.tar.gz
     
-    # Install a .vimrc file with nice defaults
-    RUN wget -nv -O /root/.vimrc https://raw.githubusercontent.com/nickmccurdy/sane-defaults/master/home/.vimrc \
-     && mkdir -p /root/.vim/backup /root/.vim/backupf
-    #RUN wget -nv -O /root/.vimrc https://raw.githubusercontent.com/tpope/vim-sensible/master/plugin/sensible.vim
-    
+    COPY zsh/.vimrc /root/
     COPY zsh/.zshrc /root/
     COPY zsh/.zlogout /root/
     COPY zsh/.p10k.zsh /root/
