@@ -80,4 +80,4 @@ jobs:
         # Use Github Container Registry for faster downloads (hopefully)
         IMAGE: ghcr.io/ethack/tht:latest
       run: |
-        ./tht --dev -- /usr/local/test/bats/bin/bats /usr/local/test
+        ./tht --dev run "/usr/local/test/bats/bin/bats /usr/local/test"
