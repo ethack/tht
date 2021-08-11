@@ -1,0 +1,29 @@
+#!/usr/bin/env python3
+from sys import argv, stdin
+import plotext as plt
+
+xlabel = None
+if len(argv) > 1:
+  xlabel = argv[1]
+
+ylabel = "Count"
+if len(argv) > 2:
+  ylabel = argv[2]
+
+# Expects input like (e.g. from freq or uniq -c):
+'''
+   7788 2021-06-21
+   9966 2021-06-22
+  13204 2021-06-23
+  16200 2021-06-24
+  10354 2021-06-25
+    876 2021-06-26
+'''
+
+counts, things = zip(*[line.split() for line in stdin if line])
+
+plt.bar(list(things), list(map(int, counts)))
+plt.plotsize(100, 30)
+plt.xlabel(xlabel)
+plt.ylabel(ylabel)
+plt.show()

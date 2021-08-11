@@ -188,6 +188,10 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort-fast $BIN
 
+    ### Graphing ###
+    RUN apt-get -y install python3-pip
+    RUN python3 -m pip install plotext
+
     ### Grep ###
     # grep, sed, awk, etc
     RUN apt-get -y install coreutils
