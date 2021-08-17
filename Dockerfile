@@ -175,11 +175,11 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      && tar -xzf /tmp/tsv-utils.tar.gz -C /tmp \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/keep-header $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/csv2tsv $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/number-lines $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/number-lines $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-append $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-filter $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-join $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-pretty $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-pretty $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-sample $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-select $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-split $BIN \
@@ -188,7 +188,16 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort-fast $BIN
 
+    # Misc useful tools from https://www.datascienceatthecommandline.com/
+    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/body $BIN
+    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/cols $BIN
+    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/header $BIN
+    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/dseq $BIN
+    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/trim $BIN
+    RUN chmod +x $BIN/*
+
     ### Graphing ###
+    RUN apt-get install -y colortest
     RUN apt-get -y install python3-pip
     RUN python3 -m pip install plotext
 
