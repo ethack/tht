@@ -19,11 +19,12 @@ docker_cmd=(
     "--hostname" "$(hostname)"
     "--init"
     "--pid" "host"
+    "--env" "TERM=${TERM}"
     "--mount" "source=/etc/localtime,destination=/etc/localtime,type=bind"
     "--mount" "source=/var/run/docker.sock,destination=/var/run/docker.sock,type=bind"
     "--mount" "source=/,destination=/host,type=bind"
     # resolve the current path in case it's in a symlinked directory 
-    "--workdir" "/host/$(realpath "$(pwd)")"
+    "--workdir" "/host/$(realpath "${PWD}")"
 )
 CMD=()
 BACKGROUNDJOB=false
@@ -96,18 +97,18 @@ while [ $# -gt 0 ]; do
     ;;
     dev|--dev)
         # change to directory this script is in, following any symlinks
-        pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" >/dev/null
+        pushd $(dirname $(readlink -f "${BASH_SOURCE[0]}")) >/dev/null
         # loop through dynamically to prevent having to update on every new addition
         while IFS=  read -r -d $'\0' PROG; do
             # mount bin scripts for development
-            docker_cmd+=("--mount" "source=$(pwd)/${PROG},destination=/usr/local/bin/${PROG#"bin"},type=bind")
+            docker_cmd+=("--mount" "source=${PWD}/${PROG},destination=/usr/local/bin/${PROG#"bin"},type=bind")
         done < <(find bin -type f -print0 2>/dev/null)
         while IFS=  read -r -d $'\0' CONF; do
             # mount zsh configs for development
-            docker_cmd+=("--mount" "source=$(pwd)/${CONF},destination=/root/${CONF#"zsh"},type=bind")
+            docker_cmd+=("--mount" "source=${PWD}/${CONF},destination=/root/${CONF#"zsh"},type=bind")
         done < <(find zsh -type f -print0 2>/dev/null)
+        docker_cmd+=("--mount" "source=${PWD}/test,destination=/usr/local/test,type=bind")
         popd >/dev/null
-        docker_cmd+=("--mount" "source=$(pwd)/test,destination=/usr/local/test,type=bind")
     ;;
     --)
         # anything after -- is treated as a command to run in interactive mode
