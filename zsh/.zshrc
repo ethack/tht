@@ -20,10 +20,6 @@ $ "
 export TMPDIR=/tmp
 export SHELL=/usr/bin/zsh
 
-# allow cd - to work across sessions
-touch "$PERSISTENT/.oldpwd"
-source "$PERSISTENT/.oldpwd"
-
 ## History ##
 
 # set history size
@@ -68,6 +64,11 @@ if [ -f "$HOME/.zinit/zinit.zsh" ]; then
       OMZ::plugins/history-substring-search \
     atload"!_zsh_autosuggest_start" \
       zsh-users/zsh-autosuggestions
+  # restore previous OLDPWD value; this must be executed last
+  touch "$PERSISTENT/.oldpwd"
+  zinit wait lucid for \
+    src".oldpwd" \
+      "$PERSISTENT"
   # powerlevel10k theme
   # zinit light-mode depth=1 for \
   #   romkatv/powerlevel10k
@@ -168,9 +169,11 @@ alias t="tail -f"
 # note: --buffer-size=2G is recommended here for allowing pipeline sort to be parallelized
 # https://github.com/eBay/tsv-utils/blob/master/docs/TipsAndTricks.md#set-the-buffer-size-for-reading-from-standard-input
 alias distinct="sort --version-sort --buffer-size=2G | uniq"
-alias countdistinct="sort --version-sort --buffer-size=2G | uniq | wc -l"
-alias distinctcount="sort --version-sort --buffer-size=2G | uniq | wc -l"
 alias freq="sort --version-sort --buffer-size=2G | uniq -c"
+alias countdistinct="sort --version-sort --buffer-size=2G | uniq | wc -l"
+# other names people might use instead
+alias distinctcount=countdistinct
+alias cardinality=countdistinct
 # most frequent occurrence (show all by default)
 function mfo() {
   sort --buffer-size=2G | uniq -c | sort -nr --buffer-size=2G | head --lines=${1:--0}
@@ -179,7 +182,7 @@ function mfo() {
 function lfo() {
   sort --buffer-size=2G | uniq -c | sort -n --buffer-size=2G | head --lines=${1:--0}
 }
-# other names people might like better
+# other names people might use instead
 alias stackcount=mfo
 alias shorttail=mfo
 alias longtail=lfo
