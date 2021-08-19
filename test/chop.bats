@@ -96,12 +96,7 @@ pipe() {
 @test "zeek, name, retain header" {
     run chop zeek -H id.orig_h id.resp_h
     assert_output "\
-#separator \x09
-#set_separator	,
-#empty_field	(empty)
-#unset_field	-
-#fields	id.orig_h	id.resp_h
-#types	addr	addr
+id.orig_h	id.resp_h
 10.55.182.100	10.233.233.5
 192.168.88.2	165.227.88.15"
 }
@@ -109,6 +104,7 @@ pipe() {
 @test "zeek, index" {
     run chop zeek 3 5
     assert_output "\
+id.orig_h	id.resp_h
 10.55.182.100	10.233.233.5
 192.168.88.2	165.227.88.15"
 }
@@ -141,31 +137,31 @@ id.orig_h	id.resp_h
 @test "csv, header, name" {
     run chop csv_header bravo echo
     assert_output "\
-re,so
-two,five"
+re	so
+two	five"
 }
 
 @test "csv, header, name, retain header" {
     run chop csv_header -H bravo echo
     assert_output "\
-bravo,echo
-re,so
-two,five"
+bravo	echo
+re	so
+two	five"
 }
 
 @test "csv, header, index" {
     run chop csv_header 2 5
     assert_output "\
-bravo,echo
-re,so
-two,five"
+bravo	echo
+re	so
+two	five"
 }
 
 @test "csv, no header, index" {
     run chop csv 2 5
     assert_output "\
-re,so
-two,five"
+re	so
+two	five"
 }
 
 ## TSV ##

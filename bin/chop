@@ -4,9 +4,12 @@ if [ -n "$DEBUG" ]; then set -x; set -e; fi
 
 print_usage() {
     2>&1 cat <<EOF
-Usage: $0 [-H|--headers] <fields>
+Usage: $0 [-H|--headers] [<delimiter>] <fields>
   -H|--header             request headers be maintained in the output (default omitted where possible)
   -d|--delimiter <CHR>    custom character to use as a delimiter
+
+  delimiter      must be a single non-alphanum character and the first argument; optional
+  fields         can be names, numbers, or ranges; space or comma separated
 EOF
 }
 
@@ -39,14 +42,23 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-# true if the arguments passed in all look like indexes (not field names)
+# allow specifying a custom delimeter as the first argument
+if [[ -z $customDelim ]] && [[ ${#args[0]} -eq 1 ]] && ! [[ ${args[0]} =~ [0-9a-zA-Z] ]]; then
+    # if the first argument is a single character and not alphanumeric then assume it is a delimeter
+    # if you have columns delimited by numbers or letters then use -d
+    customDelim="${args[0]}"
+    unset args[0]
+fi
+
+# true if the field arguments all look like indexes (not names)
 indexArgs=false
-if echo ${args[*]} | grep -q '^[0-9, -]*$'; then
+if echo "${args[*]}" | grep -q '^[0-9, -]*$'; then
     indexArgs=true
 fi
 
-commaArgs="$(echo "${args[*]}" | tr ' ' ',')"
-spaceArgs="$(echo "${args[*]}" | tr ',' ' ')"
+# these are used based on what the underlying tool expects
+commaArgs=$(echo "${args[*]}" | tr ' ' ',')
+spaceArgs=$(echo "${args[*]}" | tr ',' ' ')
 
 # read the first line in order to detect the type of log
 IFS= read -r LINE
@@ -62,76 +74,47 @@ stdin() {
 }
 
 # default to including headers / first row in output
-zeek_cut="zeek-cut -c"  # include full zeek headers
 conditionalHeader="cat" # xsv includes headers by default
-
 if ! $headerFlag; then
     # assume the input has a header row if the arguments are field names
     if ! $indexArgs; then
         # only in the case where we're reasonably sure there is a header row
         # and the user did not specify the header flag can we omit the headers
-        zeek_cut="zeek-cut"            # don't include zeek headers
         conditionalHeader="tail -n +2" # omit first row (header)
     fi
 fi
+
+# note: all output is converted to tsv
 
 # custom delimiter
 if [[ -n $customDelim ]]; then
     stdin | xsv select -d "$customDelim" $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
 # zeek tsv
 elif match '^#'; then
-    if $indexArgs; then
-        # convert to straight TSV if index arguments were provided
-        if $headerFlag; then
-            # with headers
-            stdin | sed -e '0,/^#fields\t/s///' | grep -v '^#'| xsv select -d $'\t' $commaArgs | xsv fmt -t $'\t'
-        else
-            # without headers
-            stdin | grep -v '^#' | xsv select --no-headers -d $'\t' $commaArgs | xsv fmt -t $'\t'
-        fi
-    else
-        stdin | $zeek_cut -u $spaceArgs
-    fi
+    # convert to straight TSV
+    stdin | sed -e '0,/^#fields\t/s///' | grep -v '^#' | xsv select -d $'\t' $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
 # ndjson
 elif match '^\{.*\}$'; then
     # note: output is tsv
     stdin | json-cut $spaceArgs
     # note: json-cut is several orders of magnitude faster than zq v0.29.0
-# generic tsv
+    # note: json-cut doesn't have an option to preserve headers
+# tsv
 elif match '.*	.*'; then
     stdin | xsv select -d $'\t' $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
-    # note: xsv is an order of magnitude faster than miller
-    # note: xsv only outputs csv, not tsv; piping to miller after is a slight performance hit, depending on number of columns
-# generic csv
+# csv
 elif match '.*,.*'; then
-    stdin | xsv select $commaArgs | $conditionalHeader
-    # note: xsv is an order of magnitude faster than miller
+    stdin | xsv select $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
 # unknown; fallback to splitting on whitespace
 else
     # trim all leading and trailing whitespace and replace consecutive whitespace with a single tab
-    # note: converts output to tsv
     stdin | sed -E -e 's/^[ \t]*//;s/[ \t]*$//' -e 's/[ \t]+/\t/g' | xsv select -d $'\t' $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
 fi
 
 # TODO
-# idea: 
-# - /dev/shm
-# - grep for # lines except fields and types
-# - sed to convert to tsv
-# - send to xsv
-# - sed to convert fields and types back
-
-# output is inconsistent; just convert everything to tsv
-# do I actually want to pass zeek headers on to anything?
-# zeek tsv -> tsv (or zeek tsv)
-# json -> tsv
-# tsv -> tsv
-# csv -> csv
-# whitespace -> csv
-
 # use tsv-utils instead of xsv if benchmark is faster
-# benchmark converting to tsv vs using xsv directly
+# tsv-select supports -d
+
+# test jq for json
 
 # allow inverting columns with -v
-
-# auto-run tests
