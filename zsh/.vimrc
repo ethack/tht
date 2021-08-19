@@ -28,9 +28,6 @@ set mouse=a
 " line numbers
 set number
 
-" highlight cursor line
-set cursorline
-
 " wrapping stuff
 "set textwidth=80
 set colorcolumn=100
