@@ -1,1 +1,1 @@
-printf "export %s" $(env | grep OLDPWD) > $PERSISTENT/.oldpwd
+printf "export OLDPWD=$PWD" > $PERSISTENT/.oldpwd
