@@ -1,0 +1,36 @@
+#!/bin/bash
+
+# converts timestamps between formats
+
+cmd=(date)
+
+# default to displaying in UTC, unless --local is specified
+if [[ $1 =~ -l|--local ]]; then
+    shift
+else
+    cmd+=(--utc)
+fi
+
+if [[ -z $1 ]]; then
+    # default to convert to date if no arguments
+    cmd+=(--iso-8601=date)
+else
+    case $1 in
+        8601)   cmd+=(--iso-8601=${2:-seconds}) ;;
+        email)  cmd+=(--rfc-email) ;;
+        3339)   cmd+=(--rfc-3339=${2:-seconds}) ;;
+        unix)   cmd+=("+%s") ;;
+        date|day|days|d)             cmd+=(--iso-8601=date) ;;
+        hour|hours|hr|h)             cmd+=(--iso-8601=hours) ;;
+        minute|minutes|min|m)        cmd+=(--iso-8601=minutes) ;;
+        second|seconds|sec|s)        cmd+=(--iso-8601=seconds) ;;
+        nanosecond|nanoseconds|ns)   cmd+=(--iso-8601=ns) ;;
+        *)      cmd+=($(echo "+$1" | sed -E 's/^[+]{2}/+/')) ;;  # treat argument as a custom date format string
+    esac
+fi
+
+# sed prepends @ to all input that looks like a unix timestamp
+sed 's/^[0-9.]*$/@\0/g' | "${cmd[@]}" --file -
+
+# TODO 
+# write usage and proper argument handling
