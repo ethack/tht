@@ -31,6 +31,21 @@ Don't panic! You have many tools and methods at your disposal. This documentatio
 - **Summarize** 
     - _Summarizing_, also known as _grouping_, _aggregating_, or _stacking_, reduces your data by combining data through methods such as the average, sum, or count.
 
+- Visualize - can be broken down into EDA, conceptualization
+- Search / Filter
+- Compute / Transform
+- Correlate / Join / Pivot
+- Summarize / group / aggregate / stack
+
+Change Correlate to Pivot or integrate pivot somehow. 
+
+
+Supplementary
+- Clean / scrubbing
+- Sort
+
+https://pandas.pydata.org/docs/user_guide/groupby.html
+
 <!-- Not sure if this belongs in the list or not.
 - Machine learning - This is often has a loose definition, but under the hood any machine learning going to be doing several of these methods, especially _deriving_ and _correlating_ your data.
 
@@ -58,8 +73,11 @@ This is the simplest way to launch THT.
 tht
 ```
 
-This will give you a `zsh` shell inside a new THT container. All the tools and examples from this documentation can now be used.
+This will give you a `zsh` shell inside a new THT container. All the tools and examples from this documentation can now be used. 
 
+{{% notice tip %}}
+Your host's filesystem is accessible from `/host`.
+{{% /notice %}}
 ### Advanced Usage
 
 With `tht` you can also run one-off commands or even give it scripts to execute within the context of the container. This is useful if you want to automate or schedule certain tasks from the host system.
@@ -105,7 +123,7 @@ SCRIPT
 
     Here is an example python program
 
-For instance, you might want to put a script like this in your host's cron scheduler `/etc/cron.hourly/pdns`.
+You might want to put a script like this in your host's cron scheduler `/etc/cron.hourly/pdns`.
 
 ```bash
 #!/bin/bash
@@ -114,11 +132,12 @@ tht run <<\SCRIPT
 cd /host/opt/zeek/logs/
 
 nice flock -n "/host/tmp/pdns.lock" \
-fd 'dns.*.log' | sort | xargs -n 24 bro-pdns index
+fd 'dns.*log' | sort | xargs -n 24 bro-pdns index
 SCRIPT
 ```
+<!-- TODO convert to asciidoc and #include cron/tht-pdns -->
 
-
+See the [cron/](https://github.com/ethack/tht/tree/main/cron) directory in the code repo for more examples of cron scripts.
 ## Updating THT
 
 This will pull the latest image as well as latest `tht` script.
@@ -135,3 +154,94 @@ tht update
     Status: Image is up to date for ethack/tht:latest
     docker.io/ethack/tht:latest
     Self-updating THT script...
+
+# Advantages
+
+## Simplicity
+
+Here is an example of the power of THT. Let's say your goal is to find a trend or anomaly in traffic to _cloudfront.net_.
+
+The following command searches Zeek `ssl.log` files (compressed or not) for all events going to _cloudfront.net_. It then pulls out the timestamp, converts it to a date, and counts the frequency of events per day. Finally, it displays a bar graph of the result.
+
+```bash
+filter --ssl cloudfront.net | chop ts | ts2 date | freq | plot-bar 
+```
+
+**Result:**
+
+          ┌────────────────────────────────────────────────────────────────────────────────────────────┐
+    475620┤                                                               █████████████▌               │
+          │                                                               █████████████▌               │
+          │                                                               █████████████▌               │
+          │                                                               █████████████▌               │
+    396350┤                                                               █████████████▌               │
+          │                                                               █████████████▌               │
+          │                                                               █████████████▌               │
+          │                                                               █████████████▌               │
+    317080┤                                                               █████████████▌               │
+          │                                                               █████████████▌               │
+          │                                                               █████████████▌               │
+          │                                                               █████████████▌               │
+    237810┤                                                               █████████████▌               │
+          │                                                               █████████████▌  ▄▄▄▄▄▄▄▄▄▄▄▄▄│
+          │                                                               █████████████▌  █████████████│
+          │                                                               █████████████▌  █████████████│
+          │                                                               █████████████▌  █████████████│
+    158540┤                                                               █████████████▌  █████████████│
+          │                                                               █████████████▌  █████████████│
+          │                                               ▐████████████▌  █████████████▌  █████████████│
+          │                                               ▐████████████▌  █████████████▌  █████████████│
+     79270┤                                               ▐████████████▌  █████████████▌  █████████████│
+          │                                               ▐████████████▌  █████████████▌  █████████████│
+          │                                               ▐████████████▌  █████████████▌  █████████████│
+          │                               ▗▄▄▄▄▄▄▄▄▄▄▄▄▖  ▐████████████▌  █████████████▌  █████████████│
+         0┤▄▄▄▄▄▄▄▄▄▄▄▄▄  ▗▄▄▄▄▄▄▄▄▄▄▄▄▄  ▐████████████▌  ▐████████████▌  █████████████▌  █████████████│
+          └──────┬───────────────┬───────────────┬──────────────┬───────────────┬───────────────┬──────┘
+             2021-06-21      2021-06-22      2021-06-23     2021-06-24      2021-06-25      2021-06-26  
+    [y] Count                                           [x]                                             
+
+Compare this to a (rougly) equivalent command without THT. It's doable, but you have to be fluent in quite a few builtin Linux tools, as well as their various flags, and how to escape special characters. After all that you get the same information, but you have to compare relative size of numbers in the text output rather than looking at an graph.
+
+```bash
+zgrep -hF cloudfront.net */ssl* | cut -d$'\t' -f1 | sed 's/^/@/' | date -Idate -f - | sort -nr | uniq -c
+```
+
+**Result:**
+
+       2910 2021-06-21
+       3326 2021-06-22
+      19308 2021-06-23
+     126939 2021-06-24
+     475620 2021-06-25
+     226890 2021-06-26
+
+## Speed
+
+Not only do the tools included in THT remove much of the arcane syntax and boilerplate associated with log parsing, but they are also generally faster. 
+
+In the above example, the THT version took **10.8 seconds**.
+
+    filter --ssl cloudfront.net  64.85s user 5.54s system 670% cpu 10.491 total
+    chop ts  2.56s user 2.10s system 44% cpu 10.492 total
+    ts2 date  4.54s user 0.11s system 44% cpu 10.496 total
+    sort --version-sort --buffer-size=2G  1.26s user 0.11s system 12% cpu 10.809 total
+    uniq -c  0.05s user 0.01s system 0% cpu 10.808 total
+    plot-bar  0.07s user 0.02s system 0% cpu 10.871 total
+
+And the non-THT version took nearly **3x longer** at **31.3 seconds**.
+
+    zgrep -hF cloudfront.net */ssl*  33.00s user 3.68s system 117% cpu 31.188 total
+    cut -d$'\t' -f1  1.41s user 0.48s system 6% cpu 31.187 total
+    sed 's/^/@/'  0.32s user 0.04s system 1% cpu 31.187 total
+    date -Idate -f -  1.23s user 0.04s system 4% cpu 31.186 total
+    sort -n  0.56s user 0.05s system 1% cpu 31.306 total
+    uniq -c  0.06s user 0.00s system 0% cpu 31.305 total
+
+# Complementary Projects
+
+These are all projects that work well together with THT.
+
+- [Elastic](https://www.elastic.co/elasticsearch/) / [Kibana](https://www.elastic.co/kibana/)
+- [Metabase](https://github.com/metabase/metabase)
+- [ml-workspace](https://github.com/ml-tooling/ml-workspace)
+- [Data Science at the Command Line](https://www.datascienceatthecommandline.com/)
