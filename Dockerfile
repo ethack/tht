@@ -16,8 +16,8 @@ FROM golang:buster as go-builder
     RUN go get -v -u github.com/tomnomnom/gron
     # zeek passive dns
     RUN go get -v github.com/JustinAzoff/bro-pdns
-    # rush - paralell alternative
-    # RUN go get -v -u github.com/shenwei356/rush
+    # pxl - image viewer
+    RUN go get -v -u github.com/ichinaski/pxl
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
@@ -200,6 +200,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get install -y colortest
     RUN apt-get -y install python3-pip
     RUN python3 -m pip install plotext
+    COPY --from=go-builder $GO_BIN/pxl $BIN
 
     ### Grep ###
     # grep, sed, awk, etc
