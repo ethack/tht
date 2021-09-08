@@ -20,6 +20,9 @@ $ "
 export TMPDIR=/tmp
 export SHELL=/usr/bin/zsh
 
+# change directories by typing the name of the directory
+setopt AUTO_CD
+
 ## History ##
 
 # set history size
@@ -170,6 +173,7 @@ alias t="tail -f"
 # https://github.com/eBay/tsv-utils/blob/master/docs/TipsAndTricks.md#set-the-buffer-size-for-reading-from-standard-input
 alias distinct="sort --version-sort --buffer-size=2G | uniq"
 alias freq="sort --version-sort --buffer-size=2G | uniq -c"
+alias count="wc -l"
 alias countdistinct="sort --version-sort --buffer-size=2G | uniq | wc -l"
 # other names people might use instead
 alias distinctcount=countdistinct
