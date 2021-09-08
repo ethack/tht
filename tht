@@ -26,6 +26,18 @@ docker_cmd=(
     # resolve the current path in case it's in a symlinked directory 
     "--workdir" "/host/$(realpath "${PWD}")"
 )
+
+
+USERNAME="${USERNAME:-${USER:-user}}"
+GROUPNAME=$(cat /etc/group | grep ${GID:-$(id --group)} /etc/group | cut -d: -f1)
+
+docker_cmd+=(
+    --env "USERNAME=$USERNAME"
+    --env "GROUPNAME=$GROUPNAME"
+    --env "PUID=${UID:-$(id --user)}"
+    --env "PGID=${GID:-$(id --group)}"
+)
+
 CMD=()
 BACKGROUNDJOB=false
 while [ $# -gt 0 ]; do
@@ -108,6 +120,7 @@ while [ $# -gt 0 ]; do
             docker_cmd+=("--mount" "source=${PWD}/${CONF},destination=/root/${CONF#"zsh"},type=bind")
         done < <(find zsh -type f -print0 2>/dev/null)
         docker_cmd+=("--mount" "source=${PWD}/test,destination=/usr/local/test,type=bind")
+        docker_cmd+=("--mount" "source=${PWD}/docker-entrypoint.sh,destination=/docker-entrypoint.sh,type=bind")
         popd >/dev/null
     ;;
     --)

@@ -190,11 +190,10 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
     # Misc useful tools from https://www.datascienceatthecommandline.com/
     ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/body $BIN
-    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/cols $BIN
     ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/header $BIN
     ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/dseq $BIN
     ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/trim $BIN
-    RUN chmod +x $BIN/*
+    RUN chmod +rx $BIN/*
 
     ### Graphing ###
     RUN apt-get install -y colortest
@@ -302,6 +301,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY zsh/.zshrc /root/
     COPY zsh/.zlogout /root/
     COPY zsh/.p10k.zsh /root/
+    COPY zsh/.config /root/
     
     # zinit - plugin manager for zsh
     # svn required for some zinit functions
@@ -326,7 +326,14 @@ COPY --from=base / /
      && echo "HASH=$THT_HASH" >> /etc/tht-release \
      && echo "DATE=$(date +%Y.%m.%d)" >> /etc/tht-release
 
-CMD ["zsh"]
+ENV DEBIAN_FRONTEND noninteractive
+ENV DEBCONF_NONINTERACTIVE_SEEN true
+
+RUN apt-get -y install sudo
+COPY docker-entrypoint.sh /
+
+ENTRYPOINT ["/bin/bash", "/docker-entrypoint.sh"]
+CMD ["zsh", "--login"]
 
 # Metadata #
 LABEL org.opencontainers.image.source https://github.com/ethack/tht
