@@ -6,7 +6,7 @@
   <a href="https://ethack.github.io/tht/">Docs</a>
 </p>
 
-The Threat Hunting Toolkit (<span title="Think Happy Thoughts  (⌒‿⌒)">THT</span>) is a Swiss Army knife for threat hunting, log processing, and security-focused data science. It incorporates many CLI tools into one place for ease of deployment and includes wrappers and convenience features for ease of use. It comes packaged as a Docker container image that can be deployed with a single command. Spend less time struggling with installation, configuration, or environment differences, and more on filtering, slicing, and data stacking.
+The Threat Hunting Toolkit (<span title="Think Happy Thoughts  (⌒‿⌒)">THT</span>) is a Swiss Army knife for threat hunting, log processing, and security-focused data science. It incorporates many CLI tools into one place for ease of deployment and includes wrappers and convenience features for ease of use. It comes packaged as a Docker image that can be deployed with a single command. Spend less time struggling with installation, configuration, or environment differences, and more on filtering, slicing, and data stacking.
 
 ## Features
 
