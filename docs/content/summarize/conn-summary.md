@@ -1,5 +1,7 @@
 ---
 title: "Conn Summary"
+description: |
+  Output a summary of connections given an input of Zeek logs. Great for getting an overview of a subset of logs.
 date: 2021-03-29T22:40:55-05:00
 draft: false
 ---

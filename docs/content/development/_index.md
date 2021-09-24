@@ -7,11 +7,20 @@ weight: 1000
 
 ## Running
 
+Clone the THT repo.
+
 ```bash
-tht --dev
+git clone https://github.com/ethack/tht.git
 ```
 
-This will mount certain files from this repository directly into the container. This allows making changes to scripts without having to rebuild the image.
+Then run THT in development mode.
+
+```bash
+cd tht
+./tht --dev
+```
+
+This mounts certain files from this repository directly into the container which allows making changes to scripts without having to rebuild the image.
 
 ## Building Docker Image
 

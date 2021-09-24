@@ -11,31 +11,42 @@ weight: 1
 
 Don't panic! You have many tools and methods at your disposal. This documentation will show how you can use and combine them to make your data more valuable.
 
-- **Visualize** 
-    - The simplest thing you can do is look at your raw data. There may be too much at first to be meaningful, but viewing your data is necessary to determine how to transform and summarize it.
+- **Explore** 
+    - The simplest thing you can do is explore your raw data. There may be too much at first to be meaningful, but viewing your data is necessary to determine how to transform and summarize it. In data science this is called _Exploratory Data Analysis_ (EDA).
         - Example: Using `cat` to view a log file or loading a CSV into a spreadsheet.
-    - Creating _graphs_ and _charts_ is a useful way to discover patterns and trends, identify outliers, and view relationships.
-- **Clean** 
-    - An overlooked, but crucial step is making sure your data is _cleaned_ or _normalized_ so that other operations can be performed without error. This is an important part of data science.
+    - _Visualizing_ your data through graphs and charts is a useful way to discover patterns and trends, identify outliers, and view relationships.
 - **Filter** 
-    - Reducing the amount of data through _filtering_ is nearly always going to be your first step and often between other operations as well. Not only does this remove noise irrelevant to the question or goal you have, but it reduces the amount of time it takes to get to that goal.
-- **Sort** 
-    - _Sorting_ the data on different or even multiple fields is necessary for techniques like long tail analysis. It is also a vital first step done before any aggregation/grouping procedure.
+    - Reducing the amount of data through _filtering_ is nearly always going to be your first step and often between other operations as well. 
+    - Not only does this remove noise irrelevant to your question or goal, but it decreases the time it takes to process the remaining data.
+    - How to: Countless tools accomplish this in different ways. Anything that uses regular expressions, search terms, or comparisions is a way of filtering data. Common Linux utils like `grep` and `awk`, THT's `filter`, your SIEM's search bar, or even a SQL `WHERE` clause are all ways to accomplish this.
 - **Compute** 
-    - This is when you use fields from your existing data and perform some operation to create or _derive_ a new field, sometimes referred to as a _computed field_. A simple example would be adding the bytes sent and received together to get the total bytes transferred.
+    - This is when you use fields from your existing data and perform some operation to create or _derive_ a new field, sometimes referred to as a _computed field_. A simple example would be adding the bytes sent and received together to get the total bytes transferred. In data science this is known as _Feature Engineering_.
+    - _Computing_ normally involves some custom programming, either in a formal language like Python, or in a domain specific language (DSL) in a tool like Miller.
 - **Correlate** 
+    - Closely related to pivoting, which is when you would manually use a piece of information to _pivot_ into a different dataset. This can also be thought of as a _join_.
     - You can _correlate_ your data with other data by _joining_ datasets together on common fields.
         - Example: Taking multiple log types that share a field (e.g. IP address) and joining them together to create a single entry containing data from both logs. 
     - You can also _enrich_ your data using data from other sources, such as an API or existing database. 
         - Examples: Name resolution or passive DNS, geographical info, WHOIS or ownership info, or even threat intelligence feeds.
 - **Summarize** 
-    - _Summarizing_, also known as _grouping_, _aggregating_, or _stacking_, reduces your data by combining data through methods such as the average, sum, or count.
+    - _Summarizing_, also known as _grouping_, _aggregating_, or _data stacking_, reduces your data by combining data through methods such as the average, sum, or count.
 
-- Visualize - can be broken down into EDA, conceptualization
-- Search / Filter
-- Compute / Transform
-- Correlate / Join / Pivot
-- Summarize / group / aggregate / stack
+<!-- - Visualize - can be broken down into EDA, conceptualization - Learning about your dataset
+
+- Search / Filter - Reducing your dataset (filter), also columns (chop)
+- Compute / Transform - increases your data by adding new information
+- Summarize / group / aggregate / stack - related but reduces number of rows
+
+- Correlate / Join / Pivot - Bringing in other datasets
+
+VE F T SGA CJP
+
+filter chop agg
+
+- **Clean** 
+    - An overlooked, but crucial step is making sure your data is _cleaned_ so that other operations can be performed without error. This is an important part of data science.
+- **Sort** 
+    - _Sorting_ the data on different or even multiple fields is necessary for techniques like long tail analysis. It is also a vital first step done before any aggregation/grouping procedure.
 
 Change Correlate to Pivot or integrate pivot somehow. 
 
@@ -44,7 +55,11 @@ Supplementary
 - Clean / scrubbing
 - Sort
 
-https://pandas.pydata.org/docs/user_guide/groupby.html
+Similar Models:
+
+- Split, Apply, Combine - [Pandas `groupby` function](https://pandas.pydata.org/docs/user_guide/groupby.html)
+- Extract, Transform, Load (ETL) - Data Science discipline
+- Graph, Aggregate, Pivot, Statistics, Search (GAPPS) - [Chris Sanders' Practical Threat Hunting course](https://chrissanders.org/training/threat-hunting-training/) -->
 
 <!-- Not sure if this belongs in the list or not.
 - Machine learning - This is often has a loose definition, but under the hood any machine learning going to be doing several of these methods, especially _deriving_ and _correlating_ your data.
@@ -200,6 +215,8 @@ filter --ssl cloudfront.net | chop ts | ts2 date | freq | plot-bar
              2021-06-21      2021-06-22      2021-06-23     2021-06-24      2021-06-25      2021-06-26  
     [y] Count                                           [x]                                             
 
+<!-- TODO prevent line wrapping on smaller width screens. The above block should purely scroll instead. -->
+
 Compare this to a (rougly) equivalent command without THT. It's doable, but you have to be fluent in quite a few builtin Linux tools, as well as their various flags, and how to escape special characters. After all that you get the same information, but you have to compare relative size of numbers in the text output rather than looking at an graph.
 
 ```bash
@@ -235,7 +252,7 @@ And the non-THT version took nearly **3x longer** at **31.3 seconds**.
     sed 's/^/@/'  0.32s user 0.04s system 1% cpu 31.187 total
     date -Idate -f -  1.23s user 0.04s system 4% cpu 31.186 total
     sort -n  0.56s user 0.05s system 1% cpu 31.306 total
-    uniq -c  0.06s user 0.00s system 0% cpu 31.305 total
+    uniq -c  0.06s user 0.00s system 0% cpu 31.305 total                                  
 
 # Complementary Projects
 
