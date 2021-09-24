@@ -85,3 +85,25 @@ rwsetmember [SWITCHES] WILDCARD_IP INPUT_SET [INPUT_SET...]
 	Determine existence of IP address(es) in one or more IPset files.
 	By default, print names of INPUT_SETs that contain WILDCARD_IP.
 ```
+
+## Sorting
+
+sort -V
+
+
+## Filtering internal
+
+This matches if the IP address is preceded by a tab character. 
+
+rg -v '\t(127|192\.168|172\.1[6-9]|172\.2[0-9]|172\.3[0-1]|10|169\.254)\.' 
+
+This matches if it is at the beginning of a line. 
+
+rg -v '^(127|192\.168|172\.1[6-9]|172\.2[0-9]|172\.3[0-1]|10\.|169\.254)\.' 
+
+These should match general cases (not tested). 
+
+rg -v '\b(127|192\.168|172\.1[6-9]|172\.2[0-9]|172\.3[0-1]|10\.|169\.254)\.' 
+rg -v '[^0-9.](127|192\.168|172\.1[6-9]|172\.2[0-9]|172\.3[0-1]|10\.|169\.254)\.' 
+
+Update these to use filter and/or grepcidr. Also ipset tools.

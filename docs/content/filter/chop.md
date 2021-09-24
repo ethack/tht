@@ -1,7 +1,9 @@
 ---
 title: "Chop"
+description: |
+  Like `cut` but with column names and CSV/TSV/JSON/Zeek support without the boilerplate.
 date: 2021-07-23T16:06:13-05:00
-draft: true
+draft: false
 ---
 
 ## Overview
@@ -10,24 +12,24 @@ One of the most common ways to transform data is to select certain columns to ke
 
 Here's a comparison between the different tools and log types they support.
 
-| Command    | Zeek TSV | JSON | CSV  | TSV  | Whitespace | Custom |
-| ---------- | -------- | ---- | ---- | ---- | ---------- | ------ |
-| `chop`     | ✔️        | ✔️    | ✔️    | ✔️    | ✔️          | ††††   |
-| `awk`      | ✔️ †      |      | ✔️ †† | ✔️ †† | ✔️          | ✔️      |
-| `cut`      | ✔️ †      |      | ✔️ †† | ✔️ †† | ✔️  †††     | ✔️      |
-| `zeek-cut` | ✔️        |      |      |      |            |        |
-| `jq`       |          | ✔️    |      |      |            |        |
-| `json-cut` |          | ✔️    |      |      |            |        |
-| `zq`       | ✔️        | ✔️    |      |      |            |        |
-| `mlr`      |          | ✔️    | ✔️    | ✔️    | ✔️          |        |
-| `xsv`      |          |      | ✔️    | ✔️    |            |        |
+| Command      | Zeek TSV | JSON | CSV  | TSV  | Whitespace | Custom |
+| ------------ | -------- | ---- | ---- | ---- | ---------- | ------ |
+| `chop`       | ✔️        | ✔️    | ✔️    | ✔️    | ✔️          | ✔️      |
+| `awk`        | ✔️ †      |      | ✔️ †† | ✔️ †† | ✔️          | ✔️      |
+| `cut`        | ✔️ †      |      | ✔️ †† | ✔️ †† | ✔️  †††     | ✔️      |
+| `zeek-cut`   | ✔️        |      |      |      |            |        |
+| `jq`         |          | ✔️    |      |      |            |        |
+| `json-cut`   |          | ✔️    |      |      |            |        |
+| `zq 'cut'`   | ✔️        | ✔️    |      |      |            |        |
+| `mlr cut`    |          | ✔️    | ✔️    | ✔️    | ✔️          |        |
+| `xsv select` |          |      | ✔️    | ✔️    |            | ✔️      |
+| `tsv-select` | ✔️ †      |      | ✔️    | ✔️    |            | ✔️      |
 
 - † returns junk from metadata
 - †† will not handle quoted values containing delimeter
 - ††† can pick space or tab but not both
-- †††† not yet
 
-Can you pre-process and post-process data and make most of these tools work? Sure. But why not let `chop` do it for you instead? And automatically using the fastest tool for the job is a nice bonus.
+Can you pre-process and post-process data and make most of these tools work? Sure. But why not let `chop` do it for you instead?
 
 The best way to illustrate this is with examples.
 
@@ -50,16 +52,18 @@ mlr --prepipe "sed '0,/^#fields\t/s///'" --tsv --skip-comments cut -f id.resp_h,
 chop id.resp_h id.resp_p
 chop id.resp_h,id.resp_p
 ```
-<!-- 
-These don't yet work with Zeek TSV
+
+If your logs don't have headers (or you just prefer not to use them) you can specify field indexes instead.
+
+```bash
 chop 6,7
 chop 6 7
+# a range will also work
 chop 6-7
--->
-
+```
 
 {{% notice tip %}}
-`chop` lets you specify fields with spaces, commas, or both!
+`chop` lets you specify fields with spaces, commas, or mix-and-match!
 {{% /notice %}}
 
 Now let's say you want to do the same thing (pull out the destination IPs and ports) but this time from a Zeek JSON file.
@@ -75,7 +79,7 @@ mlr --json cut -f id.resp_h,id.resp_p
 Since JSON objects are sparse and un-ordered it doesn't make sense to specify a field by its numerical index.
 {{% /notice %}}
 
-Unless you're using `zq` you've already had to dust off a new tool and learn/remember its syntax. `chop` lets you use the same simple syntax you've already learned.
+Unless you were using `zq` you've already had to dust off a new tool and learn/remember its syntax. `chop` lets you use the same simple syntax you've already learned.
 
 ```bash
 chop id.resp_h id.resp_p
@@ -91,16 +95,12 @@ xsv select 1,3
 mlr --csv cut -f src,dst
 ```
 
-That's not *too* bad. But you still have unnecessary command switches and boilerplate.
+That's not *too* bad. But you still have unnecessary command switches and boilerplate compared to `chop`.
 
 ```bash
 chop src dst
 chop 1,3
 ```
-
-{{% notice tip %}}
-`chop` lets you use numerical indexes in CSV/TSV files (e.g. `1,3` or `1-5`).
-{{% /notice %}}
 
 And what if those `src` and `dst` columns were whitespace separated?
 
@@ -120,6 +120,6 @@ chop 1,3
 
 Before `chop`, each scenario would require you to reach for a different tool and then figure out the syntax or transformations to get it working with your data. In the end, you'd have a command that's cumbersome to type and unlikely to be used as-is for another log format.
 
-{{% notice info %}}
-`chop` does not yet support specifying a custom delimeter. For example, if your data is `|` separated you'll have to reach for `cut -d'|'` for now.
+{{% notice tip %}}
+Just like with other tools, you can specify a custom single character as a delimeter with `chop`. E.g. `chop -d'|'` or `chop -d':'`.
 {{% /notice %}}

@@ -1,5 +1,8 @@
 ---
 title: "Filter"
+description: |
+  Parallel searching for IPs, domains, or regexes across [un]compressed logs. 
+  Plus special features for Zeek logs.
 date: 2021-04-28T08:48:04-05:00
 draft: false
 ---
@@ -8,24 +11,25 @@ draft: false
 
 The `filter` script is tailored for searching IP addresses and domains in Zeek logs. However, it is flexible enough that it can be used for other purpsoses as well. 
 
-`filter` has several special features. By default, it:
+`filter` has several special features. Most of these behaviors can be changed with flags, but by default it:
 - Searches in the current directory tree for any `conn.log` files, including compressed files and rotated logs.
 - Searches files in parallel using multiple cores.
 - Uses faster alternatives to `grep` like [ripgrep](https://github.com/BurntSushi/ripgrep) or [ugrep](https://github.com/Genivia/ugrep), when available.
 - Keeps Zeek TSV headers intact so that tools like `zeek-cut` can be used on the results.
 - Requires all search terms to be found in the same line to cut down on piping to repeated searches.
 - Escapes periods in search terms to prevent `10.0.1.0` from matching `10.0.100` or `google.com` from matching `google1com.com`.
-- Adds boundaries around the search term to prevent `192.168.1` from matching `192.168.100.50` or `google.com` from matching `fakegoogle.com`.
+- Adds boundaries around the search term to prevent `google.com` from matching `fakegoogle.com`.
 
 ## Usage
 
 ```txt
 filter [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPTIONS]]
 
-    --<logtype>         is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
-    -d|--dir <dirglob>  will search logs in <dirglob> instead of current directory
+    Specify one or more [search_terms] to search either STDIN or log files. If you don't specify any search terms, all lines will be printed.
 
-    Specify one or more [search_terms] to filter either STDIN or log files. If you don't specify any search terms, all lines will be printed.
+    --<logtype>         is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
+    -|--stdin           reads filenames to search from stdin instead
+    -d|--dir <dirglob>  will search logs in <dirglob> instead of current directory
     
     Lines must match all search terms by default.
     --or       at least one search term is required to appear in a line (as opposed to all terms matching)
@@ -48,7 +52,6 @@ filter [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPTIONS]]
     --ug          force use of ugrep
     --zgrep       force use of zgrep
     --cat         force use of cat (useful for testing)
-    --grepcidr    force use of grepcidr
 
     Any arguments given after -- will be passed to the underlying search command.
 ```
@@ -68,12 +71,14 @@ Let's look at what it would take to do this without using `filter`. A first atte
 cat conn.*log | fgrep 192.168.1.1
 # or
 zcat conn.*log.gz | fgrep 192.168.1.1
+# or
+zfgrep 192.168.1.1 conn.*log*
 ```
 
 However, this has multiple issues:
-- It is cumbersome to search both plaintext and gzip logs at once.
+- It is somewhat cumbersome to search both plaintext and gzip logs at once.
 - Zeek TSV headers are stripped which means no piping to `zeek-cut`.
-- `grep` doesn't make use of multiple cores, increasing the search time.
+- `grep` doesn't make use of multiple cores which increases the search time.
 - Logs in subdirectories are not searched.
 - Search will match `192.168.1.10`, `192.168.1.19`, `192.168.1.100`, etc.
 
@@ -217,13 +222,42 @@ Summary
    17.45 ± 2.09 times faster than 'cat-then-select'
 ```
 
-## Gotchas
+## Advanced Usage
+
+### Dry Run
+
+Sometimes it can be detrimental for a tool to hide the implementation details, especially when you're unsure where an error lies. You can double-check the command that `filter` will run by using the `-n` or `--dry-run` flag. This will print out the command `filter` would have run without the flag.
+
+```bash
+$ filter --dry-run 1.1.1.1  
+ug --no-filename --decompress --bool '^# OR (\b1\.1\.1\.1\b)' ./conn.log | grep -v '^#'
+```
+
+{{% notice tip %}}
+Another use of the `--dry-run` flag is as a command builder. Have `filter` output the complex command and you can use that as a starting place for further tweaking.
+{{% /notice %}} 
+
+You can also force `filter` to use a certain `grep` utility with a flag. See `--help` for all options.
+
+```bash
+$ filter --grep --dry-run 1.1.1.1
+echo ./conn.log | xargs -n 1 -P 12 zgrep -e '^#' -e '\b1\.1\.1\.1\b' | grep -v '^#'
+```
+
+{{% notice note %}}
+Notice the `grep -v '^#` on the end of the commands printed above. If `filter` detects it is printing to a terminal it will remove lines beginning with `#`. To disable this behavior you just need to pipe to another program, such as `cat`. e.g. `filter --dry-run 1.1.1.1 | cat`
+{{% /notice %}} 
+
+### Anchoring
+
+If you are searching for a partial IP address (e.g. "192.168") or a partial domain (e.g. "google.com") you may still get unintended matches. You can control this behavior with the `--starts-with` and `--ends-with` flags. 
 
 ```bash
 # this will also match 10.10.192.168 or 10.192.168.10, etc.
 filter 192.168
 # do this instead
 filter --starts-with 192.168
+filter -s 192.168
 ```
 
 ```bash
@@ -231,9 +265,21 @@ filter --starts-with 192.168
 filter --http google.com
 # do this instead
 filter --http --ends-with google.com
+filter --http -e google.com
 ```
 
-## Alternatives
+### Search Custom Files
+
+Sometimes `filter`'s default file finding behavior doesn't fit the situation. In this case, you can instead pass filenames to search in on stdin using either `-` or the `--stdin` flag. The recommended method is to combine this with the `fd` command.
+
+```bash
+fd conn 2021-06-* | filter - 1.1.1.1
+fd http 2021-{01..06}-{01-31} | filter - google.com
+```
+
+## Related Tools
+
+Here are some related tools that may be useful if `filter` doesn't fit your use case.
 
 - [grepwide](https://github.com/markjx/search2018)
 - [ripgrep](https://github.com/BurntSushi/ripgrep)
@@ -245,6 +291,6 @@ filter --http --ends-with google.com
 Q: Why use `filter` over tools like `awk`, `grep`, `jq`, [`zq`](https://github.com/brimdata/zed/blob/main/cmd/zed/README.md#zq), etc.? 
 
 A: `filter` complements or enhances many of these tools. 
-- For instance, using a regex search tool is nearly always faster than using `awk`, `zq`, or `jq` to perform equality testing. 
+- For instance, using a regex search tool is nearly always faster than using `awk`, `zq`, or `jq` to match a line. 
 - By assuming a specific use case (searching Zeek logs for things like IP addresses) `filter` can automate a bunch of boilerplate like escaping periods in regexes, passing through Zeek headers, and recursively searching compressed files of one log type.
 - `grep` on its own does not utilize parallel processing. This means either replacing it with an alternative or remembering the correct syntax to combine it with something like `parallel` or `xargs`.
