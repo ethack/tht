@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Apply remainder of arguments as a command to the column specified in the first argument
+
+# Based on:
+# https://github.com/jeroenjanssens/dsutils/blob/master/cols
+
+COLUMNS="$1"
+shift
+EXPR="$@"
+
+finish() {
+	rm -f $OTHER_COLUMNS
+}
+trap finish EXIT
+
+if [ -z "$TMPDIR" ]; then
+    TMPDIR=/tmp
+fi
+OTHER_COLUMNS=$(mktemp)
+
+tee $OTHER_COLUMNS | xsv select -d $'\t' "$COLUMNS" | eval ${EXPR} | paste - <(xsv select -d $'\t' "!$COLUMNS" $OTHER_COLUMNS)
+#tee $OTHER_COLUMNS | tsv-select --header --fields "$COLUMNS" | eval ${EXPR} | paste - <(tsv-select --header --exclude "$COLUMNS" $OTHER_COLUMNS)
+
+# TODO
+# make this work on csv, tsv, and generic whitespace delimited
+# keep original column ordering
