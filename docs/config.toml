@@ -3,7 +3,7 @@ languageCode = "en-us"
 defaultContentLanguage = "en"
 
 title = "Threat Hunting Toolkit"
-theme = "hugo-theme-learn"
+theme = "hugo-theme-relearn"
 
 pluralizeListTitles = false
 
@@ -11,7 +11,7 @@ pluralizeListTitles = false
   # Prefix URL to edit current page. Will display an "Edit this page" button on top right hand corner of every page.
   #editURL = "https://github.com/ethack/tht/edit/master/docs/content/"
   # Author of the site, will be used in meta information
-  author = "Ethan Robish & Derek Banks"
+  author = "Ethan Robish"
   # Description of the site, will be used in meta information
   description = "Threat Hunting Toolkit"
   # Shows a checkmark for visited pages on the menu
@@ -29,7 +29,7 @@ pluralizeListTitles = false
   # It is redirecting to the landing page of the current language if specified. (Default is "/")
   #disableLandingPageButton = true
   # When using mulitlingual website, disable the switch language button.
-  disableLanguageSwitchingButton = false
+  disableLanguageSwitchingButton = true
   # Hide breadcrumbs in the header and only show the current page title
   disableBreadcrumb = false
   # Hide Next and Previous page buttons normally displayed full height beside content

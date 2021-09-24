@@ -10,3 +10,6 @@
 [submodule "test/helper/bats-assert"]
 	path = test/helper/bats-assert
 	url = https://github.com/bats-core/bats-assert.git
+[submodule "docs/themes/hugo-theme-relearn"]
+	path = docs/themes/hugo-theme-relearn
+	url = https://github.com/McShelby/hugo-theme-relearn
