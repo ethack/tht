@@ -1,0 +1,2 @@
+# prevent fd conn from returning conn-summary logs, which almost never the intention
+**/conn-summary*

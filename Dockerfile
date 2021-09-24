@@ -302,7 +302,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY zsh/.vimrc /root/
     COPY zsh/.zshrc /root/
     COPY zsh/.zlogout /root/
-    COPY zsh/.p10k.zsh /root/
+    # COPY zsh/.p10k.zsh /root/
+    COPY zsh/.config/fd/ignore /root/.config/fd/ignore
     
     # zinit - plugin manager for zsh
     # svn required for some zinit functions
