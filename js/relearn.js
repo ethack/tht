@@ -98,11 +98,106 @@ function restoreTabSelections() {
     }
 }
 
+function initMermaid() {
+    $('code.language-mermaid').each(function(index, element) {
+        var content = $(element).html().replace(/&amp;/g, '&');
+        $(element).parent().replaceWith('<div class="mermaid" align="center">' + content + '</div>');
+    });
+
+    if (typeof mermaid != 'undefined') {
+        mermaid.mermaidAPI.initialize( Object.assign( {}, mermaid.mermaidAPI.getSiteConfig(), { startOnLoad: true } ) );
+        mermaid.contentLoaded();
+        $(".mermaid svg").svgPanZoom({})
+    }
+}
+
+function scrollToActiveMenu() {
+    window.setTimeout(function(){
+        var e = $("#sidebar ul.topics li.active")[0];
+        if( e && e.scrollIntoView ){
+            e.scrollIntoView({
+                block: 'center',
+            });
+        }
+    }, 200);
+}
+
+// Get Parameters from some url
+var getUrlParameter = function getUrlParameter(sPageURL) {
+    var url = sPageURL.split('?');
+    var obj = {};
+    if (url.length == 2) {
+      var sURLVariables = url[1].split('&'),
+          sParameterName,
+          i;
+      for (i = 0; i < sURLVariables.length; i++) {
+          sParameterName = sURLVariables[i].split('=');
+          obj[sParameterName[0]] = sParameterName[1];
+      }
+    }
+    return obj;
+};
+
+// Execute actions on images generated from Markdown pages
+var images = $("main#body-inner img").not(".inline");
+// Wrap image inside a featherlight (to get a full size view in a popup)
+images.wrap(function(){
+    var image =$(this);
+    var o = getUrlParameter(image[0].src);
+    var f = o['featherlight'];
+    // IF featherlight is false, do not use feather light
+    if (f != 'false') {
+        if (!image.parent("a").length) {
+            return "<a href='" + image[0].src + "' data-featherlight='image'></a>";
+        }
+    }
+});
+
+// Change styles, depending on parameters set to the image
+images.each(function(index){
+    var image = $(this)
+    var o = getUrlParameter(image[0].src);
+    if (typeof o !== "undefined") {
+        var h = o["height"];
+        var w = o["width"];
+        var c = o["classes"];
+        image.css("width", function() {
+            if (typeof w !== "undefined") {
+                return w;
+            } else {
+                return "auto";
+            }
+        });
+        image.css("height", function() {
+            if (typeof h !== "undefined") {
+                return h;
+            } else {
+                return "auto";
+            }
+        });
+        if (typeof c !== "undefined") {
+            var classes = c.split(',');
+            for (i = 0; i < classes.length; i++) {
+                image.addClass(classes[i]);
+            }
+        }
+    }
+});
+
 // for the window resize
 $(window).resize(function() {
     setMenuHeight();
 });
-
+// for the sticky header
+$(window).scroll(function() {
+    // add shadow when not in top position
+    if ($(this).scrollTop() == 0) {
+        $('#top-bar').removeClass("is-sticky");
+    }
+    else {
+        $('#top-bar').addClass("is-sticky");
+    }
+});
 // debouncing function from John Hann
 // http://unscriptable.com/index.php/2009/03/20/debouncing-javascript-methods/
 (function($, sr) {
@@ -132,9 +227,10 @@ $(window).resize(function() {
 
 })(jQuery, 'smartresize');
 
-
-jQuery(document).ready(function() {
+jQuery(function() {
     restoreTabSelections();
+    initMermaid();
+    scrollToActiveMenu();
 
     jQuery('#sidebar .category-icon').on('click', function() {
         $( this ).toggleClass("fa-angle-down fa-angle-right") ;
@@ -189,18 +285,22 @@ jQuery(document).ready(function() {
             $('ul.topics').removeClass('searched');
             items.css('display', 'block');
             sessionStorage.removeItem('search-value');
+            $("mark").parents(".expand-marked").removeClass("expand-marked");
             $(".highlightable").unhighlight({ element: 'mark' })
             return;
         }
 
         sessionStorage.setItem('search-value', value);
+        $("mark").parents(".expand-marked").removeClass("expand-marked");
         $(".highlightable").unhighlight({ element: 'mark' }).highlight(value, { element: 'mark' });
+        $("mark").parents(".expand").addClass("expand-marked");
 
         if (ajax && ajax.abort) ajax.abort();
 
         jQuery('[data-search-clear]').on('click', function() {
             jQuery('[data-search-input]').val('').trigger('input');
             sessionStorage.removeItem('search-input');
+            $("mark").parents(".expand-marked").removeClass("expand-marked");
             $(".highlightable").unhighlight({ element: 'mark' })
         });
     });
@@ -225,6 +325,9 @@ jQuery(document).ready(function() {
             }
         }
     }
+
+    $(".highlightable").highlight(sessionStorage.getItem('search-value'), { element: 'mark' });
+    $("mark").parents(".expand").addClass("expand-marked");
 
     // clipboard
     var clipInit = false;
@@ -259,6 +362,7 @@ jQuery(document).ready(function() {
                 clipInit = true;
             }
 
+            code.addClass('copy-to-clipboard-inline');
             code.after('<span class="copy-to-clipboard" title="Copy to clipboard" />');
             code.next('.copy-to-clipboard').on('mouseleave', function() {
                 $(this).attr('aria-label', null).removeClass('tooltipped tooltipped-s tooltipped-w');
@@ -400,30 +504,47 @@ jQuery(document).ready(function() {
         $(document).ready($.proxy(anchorScrolls, 'init'));
     })(window.document, window.history, window.location);
 
-});
+    // Add link button for every
+    var text, clip = new ClipboardJS('.anchor');
+    $("h1~h2,h1~h3,h1~h4,h1~h5,h1~h6").append(function(index, html){
+        var element = $(this);
+        var url = encodeURI(document.location.origin + document.location.pathname);
+        var link = url + "#"+element[0].id;
+        return " <span class='anchor' data-clipboard-text='"+link+"'>" +
+            "<i class='fas fa-link fa-lg'></i>" +
+            "</span>"
+        ;
+    });
 
-jQuery(window).on('load', function() {
-    // store this page in session
+    $(".anchor").on('mouseleave', function(e) {
+        $(this).attr('aria-label', null).removeClass('tooltipped tooltipped-s tooltipped-w');
+    });
+
+    clip.on('success', function(e) {
+            e.clearSelection();
+            $(e.trigger).attr('aria-label', 'Link copied to clipboard!').addClass('tooltipped tooltipped-s');
+    });
+
+    $('a[rel="lightbox"]').featherlight({
+        root: 'div#body'
+    });
+
     sessionStorage.setItem(jQuery('body').data('url'), 1);
 
     // loop through the sessionStorage and see if something should be marked as visited
     for (var url in sessionStorage) {
-        if (sessionStorage.getItem(url) == 1) jQuery('[data-nav-id="' + url + '"]').addClass('visited');
+        if (sessionStorage.getItem(url) == 1){
+            // in case we have `relativeURLs=true` we have to strip the
+            // relative path to root
+            url = url.replace( /\.\.\//g, '/' ).replace( /^\/+\//, '/' );
+            jQuery('[data-nav-id="' + url + '"]').addClass('visited');
+        }
     }
-
-
-    $(".highlightable").highlight(sessionStorage.getItem('search-value'), { element: 'mark' });
-});
-
-$(function() {
-    $('a[rel="lightbox"]').featherlight({
-        root: 'section#body'
-    });
 });
 
 jQuery.extend({
     highlight: function(node, re, nodeName, className) {
-        if (node.nodeType === 3) {
+        if (node.nodeType === 3 && node.parentElement && node.parentElement.namespaceURI == 'http://www.w3.org/1999/xhtml') { // text nodes
             var match = node.data.match(re);
             if (match) {
                 var highlight = document.createElement(nodeName || 'span');
