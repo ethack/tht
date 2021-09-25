@@ -13,23 +13,44 @@ if [ ! -w "/var/run/docker.sock" ]; then
     DOCKER="sudo --preserve-env docker"	
 fi
 
+usage() {
+    cat <<EOF
+Usage: tht [update|pull|version|dev] [run <arg>] [-- [<args>]]
+
+Run tht without arguments for normal use.
+
+    update   Download the latest THT image and update the script before running.
+    pull     Download the latest THT image before running (don't update this script).
+    version  Print the THT version.
+    dev      Start THT in dev mode. For development purposes only.
+
+    run      Run either the script from stdin or following argument inside THT.
+    --       Any arguments after the -- are run inside THT in _interactive_ mode.
+
+EOF
+}
+
 docker_cmd=(
-    "container" "run"
-    "--rm"
-    "--hostname" "$(hostname)"
-    "--init"
-    "--pid" "host"
-    "--env" "TERM=${TERM}"
-    "--mount" "source=/etc/localtime,destination=/etc/localtime,type=bind"
-    "--mount" "source=/var/run/docker.sock,destination=/var/run/docker.sock,type=bind"
-    "--mount" "source=/,destination=/host,type=bind"
+    container run
+    --rm
+    --hostname "$(hostname)"
+    --init
+    --pid host
+    --env "TERM=${TERM}"
+    --mount source=/etc/localtime,destination=/etc/localtime,type=bind
+    --mount source=/,destination=/host,type=bind
     # resolve the current path in case it's in a symlinked directory 
-    "--workdir" "/host/$(realpath "${PWD}")"
+    --workdir "/host/$(realpath "${PWD}")"
+    --add-host host.docker.internal:host-gateway
 )
 CMD=()
 BACKGROUNDJOB=false
 while [ $# -gt 0 ]; do
     case $1 in
+    help|-h|--help)
+        usage
+        exit 0
+    ;;
     update)
         echo "Downloading latest THT image..."
         $DOCKER pull $IMAGE
@@ -43,7 +64,7 @@ while [ $# -gt 0 ]; do
         shift
         exec "$0" "$@"
     ;;
-    pull|--pull)
+    pull)
         echo "Downloading latest THT image..."
         $DOCKER pull $IMAGE
         SUDO=
