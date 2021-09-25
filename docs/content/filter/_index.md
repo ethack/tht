@@ -8,3 +8,8 @@ chapter: true
 Here is an overview of the pages in this category:
 
 {{% children description="true" %}}
+
+- `ug` - Ugrep
+- `rg` - Ripgrep
+- `grepcidr`
+- `json-cut` - Like `zeek-cut` but for JSON logs.

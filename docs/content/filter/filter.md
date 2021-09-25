@@ -150,12 +150,14 @@ filter -d 2021-06-29 1.1.1.1
 # globbing and bash brace expansion work as well (note: you'll need quotes around the argument)
 filter -d '2021-06-*' 1.1.1.1
 filter -d '2021-06-{01..15}' 1.1.1.1
+filter -d '2021-06-01' --dns 1.1.1.1
 ```
 
-If you need to get even more granular in the files that `filter` searches you can pass them in on stdin by specifying `-`.
+If you need to get even more granular in the files that `filter` searches you can pass them in on stdin by specifying `-`. The recommended method is to combine this with the `fd` command.
 
 ```bash
-find . -name 'unknown*.log' | filter - 1.1.1.1
+fd conn 2021-06-* | filter - 1.1.1.1
+fd http 2021-{01..06}-{01-31} | filter - google.com
 ```
 
 ## Performance
@@ -267,16 +269,6 @@ filter --http google.com
 filter --http --ends-with google.com
 filter --http -e google.com
 ```
-
-### Search Custom Files
-
-Sometimes `filter`'s default file finding behavior doesn't fit the situation. In this case, you can instead pass filenames to search in on stdin using either `-` or the `--stdin` flag. The recommended method is to combine this with the `fd` command.
-
-```bash
-fd conn 2021-06-* | filter - 1.1.1.1
-fd http 2021-{01..06}-{01-31} | filter - google.com
-```
-
 ## Related Tools
 
 Here are some related tools that may be useful if `filter` doesn't fit your use case.

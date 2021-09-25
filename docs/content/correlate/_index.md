@@ -3,11 +3,13 @@ title: "Correlate"
 date: 2021-05-29T11:07:27-05:00
 weight: 40
 chapter: true
-draft: true
 ---
 
-### Chapter X
+Here is an overview of the pages in this category:
 
-# Some Chapter title
+<!-- {{% children description="true" %}} -->
 
-Lorem Ipsum.
+- `zannotate`
+- `dog`
+- `mtr`
+- `whois`
