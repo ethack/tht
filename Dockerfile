@@ -9,7 +9,7 @@ FROM golang:buster as go-builder
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
 
-    RUN go install github.com/zmap/zannotate/cmd/zannotate@aae45de181c591172b9403d0d8d1984f9f71664e
+    RUN go install github.com/zmap/zannotate/cmd/zannotate@latest
     # RUN go install github.com/brimdata/zed/cmd/zq@v0.29.0
     RUN go install github.com/JustinAzoff/json-cut@latest
     # Help find the path to the data you want
