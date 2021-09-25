@@ -9,15 +9,15 @@ FROM golang:buster as go-builder
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
 
-    RUN go get -v -u github.com/zmap/zannotate/cmd/zannotate
-    # RUN go get -v -u github.com/brimdata/zed/cmd/zq
-    RUN go get -v -u github.com/JustinAzoff/json-cut
+    RUN go install github.com/zmap/zannotate/cmd/zannotate@aae45de181c591172b9403d0d8d1984f9f71664e
+    # RUN go install github.com/brimdata/zed/cmd/zq@v0.29.0
+    RUN go install github.com/JustinAzoff/json-cut@latest
     # Help find the path to the data you want
-    RUN go get -v -u github.com/tomnomnom/gron
+    RUN go install github.com/tomnomnom/gron@latest
     # zeek passive dns
-    RUN go get -v github.com/JustinAzoff/bro-pdns
+    RUN go get -v github.com/JustinAzoff/bro-pdns@latest
     # pxl - image viewer
-    RUN go get -v -u github.com/ichinaski/pxl
+    RUN go install github.com/ichinaski/pxl@latest
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
