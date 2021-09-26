@@ -15,7 +15,7 @@ FROM golang:buster as go-builder
     # Help find the path to the data you want
     RUN go install github.com/tomnomnom/gron@latest
     # zeek passive dns
-    RUN go get -v github.com/JustinAzoff/bro-pdns@latest
+    RUN go install github.com/JustinAzoff/bro-pdns@latest
     # pxl - image viewer
     RUN go install github.com/ichinaski/pxl@latest
 
