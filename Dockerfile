@@ -20,7 +20,7 @@ FROM golang:buster as go-builder
     RUN go install github.com/ichinaski/pxl@latest
 
 # Rust Builder Stage #
-FROM rust:buster as rust-builder
+FROM rust:1.54.0-buster as rust-builder
     ARG RUST_BIN
 
     # Used for cache busting to grab latest version of tools
@@ -35,7 +35,7 @@ FROM rust:buster as rust-builder
     RUN cargo install fd-find
     RUN cargo install grex
     RUN cargo install hyperfine
-    RUN cargo install navi
+    # RUN cargo install navi
     RUN cargo install ripgrep
     RUN cargo install zoxide
     RUN cargo install bat
@@ -312,12 +312,13 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # https://github.com/zdharma/zinit/issues/484#issuecomment-785665617
     RUN TERM=${TERM:-screen-256color} zsh -isc "@zinit-scheduler burst"
 
-## Final cleanup ##
+## Cleanup ##
     RUN rm -rf /tmp/*
 
 # Squash layers #
 FROM ubuntu:21.04
-COPY --from=base / /
+## Squash all previous layers ##
+    COPY --from=base / /
 
 ## Local scripts ##
     COPY bin/* /usr/local/bin/

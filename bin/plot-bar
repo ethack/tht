@@ -2,6 +2,8 @@
 from sys import argv, stdin
 import plotext as plt
 
+# TODO: make a help output
+
 xlabel = None
 if len(argv) > 1:
   xlabel = argv[1]
@@ -20,10 +22,15 @@ if len(argv) > 2:
     876 2021-06-26
 '''
 
-counts, things = zip(*[line.split() for line in stdin if line])
+counts, things = zip(*[(line.split()[0], ' '.join(line.split()[1:])) for line in stdin if line.strip()])
 
 plt.bar(list(things), list(map(int, counts)))
 plt.plotsize(100, 30)
 plt.xlabel(xlabel)
 plt.ylabel(ylabel)
 plt.show()
+
+
+# TODO: 
+# can't plot a single bar. get div by 0 error
+# https://github.com/piccolomo/plotext/pull/43
