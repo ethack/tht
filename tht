@@ -63,16 +63,14 @@ while [ $# -gt 0 ]; do
         shift
         exec "$0" "$@"
     ;;
-    pull)
+    pull|--pull)
         echo "Downloading latest THT image..."
         $DOCKER pull $IMAGE
         SUDO=
         if [ ! -w "$0" ]; then
             SUDO="sudo"
         fi
-        # Don't update the THT script
-        # echo "Self-updating THT script..."
-        # $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht -o "$0"
+        # note: don't update the THT script
         # run the updated script with the same parameters minus the one that triggered the update
         shift
         exec "$0" "$@"
