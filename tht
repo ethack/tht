@@ -41,7 +41,6 @@ docker_cmd=(
     --mount source=/,destination=/host,type=bind
     # resolve the current path in case it's in a symlinked directory 
     --workdir "/host/$(realpath "${PWD}")"
-    --add-host host.docker.internal:host-gateway
 )
 CMD=()
 BACKGROUNDJOB=false
