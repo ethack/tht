@@ -117,6 +117,6 @@ The [documentation](docs/content/) is licensed under the [CC BY-NC-SA 4.0 licens
 [mit-badge]: https://badgen.net/badge/license/MIT/green
 <!--[![CC BY-NC-SA 4.0 license][cc-badge]][cc-url]-->
 <!-- [cc-badge]: https://licensebuttons.net/l/by-nc-sa/4.0/80x15.png -->
-<!-- [cc-url]: https://creativecommons.org/licenses/by-nc-sa/4.0/ -->
+[cc-url]: https://creativecommons.org/licenses/by-nc-sa/4.0/
 <!-- [mit-badge]: https://img.shields.io/badge/License-MIT-blue.svg -->
 <!-- [cc-badge]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png -->
