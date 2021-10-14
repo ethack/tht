@@ -218,7 +218,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ### Zeek ###
     # bro-pdns - Passive DNS for Zeek logs
     COPY --from=go-builder $GO_BIN/bro-pdns $BIN
-    RUN bro-pdns completion zsh >$ZSH_COMPLETIONS/_bro-pdns
+    #RUN bro-pdns completion zsh >$ZSH_COMPLETIONS/_bro-pdns
 
     # zeek-cut
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
