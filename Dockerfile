@@ -9,18 +9,19 @@ FROM golang:buster as go-builder
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
 
-    RUN go install github.com/zmap/zannotate/cmd/zannotate@latest
+    RUN go install github.com/zmap/zannotate/cmd/zannotate@master
     # RUN go install github.com/brimdata/zed/cmd/zq@v0.29.0
-    RUN go install github.com/JustinAzoff/json-cut@latest
+    RUN go install github.com/JustinAzoff/json-cut@master
     # Help find the path to the data you want
-    RUN go install github.com/tomnomnom/gron@latest
+    RUN go install github.com/tomnomnom/gron@master
     # zeek passive dns
-    RUN go install github.com/JustinAzoff/bro-pdns@latest
+    RUN go install github.com/JustinAzoff/bro-pdns@main
     # pxl - image viewer
-    RUN go install github.com/ichinaski/pxl@latest
+    RUN go install github.com/ichinaski/pxl@master
 
 # Rust Builder Stage #
-FROM rust:1.54.0-buster as rust-builder
+FROM rust:buster as rust-builder
+# 1.54.0-
     ARG RUST_BIN
 
     # Used for cache busting to grab latest version of tools
