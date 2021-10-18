@@ -20,12 +20,12 @@ else
         email)  cmd+=(--rfc-email) ;;
         3339)   cmd+=(--rfc-3339=${2:-seconds}) ;;
         unix)   cmd+=("+%s") ;;
-        date|day|days|d)             cmd+=(--iso-8601=date) ;;
-        hour|hours|hr|h)             cmd+=(--iso-8601=hours) ;;
-        minute|minutes|min|m)        cmd+=(--iso-8601=minutes) ;;
-        second|seconds|sec|s)        cmd+=(--iso-8601=seconds) ;;
-        nanosecond|nanoseconds|ns)   cmd+=(--iso-8601=ns) ;;
-        *)      cmd+=($(echo "+$1" | sed -E 's/^[+]{2}/+/')) ;;  # treat argument as a custom date format string
+        date|day|days|d)             cmd+=("+%Y-%m-%d") ;;
+        hour|hours|hr|h)             cmd+=("+%Y-%m-%dT%H") ;;
+        minute|minutes|min|m)        cmd+=("+%Y-%m-%dT%H:%M") ;;
+        second|seconds|sec|s)        cmd+=("+%Y-%m-%dT%H:%M:%S") ;;
+        nanosecond|nanoseconds|ns)   cmd+=("+%Y-%m-%dT%H:%M:%S,%N") ;;
+        *)      cmd+=($(echo "+$1" | sed -E 's/^[+]{2}/+/')) ;;  # treat argument as a custom date format string (plus optional)
     esac
 fi
 
