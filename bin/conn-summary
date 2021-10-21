@@ -66,9 +66,12 @@ fi
 networks=$(mktemp)
 trap "rm -f \"$networks\"" EXIT
 cat << EOF > "$networks"
+# RFC 1918
 10.0.0.0/8
 172.16.0.0/12
 192.168.0.0/16
+# IPv6 Link-Local
+fe80::/10
 EOF
 args+=("--local-nets" "$networks")
 
