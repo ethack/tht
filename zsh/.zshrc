@@ -224,9 +224,12 @@ alias z2j=zeek2json
 # convert timestamps to human-readable by default
 alias zeek-cut="zeek-cut -U '%FT%TZ'"
 
-# fix home and end keys in some terminals
+# fix home and end keys in some terminals (e.g. PuTTY, MobaXterm)
 bindkey  "^[[1~"   beginning-of-line
 bindkey  "^[[4~"   end-of-line
+# MobaXterm
+bindkey  "^[[H"    beginning-of-line
+bindkey  "^[[F"    end-of-line
 
 ## ZSH Setup; must be last ##
 autoload -Uz compinit
