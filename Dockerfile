@@ -96,6 +96,12 @@ FROM ubuntu:21.04 as c-builder
      && git checkout $NQ_VERSION \
      && make all
 
+    # moreutils - https://joeyh.name/code/moreutils/
+    RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc git
+    RUN git clone git://git.joeyh.name/moreutils /tmp/moreutils \
+    && cd /tmp/moreutils \
+    && make isutf8 ifdata ifne pee sponge mispipe lckdo parallel errno
+
 # Package Installer Stage #
 FROM ubuntu:21.04 as base
 ARG GO_BIN
@@ -142,6 +148,13 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # hyperfine - command benchmarking; like time on steroids
     COPY --from=rust-builder $RUST_BIN/hyperfine $BIN
     RUN apt-get -y install less
+    # moreutils
+    COPY --from=c-builder /tmp/moreutils/chronic $BIN
+    COPY --from=c-builder /tmp/moreutils/combine $BIN
+    COPY --from=c-builder /tmp/moreutils/ifne $BIN
+    COPY --from=c-builder /tmp/moreutils/pee $BIN
+    COPY --from=c-builder /tmp/moreutils/sponge $BIN
+    COPY --from=c-builder /tmp/moreutils/zrun $BIN
     # navi - cheatsheet
     # COPY --from=rust-builder $RUST_BIN/navi $BIN
     # /root/.local/share/navi/
@@ -155,8 +168,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install pspg
     # pv - Pipeviewer
     RUN apt-get -y install pv
-    # rush - parallel alternative
-    #COPY --from=go-builder $GO_BIN/rush $BIN
     RUN apt-get -y install unzip
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
