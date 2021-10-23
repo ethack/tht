@@ -139,7 +139,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=rust-builder $RUST_BIN/fd $BIN
     RUN apt-get -y install file
     # fzf - fuzzy finder
-    ARG FZF_VERSION=0.27.2
+    ARG FZF_VERSION=0.27.3
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
      && tar -xz -f /tmp/fzf.tar.gz -C $BIN
     # htop - process monitor
