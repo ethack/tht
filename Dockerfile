@@ -11,7 +11,6 @@ FROM golang:buster as go-builder
 
     # https://golang.org/ref/mod#version-queries
     RUN go install github.com/zmap/zannotate/cmd/zannotate@master
-    # RUN go install github.com/brimdata/zed/cmd/zq@v0.29.0
     RUN go install github.com/JustinAzoff/json-cut@master
     # Help find the path to the data you want
     RUN go install github.com/tomnomnom/gron@master
@@ -237,11 +236,10 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
-    ARG ZQ_VERSION=0.29.0
-    RUN wget -nv -O /tmp/zq.zip https://github.com/brimdata/zq/releases/download/v${ZQ_VERSION}/zq-v${ZQ_VERSION}.linux-amd64.zip \
+    ARG ZQ_VERSION=0.31.0
+    RUN wget -nv -O /tmp/zq.zip https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.zip \
      && unzip -j -d /tmp/ /tmp/zq.zip \
      && mv /tmp/zq $BIN
-    # COPY --from=go-builder $GO_BIN/zq $BIN
 
     # trace-summary
     RUN apt-get -y install --no-install-recommends python3
