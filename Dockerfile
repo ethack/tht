@@ -9,6 +9,7 @@ FROM golang:buster as go-builder
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
 
+    # https://golang.org/ref/mod#version-queries
     RUN go install github.com/zmap/zannotate/cmd/zannotate@master
     # RUN go install github.com/brimdata/zed/cmd/zq@v0.29.0
     RUN go install github.com/JustinAzoff/json-cut@master
@@ -21,7 +22,6 @@ FROM golang:buster as go-builder
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
-# 1.54.0-
     ARG RUST_BIN
 
     # Used for cache busting to grab latest version of tools
@@ -143,8 +143,11 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=rust-builder $RUST_BIN/hyperfine $BIN
     RUN apt-get -y install less
     # navi - cheatsheet
-    #COPY --from=rust-builder $RUST_BIN/navi $BIN
+    # COPY --from=rust-builder $RUST_BIN/navi $BIN
     # /root/.local/share/navi/
+    ARG NAVI_VERSION=2.17.0
+    RUN wget -nv -O /tmp/navi.tar.gz https://github.com/denisidoro/navi/releases/download/v${NAVI_VERSION}/navi-v${NAVI_VERSION}-x86_64-unknown-linux-musl.tar.gz \
+     && tar -xzf /tmp/navi.tar.gz -C $BIN
     # nq
     COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
     #RUN apt-get -y install parallel
@@ -218,7 +221,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ### Zeek ###
     # bro-pdns - Passive DNS for Zeek logs
     COPY --from=go-builder $GO_BIN/bro-pdns $BIN
-    #RUN bro-pdns completion zsh >$ZSH_COMPLETIONS/_bro-pdns
 
     # zeek-cut
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
