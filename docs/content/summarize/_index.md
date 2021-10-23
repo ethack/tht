@@ -11,7 +11,7 @@ Here is an overview of the pages in this category:
 
 - `distinct` - Outputs unique lines.
 - `count` - Counts number of lines.
-- `countdistinct` - Counts unique lines.
-- `freq` - Displays the number of occurrences of each unique line.
+- `card` - Counts unique lines, printing the _cardinality_ of the data.
+- `freq` - Displays the number of occurrences, or _frequency_, of each unique line.
 - `mfo` - Most Frequent Occurrence. Like `freq` but sorted by most commonly occurring unique line. Optionally pass a number to truncate results.
 - `lfo` - Least Frequent Occurrence. Like `freq` but sorted by least commonly occurring unique line. Optionally pass a number to truncate results.

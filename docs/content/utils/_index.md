@@ -10,6 +10,7 @@ Here is an overview of the pages in this category:
 <!-- {{% children description="true" %}} -->
 
 - `domain` - Will truncate a full domain to a given number of subdomains (default 2).
+- `ts2` - Convert timestamps between different formats.
 - `dust` - File size analyzer.
 - `entr` - File change watcher.
 - `fd` - File finder. Like `find` but better.

@@ -262,3 +262,7 @@ These are all projects that work well together with THT.
 - [Metabase](https://github.com/metabase/metabase)
 - [ml-workspace](https://github.com/ml-tooling/ml-workspace)
 - [Data Science at the Command Line](https://www.datascienceatthecommandline.com/)
+
+## Further Resources
+
+- https://github.com/dbohdan/structured-text-tools
