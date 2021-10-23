@@ -1,0 +1,101 @@
+% timestamp
+
+# Convert timestamp to date
+chop ts | ts2
+
+# Convert timestamp column to date
+cols ts ts2
+
+# Convert timestamp column
+cols <column> ts2 <period>
+
+$ column: echo ts
+$ period: printf 'day\nhour\nminute\nsecond\nnanosecond\n'
+
+% plot
+@ timestamp
+
+# Bar graph of count per day
+chop ts | ts2 | freq | plot-bar Date
+
+# Bar graph of count per time period
+chop ts | ts2 <period> | freq | plot-bar <period>
+
+% zeek
+
+# Convert Zeek to regular TSV
+sed -e '0,/^#fields\t/s///' | grep -v '^#'
+
+% miller
+
+# Process Zeek TSV
+mlr -t --prepipe "sed '0,/^#fields\t/s///'" --skip-comments
+
+;TODO can't insert in the middle
+# Calculate PCR
+put '$orig_bytes == "-" {$orig_bytes=0}; $resp_bytes == "-" {$resp_bytes=0}' then \
+stats1 -a sum -f orig_bytes,resp_bytes -g id.orig_h,id.resp_h then \
+put '$pcr = ($orig_bytes_sum-$resp_bytes_sum)/($orig_bytes_sum+$resp_bytes_sum+0.01)'
+
+% zq
+;TODO can't insert in the middle
+
+# Filter outbound int->ext traffic
+local_orig = true and local_resp = false
+
+# Filter outbound int->ext traffic by cidr
+((id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and not (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+
+# Filter inbound ext->int traffic
+local_orig = false and local_resp = true
+
+# Filter inbound ext->int traffic by cidr
+(not (id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+
+# Exclude local int<->int traffic
+not (local_orig = true and local_resp = true)
+
+# Exclude local int<->int traffic by cidr
+not ((id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+
+# Exclude remote ext<->ext traffic
+not (local_orig = false and local_resp = false)
+
+# Exclude remote ext<->ext traffic by cidr
+not (not (id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and not (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+
+# Calculate PCR
+sum_orig=sum(orig_bytes:int64),sum_resp=sum(resp_bytes:int64) by src=id.orig_h,dst=id.resp_h | put pcr=(sum_orig-sum_resp)/(sum_orig+sum_resp+0.001)
+
+% filter
+
+# Extract IPs from file
+filter -p ipv4 -- -o | distinct
+
+# Find IPs connecting to domain
+filter --or $(filter --dns <domain> | chop answers | filter -p ipv4 -- -o | distinct) | chop id.orig_h | mfo
+
+% ips, cidr
+;TODO can't insert in the middle
+
+# IPv4 private ranges RFC1918 
+<rfc1918>
+
+$ rfc1918: printf '192.168.0.0/16\n172.16.0.0/12\n10.0.0.0/8\n'
+
+# IPv4 carrier-grade NAT
+100.64.0.0/10
+
+# IPv4 link local
+169.254.0.0/16
+
+# IPv4 multicast
+224.0.0.0/4
+
+# IPv6 link local
+fe80::/10
+
+# IPv6 multicast
+ff00::/8
+
+;It might be nice to just have a straight up cheat sheet display in addition to what Navi can do. Something like cheat.sh or tldr

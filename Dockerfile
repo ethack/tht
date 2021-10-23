@@ -159,7 +159,9 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # /root/.local/share/navi/
     ARG NAVI_VERSION=2.17.0
     RUN wget -nv -O /tmp/navi.tar.gz https://github.com/denisidoro/navi/releases/download/v${NAVI_VERSION}/navi-v${NAVI_VERSION}-x86_64-unknown-linux-musl.tar.gz \
-     && tar -xzf /tmp/navi.tar.gz -C $BIN
+     && tar -xzf /tmp/navi.tar.gz -C $BIN \
+     && mkdir -p /root/.local/share/navi/cheats
+    COPY navi/* /root/.local/share/navi/cheats
     # nq
     COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
     #RUN apt-get -y install parallel
@@ -167,6 +169,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install pspg
     # pv - Pipeviewer
     RUN apt-get -y install pv
+    RUN apt-get -y install --no-install-recommends python3 \
+     && ln -s /usr/bin/python3 /usr/bin/python
     RUN apt-get -y install unzip
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
@@ -242,7 +246,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      && mv /tmp/zq $BIN
 
     # trace-summary
-    RUN apt-get -y install --no-install-recommends python3
     # install pysubnettree dependency
     RUN apt-get -y install python3-pip
     RUN python3 -m pip install pysubnettree
