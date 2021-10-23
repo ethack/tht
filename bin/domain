@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# split by domain level (default 2)
+
+rev | cut -d. -f1-${1:-2} | rev

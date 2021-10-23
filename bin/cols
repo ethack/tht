@@ -1,0 +1,35 @@
+#!/bin/bash
+
+# Apply remainder of arguments as a command to the column specified in the first argument
+
+# Based on:
+# https://github.com/jeroenjanssens/dsutils/blob/master/cols
+
+USER_COLS="$1"
+shift
+EXPR="$@"
+
+DATA=$(mktemp cols-XXXXXXXX)
+finish() {
+	rm -f $DATA
+}
+trap finish EXIT
+# write data to temp file
+# note: COLUMNS variable will get clobbered so don't use that as a name
+cat >$DATA
+
+# note: if you try to use a one-liner with tee and <() paste tries to acess the file before tee is finished writing
+# note: xsv select outputs as CSV; would need to convert to TSV in an extra command
+#tee $DATA | xsv select -d $'\t' "$USER_COLS" | eval ${EXPR} | paste - <(xsv select -d $'\t' "!$USER_COLS" $DATA)
+#tee $DATA | tsv-select --header --fields "$USER_COLS" | eval ${EXPR} | paste - <(tsv-select --header --exclude "$USER_COLS" $DATA)
+
+# when that is finished, continue on with processing the specified column(s)
+tsv-select --header --fields "$USER_COLS" $DATA | eval body ${EXPR} | paste - <(tsv-select --header --exclude "$USER_COLS" $DATA)
+
+# TODO
+# make this work on csv, tsv, and generic whitespace delimited
+# keep original column ordering
+# this is inefficient as it writes to a file (which is hopefully tmpfs in-memory) and processes the data twice
+
+# possible alternatives
+# https://github.com/greymd/teip

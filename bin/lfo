@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# least frequent occurrence (show all by default)
+
+# note: --buffer-size=2G is recommended here for allowing pipeline sort to be parallelized
+# https://github.com/eBay/tsv-utils/blob/master/docs/TipsAndTricks.md#set-the-buffer-size-for-reading-from-standard-input
+
+sort --buffer-size=2G | uniq -c | sort -n --buffer-size=2G | head --lines=${1:--0}
