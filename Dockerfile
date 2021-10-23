@@ -161,7 +161,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN wget -nv -O /tmp/navi.tar.gz https://github.com/denisidoro/navi/releases/download/v${NAVI_VERSION}/navi-v${NAVI_VERSION}-x86_64-unknown-linux-musl.tar.gz \
      && tar -xzf /tmp/navi.tar.gz -C $BIN \
      && mkdir -p /root/.local/share/navi/cheats
-    COPY navi/* /root/.local/share/navi/cheats
+    COPY cheatsheets/* /root/.local/share/navi/cheats
     # nq
     COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
     #RUN apt-get -y install parallel
