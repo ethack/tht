@@ -86,8 +86,12 @@ fi
 
 # note: all output is converted to tsv
 
+# line empty; cannot continue
+if [[ -z $LINE ]]; then
+    >&2 echo "No input detected! (make first line is not empty)"
+    exit 1
 # custom delimiter
-if [[ -n $customDelim ]]; then
+elif [[ -n $customDelim ]]; then
     stdin | xsv select -d "$customDelim" $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
 # zeek tsv
 elif match '^#'; then
@@ -96,6 +100,7 @@ elif match '^#'; then
 # ndjson
 elif match '^\{.*\}$'; then
     # note: output is tsv
+    # note: list fields will be like: ["one", "two", "three"]
     stdin | json-cut $spaceArgs
     # note: json-cut is several orders of magnitude faster than zq v0.29.0
     # note: json-cut doesn't have an option to preserve headers
@@ -114,7 +119,7 @@ fi
 # TODO
 # use tsv-utils instead of xsv if benchmark is faster
 # tsv-select supports -d
-
 # test jq for json
-
 # allow inverting columns with -v
+# parsing a suricata log or syslog will result in output being tab separated
+#   maybe have it preserve input, implement tsv script that converts input to tsv, already exists for json

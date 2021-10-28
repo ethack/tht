@@ -79,6 +79,10 @@ pipe() {
 	EOF
 }
 
+empty() {
+    echo
+}
+
 # Tests #
 @test "no arguments should print help" {
     command chop | grep -q 'Usage:'
@@ -255,4 +259,10 @@ two	five"
     assert_output "\
 re	so
 two	five"
+}
+
+## Empty
+@test "empty" {
+    run chop empty doesnotexist
+    assert_failure
 }
