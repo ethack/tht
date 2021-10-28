@@ -1,0 +1,13 @@
+style:
+  tag:
+    width_percentage: 20 # column width relative to the terminal window
+    min_width: 20        # minimum column width as number of characters
+  comment:
+    width_percentage: 40
+    min_width: 45
+  snippet:
+    width_percentage: 20
+    min_width: 25
+
+shell:
+  command: zsh
