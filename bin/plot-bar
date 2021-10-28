@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
-from sys import argv, stdin
+import sys
 import plotext as plt
 
 # TODO: make a help output
 
 xlabel = None
-if len(argv) > 1:
-  xlabel = argv[1]
+if len(sys.argv) > 1:
+  xlabel = sys.argv[1]
 
 ylabel = "Count"
-if len(argv) > 2:
-  ylabel = argv[2]
+if len(sys.argv) > 2:
+  ylabel = sys.argv[2]
 
-# Expects input like (e.g. from freq or uniq -c):
+# Expected input (e.g. from freq or uniq -c):
 '''
    7788 2021-06-21
    9966 2021-06-22
@@ -22,15 +22,27 @@ if len(argv) > 2:
     876 2021-06-26
 '''
 
-counts, things = zip(*[(line.split()[0], ' '.join(line.split()[1:])) for line in stdin if line.strip()])
+counts = []
+things = []
+for line in sys.stdin:
+  line = line.strip()
+  if line:
+    try:
+      parts = line.strip().split()
+      counts.append(int(parts[0]))
+      things.append(' '.join(parts[1:]))
+    except ValueError as e:
+      print('Skipping invalid data:', line, file=sys.stderr)
 
-plt.bar(list(things), list(map(int, counts)))
+if not counts:
+  print('No data to plot!', file=sys.stderr)
+  sys.exit(1)
+
+plt.bar(things, counts)
 plt.plotsize(100, 30)
 plt.xlabel(xlabel)
 plt.ylabel(ylabel)
 plt.show()
 
-
-# TODO: 
-# can't plot a single bar. get div by 0 error
-# https://github.com/piccolomo/plotext/pull/43
+# TODO
+# labels don't always extend to the last entry on the X-axis, which is very important as the extrema

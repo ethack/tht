@@ -162,6 +162,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      && tar -xzf /tmp/navi.tar.gz -C $BIN \
      && mkdir -p /root/.local/share/navi/cheats
     COPY cheatsheets/* /root/.local/share/navi/cheats
+    COPY zsh/.config/navi/config.yaml /root/.config/navi/config.yaml
     # nq
     COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
     #RUN apt-get -y install parallel
@@ -217,7 +218,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ### Graphing ###
     RUN apt-get install -y colortest
     RUN apt-get -y install python3-pip
-    RUN python3 -m pip install plotext
+    RUN python3 -m pip install git+https://github.com/piccolomo/plotext#egg=plotext
     COPY --from=go-builder $GO_BIN/pxl $BIN
 
     ### Grep ###
