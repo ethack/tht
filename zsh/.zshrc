@@ -107,6 +107,7 @@ fi
 
 if exists navi; then
   eval "$(navi widget zsh)"
+  function cht() { navi --print --cheatsh "$*" }
 fi
 
 if exists zannotate; then 
@@ -168,9 +169,6 @@ alias history="history 0"  # make history show all entries by default
 alias h="head"
 alias t="tail -f"
 
-# note: --version-sort works well on dates and IP addresses
-# note: --buffer-size=2G is recommended here for allowing pipeline sort to be parallelized
-# https://github.com/eBay/tsv-utils/blob/master/docs/TipsAndTricks.md#set-the-buffer-size-for-reading-from-standard-input
 # other names people might use instead
 alias cardinality=card
 alias countdistinct=card
