@@ -329,7 +329,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # zinit - plugin manager for zsh
     # svn required for some zinit functions
     RUN apt-get -y install subversion
-    RUN git clone https://github.com/zdharma/zinit.git /root/.zinit
+    RUN git clone https://github.com/zdharma-continuum/zinit.git /root/.zinit
     # https://github.com/zdharma/zinit/issues/484#issuecomment-785665617
     RUN TERM=${TERM:-screen-256color} zsh -isc "@zinit-scheduler burst"
 

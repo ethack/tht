@@ -60,7 +60,7 @@ if [ -f "$HOME/.zinit/zinit.zsh" ]; then
   zinit wait lucid depth=1 for \
     https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh \
     atinit"ZINIT[COMPINIT_OPTS]=-C; zicompinit; zicdreplay" \
-      zdharma/fast-syntax-highlighting \
+      zdharma-continuum/fast-syntax-highlighting \
     blockf \
       zsh-users/zsh-completions \
     svn \
@@ -144,7 +144,7 @@ if exists vim; then
   export EDITOR=vim
 fi
 
-if exists dog; then
+if exists dog && ! exists dig; then
   alias dig=dog
 fi
 
