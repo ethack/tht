@@ -35,12 +35,13 @@ FROM rust:buster as rust-builder
     RUN cargo install fd-find
     RUN cargo install grex
     RUN cargo install hyperfine
-    # RUN cargo install navi
     RUN cargo install ripgrep
     RUN cargo install zoxide
     RUN cargo install bat
     RUN cargo install xsv
     RUN cargo install du-dust --bin dust
+    # RUN cargo install navi
+    RUN cargo install tealdeer
 
 # C/C++ Builder Stage #
 FROM ubuntu:21.04 as c-builder
@@ -163,6 +164,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      && mkdir -p /root/.local/share/navi/cheats
     COPY cheatsheets/* /root/.local/share/navi/cheats
     COPY zsh/.config/navi/config.yaml /root/.config/navi/config.yaml
+    COPY --from=rust-builder $RUST_BIN/tldr $BIN/
     # nq
     COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
     #RUN apt-get -y install parallel
@@ -288,10 +290,13 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      || echo "Failed to download Maxmind ASN data. Skipping."
 
 ## Network Utils ##
-    # dog - dig replacement
+    # dog - dig alternative
     RUN apt-get -y install libc6 \
      && wget -nv -O $ZSH_COMPLETIONS/_dog https://raw.githubusercontent.com/ogham/dog/master/completions/dog.zsh
     COPY --from=rust-builder $RUST_BIN/dog $BIN
+    # dig
+    RUN apt-get -y install dnsutils
+    # traceroute alternative
     RUN apt-get -y install mtr
     RUN apt-get -y install netcat
     # ping
