@@ -97,10 +97,17 @@ FROM ubuntu:21.04 as c-builder
      && make all
 
     # moreutils - https://joeyh.name/code/moreutils/
-    RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc git
+    RUN apt-get update && apt-get -y install --no-install-recommends make gcc git
     RUN git clone git://git.joeyh.name/moreutils /tmp/moreutils \
     && cd /tmp/moreutils \
     && make isutf8 ifdata ifne pee sponge mispipe lckdo parallel errno
+
+    # boxes - https://boxes.thomasjensen.com/build.html
+    RUN apt-get update && apt-get -y install --no-install-recommends make gcc git diffutils flex bison libunistring-dev libpcre2-dev vim-common
+    ARG BOXES_VERSION=2.1.1
+    RUN git clone -b v$BOXES_VERSION --depth=1 https://github.com/ascii-boxes/boxes /tmp/boxes \
+    && cd /tmp/boxes \
+    && make && make test
 
 # Package Installer Stage #
 FROM ubuntu:21.04 as base
@@ -128,6 +135,10 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 ## System Utils ##
     # bat - fancy cat
     COPY --from=rust-builder $RUST_BIN/bat $BIN
+    # boxes
+    RUN apt-get -y install libunistring2 libpcre2-32-0
+    COPY --from=c-builder /tmp/boxes/out/boxes $BIN
+    RUN wget -nv -O /usr/share/boxes https://raw.githubusercontent.com/ascii-boxes/boxes/master/boxes-config
     # docker cli
     # COPY --from=docker:20.10 /usr/local/bin/docker $BIN
     # dust - du alternative
@@ -162,8 +173,9 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN wget -nv -O /tmp/navi.tar.gz https://github.com/denisidoro/navi/releases/download/v${NAVI_VERSION}/navi-v${NAVI_VERSION}-x86_64-unknown-linux-musl.tar.gz \
      && tar -xzf /tmp/navi.tar.gz -C $BIN \
      && mkdir -p /root/.local/share/navi/cheats
-    COPY cheatsheets/* /root/.local/share/navi/cheats
+    COPY cheatsheets/* /root/.local/share/navi/cheats/
     COPY zsh/.config/navi/config.yaml /root/.config/navi/config.yaml
+    # TODO: https://github.com/dbrgn/tealdeer/blob/master/zsh_tealdeer
     COPY --from=rust-builder $RUST_BIN/tldr $BIN/
     # nq
     COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/

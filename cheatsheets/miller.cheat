@@ -1,0 +1,36 @@
+% miller
+
+# Process TSV with headers
+mlr -t
+
+# Process TSV without headers
+mlr -t -N
+
+# Process Zeek TSV
+mlr -t --prepipe "sed '0,/^#fields\t/s///'" --skip-comments
+
+# Connection interval bar chart
+mlr -t --prepipe "sed '0,/^#fields\t/s///'" --skip-comments --headerless-csv-output \
+  cut -f ts then \
+  sort -n ts then \
+  put '$ts=int(round($ts))' then \
+  step -a delta -f ts then \
+  uniq -c -g ts_delta then \
+  sort -n ts_delta then \
+  reorder -f count |
+  plot-bar "Interval (s)"
+
+# Calculate bytes sent and received per hour
+mlr -t --prepipe "sed -e '0,/^#fields\t/s///' -e 's/\t-/\t0/g'" --skip-comments \
+  put '$ts = $ts // 3600 * 3600' then \
+  stats1 -a sum -f orig_bytes,resp_bytes -g <groupby>
+
+# Calculate PCR per hour
+mlr -t --prepipe "sed -e '0,/^#fields\t/s///' -e 's/\t-/\t0/g'" --skip-comments \
+; put '$orig_bytes == "-" {$orig_bytes=0}; $resp_bytes == "-" {$resp_bytes=0}' then \
+  put '$ts = $ts // 3600 * 3600' then \
+  stats1 -a sum -f orig_bytes,resp_bytes -g <groupby> then \
+  put '$pcr = ($orig_bytes_sum-$resp_bytes_sum)/($orig_bytes_sum+$resp_bytes_sum+0.01)'
+
+$ groupby: printf "id.orig_h\nid.orig_h,ts\nid.orig_h,id.resp_h\nid.orig_h,id.resp_h,ts\n"
+

@@ -1,0 +1,24 @@
+% ip, cidr, partial
+
+# IPv4 private ranges RFC1918 
+<rfc1918>
+
+$ rfc1918: printf '192.168.0.0/16\n172.16.0.0/12\n10.0.0.0/8\n'
+
+# IPv4 carrier-grade NAT
+100.64.0.0/10
+
+# IPv4 link local
+169.254.0.0/16
+
+# IPv4 multicast
+224.0.0.0/4
+
+# IPv6 link local
+fe80::/10
+
+# IPv6 multicast
+ff00::/8
+
+;It might be nice to just have a straight up cheat sheet display in addition to what Navi can do. Something like cheat.sh or tldr
+

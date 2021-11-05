@@ -1,0 +1,54 @@
+#!/bin/bash
+
+random_box() {
+    boxes=(
+        c
+        parchment
+        whirly
+        scroll
+        simple
+        c-cmt
+        c-cmt2
+        javadoc
+        html
+        html-cmt
+        shell
+        nuke
+        peek
+        ada-box
+        tex-box
+        cc
+        stone
+        lisp-cmt
+        underline
+        ian_jones
+        caml
+        f90-box
+        jstone
+        vim-box
+        cowsay
+        tux
+    )
+    shuf --echo "${boxes[@]}" | head -1
+}
+
+TIP_JAR="$HOME/.local/share/navi/cheats/"
+
+cat $TIP_JAR/*.cheat | 
+# separate all the cheats based on consecutive newlines and replace with NUL
+# https://stackoverflow.com/a/14853319
+awk 1 RS='\n\n' ORS='\0' | 
+# collect all the tips
+grep -z '#tip' | 
+# randomize the order
+shuf -z | 
+# get the first one
+head -z -n 1 |
+# print it with a trailing newline (sans NUL)
+xargs -0 |
+# wrap it up nicely
+# https://boxes.thomasjensen.com/examples.html#position
+boxes -a hlvcjl -p a1l2r2 -d $(random_box)
+
+# python one-liner alternative
+# cat cheat | python -c 'import re, sys, random; print(random.choice(list(filter(lambda cheat: "#tip" in cheat, re.split("\n\n", sys.stdin.read())))))'

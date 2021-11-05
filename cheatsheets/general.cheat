@@ -1,0 +1,8 @@
+% general
+
+# Skip first line or header row #tip
+tail -n+2
+
+# Read file line by line
+while IFS= read -r line; do echo "$line"; done < "<inputfile>"
+

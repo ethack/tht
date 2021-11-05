@@ -125,6 +125,10 @@ while [ $# -gt 0 ]; do
             # mount zsh configs for development
             docker_cmd+=("--mount" "source=${PWD}/${CONF},destination=/root/${CONF#"zsh"},type=bind")
         done < <(find zsh -type f -print0 2>/dev/null)
+        while IFS=  read -r -d $'\0' CHEAT; do
+            # mount navi cheats development
+            docker_cmd+=("--mount" "source=${PWD}/${CHEAT},destination=/root/.local/share/navi/cheats/${CHEAT#"cheatsheets"},type=bind")
+        done < <(find cheatsheets -type f -print0 2>/dev/null)
         docker_cmd+=("--mount" "source=${PWD}/test,destination=/usr/local/test,type=bind")
         popd >/dev/null
     ;;

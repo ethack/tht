@@ -1,0 +1,10 @@
+% cheat
+
+# Display a random #tip
+random-tip
+
+# Search local THT cheatsheets #tip
+Press ctrl-g
+
+# Search online cheatsheets #tip
+cht <topic>

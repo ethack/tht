@@ -1,0 +1,30 @@
+% zq, partial
+;TODO can't insert in the middle
+
+# Include outbound int->ext traffic
+local_orig == true and local_resp == false
+
+# Include outbound int->ext traffic by cidr
+((id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and not (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+
+# Include inbound ext->int traffic
+local_orig == false and local_resp == true
+
+# Include inbound ext->int traffic by cidr
+(not (id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+
+# Exclude local int<->int traffic
+not (local_orig == true and local_resp == true)
+
+# Exclude local int<->int traffic by cidr
+not ((id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+
+# Exclude remote ext<->ext traffic
+not (local_orig == false and local_resp == false)
+
+# Exclude remote ext<->ext traffic by cidr
+not (not (id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and not (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+
+# Calculate PCR
+sum_orig=sum(orig_bytes:int64),sum_resp=sum(resp_bytes:int64) by src=id.orig_h,dst=id.resp_h | put pcr=(sum_orig-sum_resp)/(sum_orig+sum_resp+0.001)
+

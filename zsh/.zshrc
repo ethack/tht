@@ -213,6 +213,9 @@ bindkey  "^[[4~"   end-of-line
 bindkey  "^[[H"    beginning-of-line
 bindkey  "^[[F"    end-of-line
 
+# display tip of the day
+random-tip
+
 ## ZSH Setup; must be last ##
 autoload -Uz compinit
 compinit
