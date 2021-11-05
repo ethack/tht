@@ -1,10 +1,19 @@
-% cheat
+% cheatsheet
 
 # Display a random #tip
 random-tip
 
-# Search local THT cheatsheets #tip
-Press ctrl-g
+# Search local THT cheatsheets and execute #tip
+navi
 
-# Search online cheatsheets #tip
+# Search online cheatsheets for topic #tip
 cht <topic>
+
+# Display cheatsheets for topic #tip
+tldr <topic>
+
+# Display local THT cheatsheets #tip
+bat -l bash /root/.local/share/navi/cheats/<topic>.cheat
+
+$ topic: fd . /root/.local/share/navi/cheats/ --extension cheat --exec echo {/.}
+

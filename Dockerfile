@@ -173,10 +173,12 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN wget -nv -O /tmp/navi.tar.gz https://github.com/denisidoro/navi/releases/download/v${NAVI_VERSION}/navi-v${NAVI_VERSION}-x86_64-unknown-linux-musl.tar.gz \
      && tar -xzf /tmp/navi.tar.gz -C $BIN \
      && mkdir -p /root/.local/share/navi/cheats
-    COPY cheatsheets/* /root/.local/share/navi/cheats/
     COPY zsh/.config/navi/config.yaml /root/.config/navi/config.yaml
-    # TODO: https://github.com/dbrgn/tealdeer/blob/master/zsh_tealdeer
+    # tealdeer - tldr client
     COPY --from=rust-builder $RUST_BIN/tldr $BIN/
+    COPY zsh/.config/tealdeer/config.toml /root/.config/tealdeer/config.toml
+    RUN mkdir -p /usr/share/zsh/site-functions/ \
+     && wget -nv -O /usr/share/zsh/site-functions/_tldr https://raw.githubusercontent.com/dbrgn/tealdeer/master/zsh_tealdeer
     # nq
     COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
     #RUN apt-get -y install parallel
@@ -353,8 +355,9 @@ FROM ubuntu:21.04
 ## Squash all previous layers ##
     COPY --from=base / /
 
-## Local scripts ##
+## Local files ##
     COPY bin/* /usr/local/bin/
+    COPY cheatsheets/* /root/.local/share/navi/cheats/
 
 ## Version info ##
     ARG THT_HASH=undefined

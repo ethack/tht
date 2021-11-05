@@ -16,10 +16,10 @@ $ period: printf 'day\nhour\nminute\nsecond\nnanosecond\n'
 % plot
 @ timestamp
 
-# Bar graph of count per day #tip
+# Show a bar graph of count per day #tip
 chop ts | ts2 | freq | plot-bar Date
 
-# Bar graph of count per time period
+# Show a bar graph of count per time period
 chop ts | ts2 <period> | freq | plot-bar <period>
 
 
@@ -36,6 +36,9 @@ z2j
 
 # Convert Zeek to Zeek TSV (alias) #tip
 z2z
+
+# Display Zeek logs in an scrollable table #tip
+zv
 
 # Convert Zeek to regular TSV
 sed -e '0,/^#fields\t/s///' | grep -v '^#'
@@ -55,7 +58,7 @@ filter -p ipv4 -- -o | distinct
 # Find IPs associated with a domain #tip
 filter --dns <domain> | chop answers | filter -p ipv4 -- -o | distinct
 
-# Find IPs connecting to domain #tip
+# Find IPs connecting to a domain #tip
 filter --or \
   -f <(filter --dns <domain> | chop answers | filter -p ipv4 -- -o | distinct) | 
   chop id.orig_h | distinct
@@ -93,13 +96,13 @@ lfo
 # Get the top 25 least frequent results #tip
 lfo 25
 
-# Number of distinct elements (cardinality); replaces `sort | uniq | wc -l`  #tip
+# Number of distinct elements (cardinality); replaces `sort | uniq | wc -l` #tip
 card
 
 # Find distinct elements; replaces `sort | uniq` #tip
 distinct
 
-# Strip subdomain from list of full domains #tip
+# Strip subdomains from list of domains #tip
 domain
 
 # Strip up to 3rd level domain from list of domains #tip

@@ -110,6 +110,11 @@ if exists navi; then
   function cht() { navi --print --cheatsh "$*" }
 fi
 
+if exists tldr; then
+  export TEALDEER_CACHE_DIR="$PERSISTENT/tealdear"
+  mkdir -p "$TEALDEER_CACHE_DIR"
+fi
+
 if exists zannotate; then 
   alias zannotate="zannotate --geoasn-database /usr/share/GeoIP/GeoLite2-ASN.mmdb --geoip2-database /usr/share/GeoIP/GeoLite2-Country.mmdb"
   alias za="zannotate"

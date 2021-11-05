@@ -20,5 +20,6 @@ fe80::/10
 # IPv6 multicast
 ff00::/8
 
-;It might be nice to just have a straight up cheat sheet display in addition to what Navi can do. Something like cheat.sh or tldr
+# See information about a network range #tip
+ipcalc <cidr>
 
