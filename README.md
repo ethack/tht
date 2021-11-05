@@ -1,5 +1,5 @@
 <h1 align="center">
-  THT &mdash; Threat Hunting Toolkit
+  Threat Hunting Toolkit
 </h1>
 
 <h4 align="center">
@@ -18,28 +18,28 @@ The Threat Hunting Toolkit (<span title="Think Happy Thoughts  (⌒‿⌒)">THT<
 
 ## Features
 
-**Easy to Install**
+🧰 **Easy to Install**
 
-- Small - Keep download size under 500 MB.
+- Small - Keep download size under 300 MB.
 - Portable - Works across a variety of systems thanks to Docker.
 
-**Fast to Learn**
+📖 **Fast to Learn**
 
-- Consistent - You get the same environment configuration on every system, which means you can have a familiar environment everywhere.
-- Format Agnostic - Use the same processes to work with a variety of data formats including Zeek, CSV, TSV, and JSON. Avoid swapping between similar tools with annoying syntax variations for different formats.
-- Remove Boilerplate - Remove the boilerplate for common use cases with the included custom scripts, shell functions, and aliases.
-- Documented - There are guides, examples, and documentation available to get started right away.
+- Consistent - Get the same configuration on every system, which means a familiar environment everywhere.
+- Format Agnostic - Avoid swapping between similar tools with annoying syntax variations for different formats including Zeek, CSV, TSV, and JSON.
+- Remove Boilerplate - Remove the boilerplate for common use cases with the included scripts, functions, and aliases.
+- Documented - There are [cheatsheets][cheat-url] and [documentation][docs-url] available to get started right away.
 
-**Fast to Run**
+🚀 **Fast to Run**
 
 - Optimized - Everything is benchmarked to find the fastest methods when there are several options.
 - Parallel - Many of the components take advantage of multiple CPU cores to process data in parallel.
 
-## Running
+## Usage
 
-The recommended method to run THT is with the wrapper script included in the repo.
+The recommended method is to use the `tht` wrapper script included in the repo.
 
-**Download and install**
+**Install**
 ```bash
 sudo curl -o /usr/local/bin/tht https://raw.githubusercontent.com/ethack/tht/main/tht && sudo chmod +x /usr/local/bin/tht
 ```
@@ -47,6 +47,11 @@ sudo curl -o /usr/local/bin/tht https://raw.githubusercontent.com/ethack/tht/mai
 **Run**
 ```bash
 tht
+```
+
+**Update**
+```bash
+tht update
 ```
 
 <details>
@@ -98,6 +103,7 @@ The [documentation](docs/content/) is licensed under the [CC BY-NC-SA 4.0 licens
 [github-url]: https://github.com/ethack/tht
 [docker-url]: https://hub.docker.com/r/ethack/tht
 [docs-url]: https://ethack.github.io/tht/
+[cheat-url]: https://github.com/ethack/tht/tree/main/cheatsheets
 
 <!-- [![GitHub][github-badge]][github-url] -->
 <!-- [![DockerHub][docker-badge]][docker-url] -->

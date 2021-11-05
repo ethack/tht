@@ -66,6 +66,8 @@ filter --or \
 # Summary of traffic between two systems #tip
 filter 10.0.0.1 8.8.8.8 | conn-summary
 
+# Find IPs going to a domain over HTTP or SSL #tip
+{ filter --ssl <domain> | chop id.orig_h ; filter --http <domain> | chop id.orig_h } | distinct
 
 % chop
 
@@ -96,7 +98,7 @@ lfo
 # Get the top 25 least frequent results #tip
 lfo 25
 
-# Number of distinct elements (cardinality); replaces `sort | uniq | wc -l` #tip
+# Number of distinct elements (`card`inality); replaces `sort | uniq | wc -l` #tip
 card
 
 # Find distinct elements; replaces `sort | uniq` #tip

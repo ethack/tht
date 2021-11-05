@@ -6,10 +6,11 @@ tail -n+2
 # Read file line by line
 while IFS= read -r line; do echo "$line"; done < "<inputfile>"
 
-# Navigate to a nested directory (e.g. /host/opt/zeek/logs) #tip
+# Go to a nested directory (e.g. /host/opt/zeek/logs) #tip
 g logs
 
-# Access host filesystem in /host directory #tip
+# Go to the host filesystem #tip
+g /host
 
 # Modern alternative to nano #tip
 micro

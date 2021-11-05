@@ -1,12 +1,10 @@
-% keyboard shortcut, shell
+# Press <ctrl-k> to cut text from cursor to end of line (shell) #tip
 
-# Press <ctrl-k> to cut text from cursor to end of line #tip
+# Press <ctrl-u> to cut the entire line (shell) #tip
 
-# Press <ctrl-u> to cut entire line #tip
+# Press <ctrl-y> to insert previously cut text (shell) #tip
 
-# Press <ctrl-y> to insert previously cut text #tip
+# Press <alt-.> to insert last argument from previous command (shell) #tip
 
-# Press <alt-.> to insert last argument from previous command #tip
-
-# Press <ctrl-g> to search local THT cheatsheets #tip
+# Press <ctrl-g> to search local THT cheatsheets (shell) #tip
 

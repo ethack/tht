@@ -23,6 +23,12 @@ Here is an overview of the pages in this category:
 - `header`
 - `dseq`
 - `ipcalc`
+- `chronic`
+- `combine`
+- `ifne`
+- `pee`
+- `sponge`
+- `zrun`
 
 ## Editors
 - `nano` - For those who have to have it.
