@@ -104,7 +104,7 @@ function initMermaid() {
         $(element).parent().replaceWith('<div class="mermaid" align="center">' + content + '</div>');
     });
 
-    if (typeof mermaid != 'undefined') {
+    if (typeof mermaid != 'undefined' && typeof mermaid.mermaidAPI != 'undefined') {
         mermaid.mermaidAPI.initialize( Object.assign( {}, mermaid.mermaidAPI.getSiteConfig(), { startOnLoad: true } ) );
         mermaid.contentLoaded();
         $(".mermaid svg").svgPanZoom({})
@@ -148,7 +148,8 @@ images.wrap(function(){
     // IF featherlight is false, do not use feather light
     if (f != 'false') {
         if (!image.parent("a").length) {
-            return "<a href='" + image[0].src + "' data-featherlight='image'></a>";
+            var html = $( "<a>" ).attr("href", image[0].src).attr("data-featherlight", "image").get(0).outerHTML;
+            return html;
         }
     }
 });
@@ -510,10 +511,8 @@ jQuery(function() {
         var element = $(this);
         var url = encodeURI(document.location.origin + document.location.pathname);
         var link = url + "#"+element[0].id;
-        return " <span class='anchor' data-clipboard-text='"+link+"'>" +
-            "<i class='fas fa-link fa-lg'></i>" +
-            "</span>"
-        ;
+        var html = " " + $( "<span>" ).addClass("anchor").attr("data-clipboard-text", link).append("<i class='fas fa-link fa-lg'></i>").get(0).outerHTML;
+        return html;
     });
 
     $(".anchor").on('mouseleave', function(e) {
