@@ -1,21 +1,40 @@
-# Enable Powerlevel10k instant prompt. Should stay close to the top of ~/.zshrc.
-# Initialization code that may require console input (password prompts, [y/n]
-# confirmations, etc.) must go above this block; everything else may go below.
-# if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
-#   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
-# fi
+# znap plugin manager
+zstyle ':znap:*' repos-dir $HOME/.zplugins
+source $HOME/.zplugins/zsh-snap/znap.zsh
 
-exists () {
-  command -v $1 >/dev/null 2>&1
-  #(( $+commands[$1] )) # this is zsh
-}
+# display tip of the day (must go before znap prompt)
+random-tip
 
-export PERSISTENT="/usr/local/share/zsh"
-mkdir -p "$PERSISTENT"
-
+# show prompt right away
 autoload -U colors && colors
 PS1="%{$fg[red]%}%n%{$reset_color%}@%{$fg[blue]%}%m %{$fg[yellow]%}%~ %{$reset_color%}
 $ "
+znap prompt
+
+# install several useful zsh plugins
+export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,underline"
+export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd history)
+znap source zsh-users/zsh-autosuggestions
+znap source zdharma-continuum/fast-syntax-highlighting
+znap source zsh-users/zsh-history-substring-search
+znap source zsh-users/zsh-completions
+znap eval fzf-bindings 'curl -fsSL \
+  https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh'
+
+## Misc Settings ##
+
+# autocompletion with an arrow-key driven interface
+zstyle ':completion:*' menu select
+
+# fix home and end keys in some terminals (e.g. PuTTY, MobaXterm)
+bindkey  "^[[1~"   beginning-of-line
+bindkey  "^[[4~"   end-of-line
+# MobaXterm
+bindkey  "^[[H"    beginning-of-line
+bindkey  "^[[F"    end-of-line
+
+export PERSISTENT="/usr/local/share/zsh"
+mkdir -p "$PERSISTENT"
 
 export TMPDIR=/tmp
 export SHELL=/usr/bin/zsh
@@ -23,7 +42,11 @@ export SHELL=/usr/bin/zsh
 # change directories by typing the name of the directory
 setopt AUTO_CD
 
-## History ##
+# restore previous OLDPWD value
+touch "$PERSISTENT/.oldpwd"
+source "$PERSISTENT/.oldpwd"
+
+## History Settings ##
 
 # set history size
 export HISTSIZE=10000
@@ -39,6 +62,10 @@ setopt INC_APPEND_HISTORY
 setopt EXTENDED_HISTORY
 
 ## Specific Tool Setup ##
+exists () {
+  command -v $1 >/dev/null 2>&1
+  #(( $+commands[$1] )) # this is zsh
+}
 
 if exists fzf; then
   export FZF_HISTORY_DIR="$PERSISTENT/fzf"
@@ -52,32 +79,6 @@ if exists fzf; then
   fi
 
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
-fi
-
-if [ -f "$HOME/.zinit/zinit.zsh" ]; then
-  source ~/.zinit/zinit.zsh
-  # install zsh plugins with zinit turbo mode
-  zinit wait lucid depth=1 for \
-    https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh \
-    atinit"ZINIT[COMPINIT_OPTS]=-C; zicompinit; zicdreplay" \
-      zdharma-continuum/fast-syntax-highlighting \
-    blockf \
-      zsh-users/zsh-completions \
-    svn \
-      OMZ::plugins/history-substring-search \
-    atload"!_zsh_autosuggest_start" \
-      zsh-users/zsh-autosuggestions
-  # restore previous OLDPWD value; this must be executed last
-  touch "$PERSISTENT/.oldpwd"
-  zinit wait lucid for \
-    src".oldpwd" \
-      "$PERSISTENT"
-  # powerlevel10k theme
-  # zinit light-mode depth=1 for \
-  #   romkatv/powerlevel10k
-
-  export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,underline"
-  export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd history)
 fi
 
 if exists bro-pdns; then
@@ -156,7 +157,7 @@ fi
 ## General Aliases ##
 #setopt complete_aliases # Unintuitively, disabling this option allows tab completion of alias arguments but does not complete the alias itself
 
-alias reload="source ~/.zshrc"
+alias reload="znap restart"
 
 alias l='ls'
 alias ll='ls -l'
@@ -210,22 +211,3 @@ alias z2j=zeek2json
 
 # convert timestamps to human-readable by default
 alias zeek-cut="zeek-cut -U '%FT%TZ'"
-
-# fix home and end keys in some terminals (e.g. PuTTY, MobaXterm)
-bindkey  "^[[1~"   beginning-of-line
-bindkey  "^[[4~"   end-of-line
-# MobaXterm
-bindkey  "^[[H"    beginning-of-line
-bindkey  "^[[F"    end-of-line
-
-# display tip of the day
-random-tip
-
-## ZSH Setup; must be last ##
-autoload -Uz compinit
-compinit
-# autocompletion with an arrow-key driven interface
-zstyle ':completion:*' menu select
-
-# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
-# [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh

@@ -328,24 +328,14 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y autoremove
 
 ## Shell customization ##
-    # cache file that powerline10k will grab on startup
-    # ARG GITSTATUSD_VERSION=1.5.1
-    # RUN wget -nv -O /tmp/gitstatusd-linux-x86_64.tar.gz https://github.com/romkatv/gitstatus/releases/download/v${GITSTATUSD_VERSION}/gitstatusd-linux-x86_64.tar.gz \
-    #  && mkdir -p /root/.cache/gitstatus \
-    #  && tar -xz -C /root/.cache/gitstatus -f /tmp/gitstatusd-linux-x86_64.tar.gz
-    
     COPY zsh/.vimrc /root/
     COPY zsh/.zshrc /root/
     COPY zsh/.zlogout /root/
-    # COPY zsh/.p10k.zsh /root/
     COPY zsh/.config/fd/ignore /root/.config/fd/ignore
-    
-    # zinit - plugin manager for zsh
-    # svn required for some zinit functions
-    RUN apt-get -y install subversion
-    RUN git clone https://github.com/zdharma-continuum/zinit.git /root/.zinit
-    # https://github.com/zdharma/zinit/issues/484#issuecomment-785665617
-    RUN TERM=${TERM:-screen-256color} zsh -isc "@zinit-scheduler burst"
+
+    # znap - plugin manager for zsh
+    RUN git clone --depth 1 https://github.com/marlonrichert/zsh-snap.git /root/.zplugins/zsh-snap
+    RUN source /root/.zplugins/zsh-snap/znap.zsh; source /root/.zshrc >/dev/null ; znap pull
 
 ## Cleanup ##
     RUN rm -rf /tmp/*
