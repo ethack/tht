@@ -257,7 +257,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
-    ARG ZQ_VERSION=0.31.0
+    ARG ZQ_VERSION=0.32.0
     RUN wget -nv -O /tmp/zq.zip https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.zip \
      && unzip -j -d /tmp/ /tmp/zq.zip \
      && mv /tmp/zq $BIN
