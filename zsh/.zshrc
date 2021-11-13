@@ -211,3 +211,9 @@ alias z2j=zeek2json
 
 # convert timestamps to human-readable by default
 alias zeek-cut="zeek-cut -U '%FT%TZ'"
+
+function replace() {
+  local search=$(echo "$1" | sed 's_/_\\/_g')
+  local replace=$(echo "$2" | sed 's_/_\\/_g')
+  echo sed -E "s/$search/$replace/g"
+}
