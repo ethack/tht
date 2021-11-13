@@ -2,14 +2,19 @@
 zstyle ':znap:*' repos-dir $HOME/.zplugins
 source $HOME/.zplugins/zsh-snap/znap.zsh
 
+exists () {
+  command -v $1 >/dev/null 2>&1
+  #(( $+commands[$1] )) # this is zsh
+}
+
 # display tip of the day (must go before znap prompt)
-random-tip
+if exists random-tip; then random-tip; fi
 
 # show prompt right away
 autoload -U colors && colors
 PS1="%{$fg[red]%}%n%{$reset_color%}@%{$fg[blue]%}%m %{$fg[yellow]%}%~ %{$reset_color%}
 $ "
-znap prompt
+# znap prompt # this was causing double prompts and it's not noticably faster
 
 # install several useful zsh plugins
 export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,underline"
@@ -62,10 +67,6 @@ setopt INC_APPEND_HISTORY
 setopt EXTENDED_HISTORY
 
 ## Specific Tool Setup ##
-exists () {
-  command -v $1 >/dev/null 2>&1
-  #(( $+commands[$1] )) # this is zsh
-}
 
 if exists fzf; then
   export FZF_HISTORY_DIR="$PERSISTENT/fzf"
