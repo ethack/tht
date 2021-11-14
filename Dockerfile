@@ -323,9 +323,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install binutils
     RUN find /usr/local/bin -type f -exec strip {} \; || true
     RUN apt-get -y remove binutils
-    # Remove pip
-    RUN apt-get -y remove python3-pip
     # Remove unecessary packages
+    RUN apt-get -y remove build-essential python3-dev
     RUN apt-get -y autoremove
 
 ## Shell customization ##
@@ -339,7 +338,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN source /root/.zplugins/zsh-snap/znap.zsh; source /root/.zshrc >/dev/null ; znap pull
 
 ## Cleanup ##
-    RUN apt-get -y remove build-essential python3-dev
     RUN rm -rf /tmp/*
 
 # Squash layers #
