@@ -12,12 +12,14 @@ FROM golang:buster as go-builder
     # https://golang.org/ref/mod#version-queries
     RUN go install github.com/zmap/zannotate/cmd/zannotate@master
     RUN go install github.com/JustinAzoff/json-cut@master
-    # Help find the path to the data you want
+    # gron - help find the path to the json data you want
     RUN go install github.com/tomnomnom/gron@master
     # zeek passive dns
     RUN go install github.com/JustinAzoff/bro-pdns@main
     # pxl - image viewer
     RUN go install github.com/ichinaski/pxl@master
+    # geoipupdate - Maxmind data downloader
+    #RUN go install github.com/maxmind/geoipupdate/v4/cmd/geoipupdate@master
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
@@ -291,18 +293,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
     # zannotate
     COPY --from=go-builder $GO_BIN/zannotate $BIN
-
-    # Maxmind geolocation data
-    ARG MAXMIND_LICENSE
-    RUN mkdir -p /usr/share/GeoIP
-    RUN wget -nv -O /tmp/geoip-city.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
-     && tar -xz -f /tmp/geoip-city.tar.gz -C /tmp/ \
-     && mv -f /tmp/GeoLite2-City_*/GeoLite2-City.mmdb /usr/share/GeoIP/ \
-     || echo "Failed to download Maxmind City data. Skipping."
-    RUN wget -nv -O /tmp/geoip-asn.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
-     && tar -xz -f /tmp/geoip-asn.tar.gz -C /tmp/ \
-     && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/ \
-     || echo "Failed to download Maxmind ASN data. Skipping."
+    RUN apt-get -y install geoipupdate
 
 ## Network Utils ##
     # dog - dig alternative
@@ -323,6 +314,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install binutils
     RUN find /usr/local/bin -type f -exec strip {} \; || true
     RUN apt-get -y remove binutils
+    # Remove unnecessary files
+    RUN rm -rf /usr/share/icons
     # Remove unecessary packages
     RUN apt-get -y remove build-essential python3-dev
     RUN apt-get -y autoremove
@@ -342,6 +335,25 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
 # Squash layers #
 FROM ubuntu:21.04
+
+# ## Update Maxmind data infrequently ##
+#     COPY .cache-buster /tmp/
+
+#     # Maxmind geolocation data
+#     ARG MAXMIND_LICENSE
+#     RUN mkdir -p /usr/share/GeoIP
+#     RUN apt-get update && apt-get -y install wget; \
+#         wget -nv -O /tmp/geoip-city.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
+#      && tar -xz -f /tmp/geoip-city.tar.gz -C /tmp/ \
+#      && mv -f /tmp/GeoLite2-City_*/GeoLite2-City.mmdb /usr/share/GeoIP/ \
+#      && rm -rf /tmp/* \
+#      || echo "Failed to download Maxmind City data. Skipping."; \
+#         wget -nv -O /tmp/geoip-asn.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
+#      && tar -xz -f /tmp/geoip-asn.tar.gz -C /tmp/ \
+#      && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/ \
+#      && rm -rf /tmp/* \
+#      || echo "Failed to download Maxmind ASN data. Skipping."
+
 ## Squash all previous layers ##
     COPY --from=base / /
 
