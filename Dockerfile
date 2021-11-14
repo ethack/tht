@@ -186,7 +186,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install pspg
     # pv - Pipeviewer
     RUN apt-get -y install pv
-    RUN apt-get -y install --no-install-recommends python3 \
+    # Python
+    RUN apt-get -y install --no-install-recommends python3 python3-pip \
      && ln -s /usr/bin/python3 /usr/bin/python
     RUN apt-get -y install unzip
     # zoxide - better directory traversal
@@ -233,8 +234,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
     ### Graphing ###
     RUN apt-get install -y colortest
-    RUN apt-get -y install python3-pip
-    RUN python3 -m pip install git+https://github.com/piccolomo/plotext#egg=plotext
+    # RUN python3 -m pip install git+https://github.com/piccolomo/plotext#egg=plotext
+    RUN python3 -m pip install 'plotext<4.0.0'
     COPY --from=go-builder $GO_BIN/pxl $BIN
 
     ### Grep ###
@@ -264,7 +265,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
     # trace-summary
     # install pysubnettree dependency
-    RUN apt-get -y install python3-pip
+    RUN apt-get -y install build-essential python3-dev
     RUN python3 -m pip install pysubnettree
     RUN wget -nv -O $BIN/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary \
      && chmod +x $BIN/trace-summary
@@ -338,6 +339,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN source /root/.zplugins/zsh-snap/znap.zsh; source /root/.zshrc >/dev/null ; znap pull
 
 ## Cleanup ##
+    RUN apt-get -y remove build-essential python3-dev
     RUN rm -rf /tmp/*
 
 # Squash layers #

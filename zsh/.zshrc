@@ -47,7 +47,7 @@ export SHELL=/usr/bin/zsh
 # change directories by typing the name of the directory
 setopt AUTO_CD
 
-# restore previous OLDPWD value
+# restore OLDPWD value
 touch "$PERSISTENT/.oldpwd"
 source "$PERSISTENT/.oldpwd"
 
