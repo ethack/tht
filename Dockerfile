@@ -197,8 +197,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
 
 ## Terminal Multiplexers ##
-    COPY --from=rust-builder $RUST_BIN/zellij $IBIN
-    RUN apt-get -y install byobu
+    COPY --from=rust-builder $RUST_BIN/zellij $BIN
     RUN apt-get -y install tmux
 
 ## Editors ##
