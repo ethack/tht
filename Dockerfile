@@ -44,6 +44,7 @@ FROM rust:buster as rust-builder
     RUN cargo install du-dust --bin dust
     # RUN cargo install navi
     RUN cargo install tealdeer
+    RUN cargo install zellij
 
 # C/C++ Builder Stage #
 FROM ubuntu:21.04 as c-builder
@@ -194,6 +195,11 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install unzip
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
+
+## Terminal Multiplexers ##
+    COPY --from=rust-builder $RUST_BIN/zellij $IBIN
+    RUN apt-get -y install byobou
+    RUN apt-get -y install tmux
 
 ## Editors ##
     RUN apt-get -y install nano
