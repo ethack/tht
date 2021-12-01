@@ -1,28 +1,28 @@
 % zq, partial
 ;TODO can't insert in the middle
 
-# Include outbound int->ext traffic
+# Include outbound traffic (int->ext)
 local_orig == true and local_resp == false
 
-# Include outbound int->ext traffic by cidr
+# Include outbound traffic by cidr (int->ext)
 ((id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and not (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
 
-# Include inbound ext->int traffic
+# Include inbound traffic (ext->int)
 local_orig == false and local_resp == true
 
-# Include inbound ext->int traffic by cidr
+# Include inbound traffic by cidr (ext->int)
 (not (id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
 
-# Exclude local int<->int traffic
+# Exclude local traffic (int<->int)
 not (local_orig == true and local_resp == true)
 
-# Exclude local int<->int traffic by cidr
+# Exclude local traffic by cidr (int<->int)
 not ((id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
 
-# Exclude remote ext<->ext traffic
+# Exclude remote traffic (ext<->ext)
 not (local_orig == false and local_resp == false)
 
-# Exclude remote ext<->ext traffic by cidr
+# Exclude remote traffic by cidr (ext<->ext)
 not (not (id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and not (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
 
 # Calculate PCR

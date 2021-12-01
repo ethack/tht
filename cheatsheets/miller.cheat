@@ -9,8 +9,20 @@ mlr -t -N
 # Process Zeek TSV
 mlr -t --prepipe "sed '0,/^#fields\t/s///'" --skip-comments
 
-# Connection interval bar chart
+# Connection interval bar chart (Zeek TSV)
 mlr -t --prepipe "sed '0,/^#fields\t/s///'" --skip-comments --headerless-csv-output \
+  cut -f ts then \
+  sort -n ts then \
+  put '$ts=int(round($ts))' then \
+  step -a delta -f ts then \
+  uniq -c -g ts_delta then \
+  sort -n ts_delta then \
+  reorder -f count |
+  plot-bar "Interval (s)"
+
+; This doesn't work b/c the timestamp needs to be parsed (try localtime2sec function in Miller)
+# Connection interval bar chart (Zeek JSON)
+mlr --json \
   cut -f ts then \
   sort -n ts then \
   put '$ts=int(round($ts))' then \
