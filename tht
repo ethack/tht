@@ -100,7 +100,7 @@ while [ $# -gt 0 ]; do
         # flock lock must be deterministic; maybe per identical input (md5 of script); or specified manually
 
         # mount the temp file in the container and execute it
-        docker_cmd+=("--mount" "source=$SCRIPT,destination=/run.sh,type=bind")
+        docker_cmd+=(--mount "source=${SCRIPT},destination=/run.sh,type=bind")
         if head -n 1 $SCRIPT | grep -q '^#!'; then
             # script has a shebang; execute it directly with the defined interpreter
             # TODO: this will fail if tmpfs is mounted as noexec
@@ -119,17 +119,17 @@ while [ $# -gt 0 ]; do
         # loop through dynamically to prevent having to update on every new addition
         while IFS=  read -r -d $'\0' PROG; do
             # mount bin scripts for development
-            docker_cmd+=("--mount" "source=${PWD}/${PROG},destination=/usr/local/bin/${PROG#"bin"},type=bind")
+            docker_cmd+=(--mount "source=${PWD}/${PROG},destination=/usr/local/bin/${PROG#"bin"},type=bind")
         done < <(find bin -type f -print0 2>/dev/null)
         while IFS=  read -r -d $'\0' CONF; do
             # mount zsh configs for development
-            docker_cmd+=("--mount" "source=${PWD}/${CONF},destination=/root/${CONF#"zsh"},type=bind")
+            docker_cmd+=(--mount "source=${PWD}/${CONF},destination=/root/${CONF#"zsh"},type=bind")
         done < <(find zsh -type f -print0 2>/dev/null)
         while IFS=  read -r -d $'\0' CHEAT; do
             # mount navi cheats development
-            docker_cmd+=("--mount" "source=${PWD}/${CHEAT},destination=/root/.local/share/navi/cheats/${CHEAT#"cheatsheets"},type=bind")
+            docker_cmd+=(--mount "source=${PWD}/${CHEAT},destination=/root/.local/share/navi/cheats/${CHEAT#"cheatsheets"},type=bind")
         done < <(find cheatsheets -type f -print0 2>/dev/null)
-        docker_cmd+=("--mount" "source=${PWD}/test,destination=/usr/local/test,type=bind")
+        docker_cmd+=(--mount "source=${PWD}/test,destination=/usr/local/test,type=bind")
         popd >/dev/null
     ;;
     --)
@@ -142,13 +142,22 @@ while [ $# -gt 0 ]; do
     shift
 done
 
+# mount docker inside if we can find it
+if command -v docker >/dev/null && [[ -e /var/run/docker.sock ]]; then
+    # mount the docker binary inside as well so we don't have to include it in THT
+    docker_cmd+=(
+        --mount "source=$(command -v docker),destination=/usr/local/bin/docker,type=bind"
+        --mount "source=/var/run/docker.sock,destination=/var/run/docker.sock,type=bind"
+    )
+fi
+
 # create and use a persistent volume
 $DOCKER volume create tht_zsh-cache >/dev/null && \
-    docker_cmd+=("--mount" "source=tht_zsh-cache,destination=${PERSISTENT},type=volume")
+    docker_cmd+=(--mount "source=tht_zsh-cache,destination=${PERSISTENT},type=volume")
 
 # connect a tty when not running a background command/script
 if ! $BACKGROUNDJOB; then
-    docker_cmd+=("--interactive" "--tty")
+    docker_cmd+=(--interactive --tty)
 fi
 
 $DOCKER "${docker_cmd[@]}" "$IMAGE" "${CMD[@]}"
