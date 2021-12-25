@@ -30,12 +30,6 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
                 rfc1918           matches private IPv4 addresses defined in RFC1918
                 ipv4              matches any IPv4 address
 
-    $(basename "$0") will pick the best search tool for the situation. Use the following options to force a specific tool.
-    --rg          force use of ripgrep
-    --ug          force use of ugrep
-    --zgrep       force use of zgrep
-    --cat         force use of cat (useful for testing)
-
     Any arguments given after -- will be passed to the underlying search command.
 
 Examples:
@@ -96,7 +90,7 @@ escape=true
 condition="and"
 dryRun=false
 invert=false
-grepCmd=
+grepCmd=ug
 termPrefix='\\b'
 termSuffix='\\b'
 terms=()
@@ -121,10 +115,6 @@ while [[ $# -gt 0 ]]; do
         --or)                   condition="or" ;;
         -n|--dry-run)           dryRun=true ;;
         -v|--invert-match)      invert=true ;;
-        --rg|--ripgrep)         grepCmd="rg" ;;
-        --ug|--ugrep)           grepCmd="ug" ;;
-        --zgrep|--grep)         grepCmd="zgrep" ;;
-        --cat|--zcat)           grepCmd="cat" ;;
         -f|--file)
             shift
             patternfile="$1"
@@ -199,7 +189,7 @@ if $findFiles && (isNotEmpty "$logType" || ! isStdinRedir || isNotEmpty "$FILTER
     # note: regex matches entire path, not just filename
     # note: never include conn-summary files and always return a success exit code
     IFS=$'\n' logFiles=($(find "${searchDir[@]}" -regextype egrep -iregex ".*/${logType}(\b|_).*\.log$" | grep -v conn-summary | sort || true))
-    IFS=$'\n' zipFiles=($(find "${searchDir[@]}" -regextype egrep -iregex ".*/${logType}(\b|_).*\.log.gz$" | grep -v conn-summary | sort || true))
+    IFS=$'\n' zipFiles=($(find "${searchDir[@]}" -regextype egrep -iregex ".*/${logType}(\b|_).*\.log\.gz$" | grep -v conn-summary | sort || true))
     files=("${logFiles[@]}" "${zipFiles[@]}")
     
     # if no log files are found then exit
@@ -218,60 +208,25 @@ for term in "${terms[@]}"; do
     regexes+=("$term")
 done
 
-# pick the best search tool available
-if isNotEmpty "$grepCmd"; then
-    : # grep command forced via flag
-elif [ ${#regexes[@]} -eq 0 ] && [ ${#extra_args[@]} -eq 0 ]; then
-    # use cat if there are no search terms and no extra arguments
-    grepCmd="cat"
-elif exists ug && (cat /proc/cpuinfo | grep -q avx); then
-    # ugrep is compiled with AVX2 so if your CPU doesn't support it don't use it
-    # https://github.com/Genivia/ugrep/issues/143
-    grepCmd="ug"
-elif exists rg; then
-    # ripgrep also uses AVX2 but it enables it at runtime based on your CPU
-    grepCmd="rg"
-elif exists zgrep; then
-    grepCmd="zgrep"
-fi
+if [[ ${#regexes[@]} -eq 0 ]]; then
+    # if there are no regexes to search then treat it like cat
+    filterCmd="ug --decompress --match ${files[@]}"
+    # TODO test files with spaces
+    # TODO cat/zcat would be faster
+else
+    invert_flag=""
+    header_flag="-e '^#'"
+    if $invert; then
+        invert_flag="--invert-match"
+        header_flag=""
+    fi
 
-if ! exists "$grepCmd"; then
-    error "Could not find a grep program."
-    exit 2
-fi
-
-invert_flag=""
-header_flag="-e '^#'"
-if $invert; then
-    invert_flag="--invert-match"
-    header_flag=""
-fi
-
-# TODO: Test if you can have too many files passed in. Might have to pipe from find directly.
-filterCmd=""
-isFirstSearch=true
-parallel="xargs -n 1 -P $(nproc)"
-# loop through all search terms
-for regex in "${regexes[@]}"; do 
-    case $grepCmd in
-    rg)
-        # special case the first search regex
-        if $isFirstSearch; then
-            # disable unicode to avoid taking a speed hit
-            # https://github.com/BurntSushi/ripgrep/issues/1860
-            # https://github.com/BurntSushi/ripgrep/issues/1760
-            filterCmd="rg ${extra_args[@]} --no-filename --no-line-number --no-unicode --search-zip $invert_flag $header_flag -e '$regex' ${files[@]}"
-            # TODO test files with spaces
-            isFirstSearch=false
-        else
-            if [ "$condition" = "and" ]; then      # prefer and
-                filterCmd="$filterCmd | rg ${extra_args[@]} $invert_flag $header_flag -e '$regex'"
-            elif [ "$condition" = "or" ]; then
-                filterCmd="$filterCmd -e '$regex'"
-            fi
-        fi
-    ;;
-    ug)
+    # TODO: Test if you can have too many files passed in. Might have to pipe from find directly.
+    filterCmd=""
+    isFirstSearch=true
+    parallel="xargs -n 1 -P $(nproc)"
+    # loop through all search terms
+    for regex in "${regexes[@]}"; do 
         # ugrep --bool needs special treatment of spaces and quotes
         regex="$(printf "%s" "$regex" | sed -e 's/ /\\x20/g' -e 's/"/\\x22/g')"
         # special case the first search regex
@@ -285,56 +240,10 @@ for regex in "${regexes[@]}"; do
                 filterCmd="$filterCmd OR $regex"
             fi
         fi
-    ;;
-    zgrep)
-        # special case the first search regex
-        if $isFirstSearch; then
-            if ! isEmpty "$files"; then
-                # use xargs to parallelize zgrep
-                filterCmd="echo ${files[@]} | $parallel"
-            fi
-            filterCmd="$filterCmd zgrep ${extra_args[@]} $invert_flag $header_flag -e '$regex'"
-            # TODO test files with spaces
-            isFirstSearch=false
-        else
-            if [ "$condition" = "and" ]; then
-                filterCmd="$filterCmd | zgrep ${extra_args[@]} $invert_flag $header_flag -e '$regex'"
-            elif [ "$condition" = "or" ]; then
-                filterCmd="$filterCmd -e '$regex'"
-            fi
-        fi
-    ;;
-    esac
-done
-# special case after search terms when needed
-case $grepCmd in
-    ug)
-        if ! $isFirstSearch; then
-            filterCmd="$filterCmd)' ${files[@]}"
-            # TODO test files with spaces
-        fi
-    ;;
-    cat)
-        # only run respective commands if there are actual files that match
-        filterCmd=
-        if isEmpty "$logFiles" && isEmpty "$zipFiles"; then
-            # no files match; simply send data through from stdin
-            filterCmd="cat"
-        else
-            if isNotEmpty "$logFiles"; then
-                filterCmd="cat ${logFiles[@]};"
-                # TODO test files with spaces
-            fi
-            if isNotEmpty "$zipFiles"; then
-                filterCmd="$filterCmd zcat ${zipFiles[@]}"
-                # TODO test files with spaces
-            fi
-        fi
-        # note: xargs causes race conditions with line output; 
-        # don't use in parallel because we want to preserve heading order
-        # TODO: save original header and ouput in parallel
-    ;;
-esac
+    done
+    filterCmd="$filterCmd)' ${files[@]}"
+    # TODO test files with spaces
+fi
 
 # if stdout is not redirected, get rid of zeek headers
 if ! isStdoutRedir; then
@@ -355,7 +264,7 @@ fi
 # write some unit tests
 # run through ShellCheck
 
-# can I use the --glob builtin to ripgrep and ugrep? grep needs an alternative though
+# can I use the --glob builtin for grep instead of find? 
 
 # Other useful presets
 # Multicast 224.0.0.0/4, ff00::/8
@@ -386,13 +295,5 @@ fi
 
 # remove commented lines from -f file
 
-# Goals:
-# unify the --dns, --stdin, and --dir into a single,  or more unified mechanism
-# support other log types than just zeek
-# maybe make aliases like filterssl or filterdns to mimic filter --ssl and filter --dns
-# similar to --preset, a --find ssl, or --find 'some pattern'
-# maybe make an env varialbe like FILTER_FLAVOR=zeek for working with different types of logs
-# could change whether to search for ^# or not too
-# Read first line and detect if it's a file that exists or not. If it is then assume input is files to search.
-# Wrapper around fd that filters Zeek logs. Filter should call that script as a shortcut.
-# Aliases zconn, zdns, zssl, zhttp, etc. arguments can be directories or further search terms.
+# make -i ignore case
+# flag to exclude # lines
