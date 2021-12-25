@@ -47,34 +47,6 @@ sed -e '0,/^#fields\t/s///' | grep -v '^#'
 filter --dns | chop query | distinct | domain | mfo 20
 
 
-% filter
-
-# Search dns logs in a date range #tip
-fd dns 2021-01-{15..31} 2021-02-{01..10} | filter - example.com
-
-# Extract IPs from text #tip
-filter -p ipv4 -- -o | distinct
-
-# Find IPs associated with a domain #tip
-filter --dns <domain> | chop answers | filter -p ipv4 -- -o | distinct
-
-# Find IPs connecting to a domain #tip
-filter --or \
-  -f <(filter --dns <domain> | chop answers | filter -p ipv4 -- -o | distinct) | 
-  chop id.orig_h | distinct
-
-# Summary of traffic for a single systems #tip
-filter <IP1> | conn-summary
-
-# Summary of traffic between two systems #tip
-filter <IP1> <IP2> | conn-summary
-
-# Summary of traffic involving an IP address over time (e.g. 2021-11-*) #tip
-fd conn <date_glob> | filter - <ip> | conn-summary
-
-# Find IPs going to a domain over HTTP or SSL #tip
-{ filter --ssl <domain> | chop id.orig_h ; filter --http <domain> | chop id.orig_h } | distinct
-
 % chop
 
 # Common DNS fields

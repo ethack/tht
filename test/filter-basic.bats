@@ -312,3 +312,32 @@ setup() {
 		five
 	EOF
 }
+
+@test "case-insensitive matching" {
+	scenario() {
+	cat <<-EOF | filter -i example
+		example
+		eXaMpLe
+		EXAMPLE
+		ignore
+	EOF
+	}
+	run scenario
+	cat <<-EOF | assert_output -
+		example
+		eXaMpLe
+		EXAMPLE
+	EOF
+}
+
+@test "only matching" {
+	scenario() {
+	cat <<-EOF | filter -o two
+		one two three
+	EOF
+	}
+	run scenario
+	cat <<-EOF | assert_output -
+		two
+	EOF
+}
