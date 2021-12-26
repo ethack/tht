@@ -20,6 +20,8 @@ FROM golang:buster as go-builder
     RUN go install github.com/ichinaski/pxl@master
     # geoipupdate - Maxmind data downloader
     #RUN go install github.com/maxmind/geoipupdate/v4/cmd/geoipupdate@master
+    # miller - text delimited processor
+    RUN go install github.com/johnkerl/miller/cmd/mlr@main
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
@@ -28,23 +30,38 @@ FROM rust:buster as rust-builder
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
 
-    RUN git clone https://github.com/ogham/dog.git /tmp/dog \
-     && cd /tmp/dog \
-     && cargo build --release \
-     && cargo test \
-     && cp target/release/dog $RUST_BIN
+    # exa - fancy ls
     RUN cargo install exa
+    # fd - better find
     RUN cargo install fd-find
-    RUN cargo install grex
+    # hyperfine - benachmarking
     RUN cargo install hyperfine
+    # ripgrep - fast grep
     RUN cargo install ripgrep
+    # zoxide - smart cd
     RUN cargo install zoxide
+    # bat - fancy cat
     RUN cargo install bat
+    # xsv - fast csv / text delimited processing
     RUN cargo install xsv
+    # dust - file / directory size analyzer
     RUN cargo install du-dust --bin dust
+    # navi - cheatsheets
     # RUN cargo install navi
+    # tealdeer - tldr cheatsheet client
     RUN cargo install tealdeer
+    # zellij - terminal multiplexer
     RUN cargo install zellij
+    # amp - text editor
+    RUN cargo install amp
+    # sd - better find and replace (sed)
+    RUN cargo install sd
+    # hck - cut alternative
+    # ENV RUSTFLAGS '-C target-cpu=native'
+    # RUN cargo install hck
+    # frawk - fast awk (TODO: check readme for better build instructions)
+    # RUN cargo +nightly install frawk --no-default-features --features use_jemalloc,allow_avx2,unstable
+    #RUN cargo install frawk --no-default-features --features use_jemalloc,allow_avx2
 
 # C/C++ Builder Stage #
 FROM ubuntu:21.04 as c-builder
@@ -54,6 +71,8 @@ FROM ubuntu:21.04 as c-builder
 
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
+
+    # RUN apt-get update && apt-get -y install ca-certficates git gcc g++ make wget
 
     # SiLK IPSet
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ libpcap-dev python python-dev libglib2.0-dev ca-certificates
@@ -76,7 +95,15 @@ FROM ubuntu:21.04 as c-builder
      && make
 
     # TODO jq https://github.com/stedolan/jq
-    # TODO pspg
+
+    # pspg - pager
+    RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git ca-certificates libpq-dev libncurses-dev
+    ARG PSPG_VERSION=5.5.1
+    RUN git clone https://github.com/okbob/pspg.git /tmp/pspg \
+     && cd /tmp/pspg \
+     && git checkout $PSPG_VERSION \
+     && ./configure \
+     && make
 
     # ugrep
     RUN apt-get update && apt-get -y install --no-install-recommends git ca-certificates gcc g++ make libpcre2-dev libz-dev
@@ -90,14 +117,6 @@ FROM ubuntu:21.04 as c-builder
     RUN apt-get update && apt-get -y install --no-install-recommends wget gcc
     RUN wget -nv -O /tmp/zeek-cut.c https://raw.githubusercontent.com/zeek/zeek-aux/master/zeek-cut/zeek-cut.c \
      && gcc --static -o /tmp/zeek-cut /tmp/zeek-cut.c
-
-    # nq
-    RUN apt-get update && apt-get -y install --no-install-recommends git ca-certificates gcc make
-    ARG NQ_VERSION=master
-    RUN git clone https://github.com/leahneukirchen/nq.git /tmp/nq \
-     && cd /tmp/nq \
-     && git checkout $NQ_VERSION \
-     && make all
 
     # moreutils - https://joeyh.name/code/moreutils/
     RUN apt-get update && apt-get -y install --no-install-recommends make gcc git
@@ -157,6 +176,9 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ARG FZF_VERSION=0.27.3
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
      && tar -xz -f /tmp/fzf.tar.gz -C $BIN
+    ARG HCK_VERSION=0.7.1
+    RUN wget -nv -O $BIN/hck https://github.com/sstadick/hck/releases/download/v${HCK_VERSION}/hck-linux-amd64 \
+     && chmod +x $BIN/hck
     # htop - process monitor
     RUN apt-get -y install htop
     # hyperfine - command benchmarking; like time on steroids
@@ -182,16 +204,16 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY zsh/.config/tealdeer/config.toml /root/.config/tealdeer/config.toml
     RUN mkdir -p /usr/share/zsh/site-functions/ \
      && wget -nv -O /usr/share/zsh/site-functions/_tldr https://raw.githubusercontent.com/dbrgn/tealdeer/master/zsh_tealdeer
-    # nq
-    COPY --from=c-builder /tmp/nq/nq /tmp/nq/fq $BIN/
     #RUN apt-get -y install parallel
     # pspg - Pager
-    RUN apt-get -y install pspg
+    RUN apt-get -y install libpq5
+    COPY --from=c-builder /tmp/pspg/pspg $BIN
     # pv - Pipeviewer
     RUN apt-get -y install pv
     # Python
     RUN apt-get -y install --no-install-recommends python3 python3-pip \
      && ln -s /usr/bin/python3 /usr/bin/python
+    COPY --from=rust-builder $RUST_BIN/sd $BIN
     RUN apt-get -y install unzip
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
@@ -204,12 +226,15 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install nano
     RUN (cd $BIN; curl https://getmic.ro | bash)
     RUN apt-get -y install --no-install-recommends vim
+    COPY --from=rust-builder $RUST_BIN/amp $BIN
 
 ## Data Processing ##
     # CSV/TSV/JSON toolkit and lightweight streaming stats
     ARG MILLER_VERSION=5.10.2
-    RUN wget -nv -O $BIN/mlr https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
-     && chmod +x $BIN/mlr
+    RUN wget -nv -O $BIN/mlr5 https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
+     && chmod +x $BIN/mlr5
+    COPY --from=go-builder $GO_BIN/mlr $BIN/mlr6
+    RUN ln -s $BIN/mlr6 $BIN/mlr
     # CSV/TSV toolkit
     COPY --from=rust-builder $RUST_BIN/xsv $BIN
     # CSV/TSV toolkit
@@ -230,6 +255,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-uniq $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort-fast $BIN
+    #COPY --from=rust-builder $RUST_BIN/frawk $BIN
 
     # Misc useful tools from https://www.datascienceatthecommandline.com/
     ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/body $BIN
@@ -242,7 +268,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ### Graphing ###
     RUN apt-get install -y colortest
     # RUN python3 -m pip install git+https://github.com/piccolomo/plotext#egg=plotext
-    RUN python3 -m pip install 'plotext<4.0.0'
+    RUN python3 -m pip install 'plotext'
     COPY --from=go-builder $GO_BIN/pxl $BIN
 
     ### Grep ###
@@ -255,8 +281,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=c-builder /tmp/ugrep/bin/ugrep $BIN
     COPY --from=c-builder /tmp/ugrep/bin/ug $BIN
 
-    COPY --from=rust-builder $RUST_BIN/grex $BIN
-
     ### Zeek ###
     # bro-pdns - Passive DNS for Zeek logs
     COPY --from=go-builder $GO_BIN/bro-pdns $BIN
@@ -265,10 +289,11 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
-    ARG ZQ_VERSION=0.32.0
+    ARG ZQ_VERSION=0.33.0
     RUN wget -nv -O /tmp/zq.zip https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.zip \
      && unzip -j -d /tmp/ /tmp/zq.zip \
-     && mv /tmp/zq $BIN
+     && mv /tmp/zq $BIN \
+     && mv /tmp/zed $BIN
 
     # trace-summary
     # install pysubnettree dependency
@@ -279,7 +304,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
     ### JSON ###
     RUN apt-get -y install jq
-
     COPY --from=go-builder $GO_BIN/json-cut $BIN
     COPY --from=go-builder $GO_BIN/gron $BIN
 
@@ -301,10 +325,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install geoipupdate
 
 ## Network Utils ##
-    # dog - dig alternative
-    RUN apt-get -y install libc6 \
-     && wget -nv -O $ZSH_COMPLETIONS/_dog https://raw.githubusercontent.com/ogham/dog/master/completions/dog.zsh
-    COPY --from=rust-builder $RUST_BIN/dog $BIN
     # dig
     RUN apt-get -y install dnsutils
     # traceroute alternative
@@ -333,7 +353,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
     # znap - plugin manager for zsh
     RUN git clone --depth 1 https://github.com/marlonrichert/zsh-snap.git /root/.zplugins/zsh-snap
-    RUN source /root/.zplugins/zsh-snap/znap.zsh; source /root/.zshrc >/dev/null ; znap pull
+    RUN source /root/.zplugins/zsh-snap/znap.zsh; source /root/.zshrc >/dev/null
 
 ## Cleanup ##
     RUN rm -rf /tmp/*
