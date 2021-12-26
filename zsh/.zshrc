@@ -1,6 +1,7 @@
 # znap plugin manager
-zstyle ':znap:*' repos-dir $HOME/.zplugins
 source $HOME/.zplugins/zsh-snap/znap.zsh
+zstyle ':znap:*' repos-dir $HOME/.zplugins
+zstyle ':znap:*' auto-compile no
 
 exists () {
   command -v $1 >/dev/null 2>&1
@@ -22,7 +23,6 @@ export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd history)
 znap source zsh-users/zsh-autosuggestions
 znap source zdharma-continuum/fast-syntax-highlighting
 znap source zsh-users/zsh-history-substring-search
-znap source zsh-users/zsh-completions
 znap eval fzf-bindings 'curl -fsSL \
   https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh'
 
@@ -170,6 +170,7 @@ alias mb='mv -i'           # common typo
 alias mkdir="mkdir -p"     # create parent directories by default
 alias df="df -h --total"
 alias dud="du -h -d 1 --total"
+function duds() { du -h -d 1 --total "$@" | sort -h }
 alias digs="dig +short"
 alias less="less -S"       # side-scrolling by default
 alias history="history 0"  # make history show all entries by default
