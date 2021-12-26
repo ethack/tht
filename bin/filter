@@ -215,9 +215,8 @@ done
 
 if [[ ${#regexes[@]} -eq 0 ]]; then
     # if there are no regexes to search then treat it like cat
-    filterCmd="ug --decompress --match ${files[@]}"
+    filterCmd="zcat --force --quiet ${files[@]}"
     # TODO test files with spaces
-    # TODO cat/zcat would be faster
 else
     invert_flag=""
     header_flag="-e '^#'"
