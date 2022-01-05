@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# skip one line by default
+SKIP_LINES=${1:-1}
+
+# argument to tail is offset by one
+tail -n +$((SKIP_LINES+1))
