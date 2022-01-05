@@ -58,6 +58,7 @@ fi
 
 # these are used based on what the underlying tool expects
 commaArgs=$(echo "${args[*]}" | tr ' ' ',')
+tabArgs=$(echo "${commaArgs[*]}" | tr ',' $'\t')
 spaceArgs=$(echo "${args[*]}" | tr ',' ' ')
 
 # read the first line in order to detect the type of log
@@ -99,11 +100,12 @@ elif match '^#'; then
     stdin | sed -e '0,/^#fields\t/s///' | grep -v '^#' | xsv select -d $'\t' $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
 # ndjson
 elif match '^\{.*\}$'; then
-    # note: output is tsv
     # note: list fields will be like: ["one", "two", "three"]
+    if $headerFlag; then
+        echo "$tabArgs"
+    fi
     stdin | json-cut $spaceArgs
-    # note: json-cut is several orders of magnitude faster than zq v0.29.0
-    # note: json-cut doesn't have an option to preserve headers
+    # note: json-cut is many times faster than zq v0.29.0, mlr 5, or jq
 # tsv
 elif match '.*	.*'; then
     stdin | xsv select -d $'\t' $commaArgs | xsv fmt -t $'\t' | $conditionalHeader
@@ -119,7 +121,6 @@ fi
 # TODO
 # use tsv-utils instead of xsv if benchmark is faster
 # tsv-select supports -d
-# test jq for json
 # allow inverting columns with -v
 # parsing a suricata log or syslog will result in output being tab separated
 #   maybe have it preserve input, implement tsv script that converts input to tsv, already exists for json

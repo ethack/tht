@@ -135,8 +135,8 @@ empty() {
 
 @test "json, name, retain header" {
 	run chop json -H id.orig_h id.resp_h
-	# BUG: no header available in JSON output
 	cat <<-EOF | assert_output -
+		id.orig_h	id.resp_h
 		10.55.182.100	10.233.233.5
 		192.168.88.2	165.227.88.15
 	EOF
