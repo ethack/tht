@@ -22,6 +22,7 @@ FROM golang:buster as go-builder
     #RUN go install github.com/maxmind/geoipupdate/v4/cmd/geoipupdate@master
     # miller - text delimited processor
     RUN go install github.com/johnkerl/miller/cmd/mlr@main
+    # RUN go install github.com/brimdata/zync/cmd/zync@main
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
@@ -56,9 +57,6 @@ FROM rust:buster as rust-builder
     RUN cargo install amp
     # sd - better find and replace (sed)
     RUN cargo install sd
-    # hck - cut alternative
-    # ENV RUSTFLAGS '-C target-cpu=native'
-    # RUN cargo install hck
     # frawk - fast awk (TODO: check readme for better build instructions)
     # RUN cargo +nightly install frawk --no-default-features --features use_jemalloc,allow_avx2,unstable
     #RUN cargo install frawk --no-default-features --features use_jemalloc,allow_avx2
@@ -161,8 +159,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install libunistring2 libpcre2-32-0
     COPY --from=c-builder /tmp/boxes/out/boxes $BIN
     RUN wget -nv -O /usr/share/boxes https://raw.githubusercontent.com/ascii-boxes/boxes/master/boxes-config
-    # docker cli
-    # COPY --from=docker:20.10 /usr/local/bin/docker $BIN
     # dust - du alternative
     COPY --from=rust-builder $RUST_BIN/dust $BIN
     # entr - perform action on file change
@@ -203,7 +199,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=rust-builder $RUST_BIN/tldr $BIN/
     COPY zsh/.config/tealdeer/config.toml /root/.config/tealdeer/config.toml
     RUN mkdir -p /usr/share/zsh/site-functions/ \
-     && wget -nv -O /usr/share/zsh/site-functions/_tldr https://raw.githubusercontent.com/dbrgn/tealdeer/master/zsh_tealdeer
+     && wget -nv -O /usr/share/zsh/site-functions/_tldr https://raw.githubusercontent.com/dbrgn/tealdeer/master/completion/zsh_tealdeer
     #RUN apt-get -y install parallel
     # pspg - Pager
     RUN apt-get -y install libpq5
@@ -217,6 +213,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install unzip
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
+    # zutils - better zcat
+    RUN apt-get -y install zutils
 
 ## Terminal Multiplexers ##
     COPY --from=rust-builder $RUST_BIN/zellij $BIN
@@ -294,6 +292,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      && unzip -j -d /tmp/ /tmp/zq.zip \
      && mv /tmp/zq $BIN \
      && mv /tmp/zed $BIN
+    # COPY --from=go-builder $GO_BIN/zync $BIN
 
     # trace-summary
     # install pysubnettree dependency
@@ -351,33 +350,24 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY zsh/.zlogout /root/
     COPY zsh/.config/fd/ignore /root/.config/fd/ignore
 
-    # znap - plugin manager for zsh
-    RUN git clone --depth 1 https://github.com/marlonrichert/zsh-snap.git /root/.zplugins/zsh-snap
-    RUN source /root/.zplugins/zsh-snap/znap.zsh; source /root/.zshrc >/dev/null
+    # sheldon - plugin manager for zsh (and others)
+    ENV XDG_CONFIG_HOME /root/.config
+    ARG SHELDON_VERSION=0.6.6
+    RUN wget -nv -O /tmp/sheldon.tar.gz https://github.com/rossmacarthur/sheldon/releases/download/${SHELDON_VERSION}/sheldon-${SHELDON_VERSION}-x86_64-unknown-linux-musl.tar.gz \
+     && tar -C /tmp -xzf /tmp/sheldon.tar.gz \
+     && mv /tmp/sheldon $BIN
+    COPY zsh/.config/sheldon /root/.config/sheldon
+    RUN sheldon lock
+    # technically, sheldon source also does a sheldon lock if it doesn't exist
+    RUN sheldon source >/root/.config/sheldon/source.zsh
+    # delete the binary; it's large and we don't need it at runtime
+    RUN rm $BIN/sheldon
 
 ## Cleanup ##
     RUN rm -rf /tmp/*
 
 # Squash layers #
 FROM ubuntu:21.04
-
-# ## Update Maxmind data infrequently ##
-#     COPY .cache-buster /tmp/
-
-#     # Maxmind geolocation data
-#     ARG MAXMIND_LICENSE
-#     RUN mkdir -p /usr/share/GeoIP
-#     RUN apt-get update && apt-get -y install wget; \
-#         wget -nv -O /tmp/geoip-city.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-City&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
-#      && tar -xz -f /tmp/geoip-city.tar.gz -C /tmp/ \
-#      && mv -f /tmp/GeoLite2-City_*/GeoLite2-City.mmdb /usr/share/GeoIP/ \
-#      && rm -rf /tmp/* \
-#      || echo "Failed to download Maxmind City data. Skipping."; \
-#         wget -nv -O /tmp/geoip-asn.tar.gz "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-ASN&license_key=${MAXMIND_LICENSE}&suffix=tar.gz" \
-#      && tar -xz -f /tmp/geoip-asn.tar.gz -C /tmp/ \
-#      && mv -f /tmp/GeoLite2-ASN_*/GeoLite2-ASN.mmdb /usr/share/GeoIP/ \
-#      && rm -rf /tmp/* \
-#      || echo "Failed to download Maxmind ASN data. Skipping."
 
 ## Squash all previous layers ##
     COPY --from=base / /

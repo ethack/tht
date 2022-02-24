@@ -1,0 +1,43 @@
+# `sheldon` configuration file
+# ----------------------------
+# See the documentation for more https://github.com/rossmacarthur/sheldon#readme
+
+shell = "zsh"
+
+[templates]
+defer = { value = 'zsh-defer source "{{ file }}"', each = true }
+
+[plugins]
+
+# must come before "defer" usage
+[plugins.zsh-defer]
+github = "romkatv/zsh-defer"
+
+[plugins.zsh-autosuggestions]
+github = "zsh-users/zsh-autosuggestions"
+apply = ["defer"]
+
+[plugins.fast-syntax-highlighting]
+github = "zdharma-continuum/fast-syntax-highlighting"
+# keep an eye on the following
+# https://github.com/zdharma-continuum/fast-syntax-highlighting/issues/8
+# https://github.com/z-shell/fast-syntax-highlighting
+apply = ["defer"]
+
+# must come after syntax highlighting plugin
+[plugins.zsh-history-substring-search]
+github = "zsh-users/zsh-history-substring-search"
+apply = ["defer"]
+
+[plugins.fzf-key-bindings]
+remote = "https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh"
+apply = ["defer"]
+
+## Shell Completions ##
+[plugins.zsh-completions]
+github = "zsh-users/zsh-completions"
+apply = ["defer"]
+
+# This should come at the end
+[plugins.compinit]
+inline = 'autoload -Uz compinit && compinit'

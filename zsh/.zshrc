@@ -1,30 +1,17 @@
-# znap plugin manager
-source $HOME/.zplugins/zsh-snap/znap.zsh
-zstyle ':znap:*' repos-dir $HOME/.zplugins
-zstyle ':znap:*' auto-compile no
+export XDG_CONFIG_HOME="$HOME/.config"
 
 exists () {
   command -v $1 >/dev/null 2>&1
   #(( $+commands[$1] )) # this is zsh
 }
 
-# display tip of the day (must go before znap prompt)
+# display tip of the day
 if exists random-tip; then random-tip; fi
 
 # show prompt right away
 autoload -U colors && colors
 PS1="%{$fg[red]%}%n%{$reset_color%}@%{$fg[blue]%}%m %{$fg[yellow]%}%~ %{$reset_color%}
 $ "
-# znap prompt # this was causing double prompts and it's not noticably faster
-
-# install several useful zsh plugins
-export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,underline"
-export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd history)
-znap source zsh-users/zsh-autosuggestions
-znap source zdharma-continuum/fast-syntax-highlighting
-znap source zsh-users/zsh-history-substring-search
-znap eval fzf-bindings 'curl -fsSL \
-  https://raw.githubusercontent.com/junegunn/fzf/master/shell/key-bindings.zsh'
 
 ## Misc Settings ##
 
@@ -158,7 +145,7 @@ fi
 ## General Aliases ##
 #setopt complete_aliases # Unintuitively, disabling this option allows tab completion of alias arguments but does not complete the alias itself
 
-alias reload="znap restart"
+alias reload="source ~/.zshrc"
 
 alias l='ls'
 alias ll='ls -l'
@@ -184,6 +171,8 @@ alias distinctcount=card
 alias stackcount=mfo
 alias shorttail=mfo
 alias longtail=lfo
+alias first='sort | head -n 1'
+alias last='sort | tail -n 1'
 
 alias cv="viewer csv"
 alias tv="viewer tsv"
@@ -219,3 +208,11 @@ function replace() {
   local replace=$(echo "$2" | sed 's_/_\\/_g')
   echo sed -E "s/$search/$replace/g"
 }
+
+# customize autosuggest
+export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,underline"
+export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd history)
+# activate plugins
+if [[ -f "$XDG_CONFIG_HOME/sheldon/source.zsh" ]]; then
+  eval "$(cat "$XDG_CONFIG_HOME/sheldon/source.zsh")"
+fi
