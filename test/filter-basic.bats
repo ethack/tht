@@ -1,6 +1,7 @@
 setup() {
 	load 'helper/bats-support/load'
 	load 'helper/bats-assert/load'
+	load 'helper/bats-file/load'
 }
 
 @test "literal string" {
@@ -242,6 +243,23 @@ setup() {
 		two
 		three
 	EOF
+}
+
+@test "file input->no arguments" {
+	local temp_dir=$(temp_make)
+	cd "$temp_dir"
+	cat <<-EOF > conn.log
+		one
+		two
+		three
+	EOF
+	run filter 
+	cat <<-EOF | assert_output -
+		one
+		two
+		three
+	EOF
+	temp_del "$temp_dir"
 }
 
 @test "empty string argument" {
