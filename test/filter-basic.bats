@@ -253,6 +253,8 @@ setup() {
 		two
 		three
 	EOF
+	run filter --dry-run
+	assert_output --partial 'conn.log'
 	run filter 
 	cat <<-EOF | assert_output -
 		one
