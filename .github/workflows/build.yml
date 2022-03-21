@@ -18,7 +18,7 @@ jobs:
     steps:
     - 
       name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         # use a custom PAT in order to trigger other workflows with events
         # https://github.com/stefanzweifel/git-auto-commit-action#commits-made-by-this-action-do-not-trigger-new-workflow-runs
