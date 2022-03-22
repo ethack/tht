@@ -247,15 +247,24 @@ setup() {
 
 @test "file input->no arguments" {
 	local temp_dir=$(temp_make)
-	cd "$temp_dir"
-	cat <<-EOF > conn.log
+	cat <<-EOF > "$temp_dir/conn.log"
 		one
 		two
 		three
 	EOF
-	run filter --dry-run
+	
+	scenario_dry_run() {
+		cd "$temp_dir"
+		filter --dry-run
+	}
+	run scenario_dry_run
 	assert_output --partial 'conn.log'
-	run filter 
+	
+	scenario() {
+		cd "$temp_dir"
+		filter
+	}
+	run scenario 
 	cat <<-EOF | assert_output -
 		one
 		two
