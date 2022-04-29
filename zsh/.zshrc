@@ -147,6 +147,9 @@ fi
 
 alias reload="source ~/.zshrc"
 
+alias version='cat /etc/tht-release'
+alias tht="echo 'You are currently running THT version $(cat /etc/tht-release | grep DATE | sd DATE= '')'"
+
 alias l='ls'
 alias ll='ls -l'
 alias la='ls -la'
