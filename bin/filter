@@ -13,6 +13,7 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
     --<logtype>         is used to search logs of "logtype" (e.g. conn, dns, etc) in the current directory tree (default: conn)
     -|--stdin           reads filenames to search from stdin instead
     -d|--dir <dirglob>  will search logs in <dirglob> instead of current directory
+    --no-cache          do not use or store a cache of the results
     
     Lines must match all search terms by default.
     --or       at least one search term is required to appear in a line (as opposed to all terms matching)
@@ -30,8 +31,10 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
     You can specify search terms in other ways as well.
     -f|--file <patternfile.txt>   file containing newline separated search terms
     -p|--preset <preset>          use a common preset regex with current options being:
-                rfc1918           matches private IPv4 addresses defined in RFC1918
-                ipv4              matches any IPv4 address
+                rfc1918           private IPv4 addresses defined in RFC1918
+                ipv4              IPv4 addresses
+                ipv6              IPv6 addresses
+                linklocal         169.254.0.0/16, ffe80::/10
 
     Any arguments given after -- will be passed to the underlying search command.
 
@@ -104,6 +107,10 @@ zipFiles=
 # default to reading from stdin
 files=
 findFiles=true
+# this should be on a ramfs/tmpfs like /tmp
+cacheDir=/tmp
+useCache=
+cacheExpiry="+15" # in minutes
 
 # process command args
 while [[ $# -gt 0 ]]; do
@@ -120,6 +127,7 @@ while [[ $# -gt 0 ]]; do
         -v|--invert-match)      invert=true ;;
         -i|--ignore-case)       extra_args+=(--ignore-case) ;;
         -o|--only-matching)     extra_args+=(--only-matching) ;;
+        --no-cache)             useCache=false ;;
         -f|--file)
             shift
             patternfile="$1"
@@ -204,6 +212,21 @@ if $findFiles && (isNotEmpty "$logType" || ! isStdinRedir || isNotEmpty "$FILTER
     fi
 fi
 
+# cache is an experimental feature
+if isEmpty $EXPERIMENTAL; then
+    useCache=false
+fi
+
+# can't write to cache directory; disable
+if [[ ! -w $cacheDir ]]; then
+    useCache=false
+# only use the cache if --no-cache wasn't specified and there are files to search (not stdin)
+elif $useCache && isNotEmpty $files; then
+    useCache=true
+else
+    useCache=false
+fi
+
 # convert all terms to regexes
 for term in "${terms[@]}"; do
     # if regex flag was not given then escape the search term
@@ -215,8 +238,10 @@ done
 
 if [[ ${#regexes[@]} -eq 0 ]]; then
     # if there are no regexes to search then treat it like cat
-    filterCmd="zcat --force --quiet ${files[@]}"
     # TODO test files with spaces
+    filterCmd="zcat --force --quiet ${files[@]}"
+    # skip the cache in this case
+    useCache=false
 else
     invert_flag=""
     header_flag="-e '^#'"
@@ -247,6 +272,25 @@ else
     done
     filterCmd="$filterCmd)' ${files[@]}"
     # TODO test files with spaces
+fi
+
+if $useCache; then
+    # create a hash of the command for caching
+    uniqueHash=$(echo $filterCmd | md5sum | cut -d' ' -f1)
+    cacheFile=$cacheDir/filter-cache-$uniqueHash
+    # clean up expired cache entries
+    find "$cacheDir" -name "filter-cache-*" -mmin "$cacheExpiry" -delete
+
+    if [[ -e $cacheFile ]]; then
+        # cache exists; just output it
+        filterCmd="cat $cacheFile"
+    else
+        # cache doesn't exist; save one
+        filterCmd="$filterCmd | tee $cacheFile"
+        # remove the cache file if filter stops prematurely
+        trap "rm -f '$cacheFile'" INT
+    fi
+    # TODO what to do if we run out of space for the cache
 fi
 
 # if stdout is not redirected, get rid of zeek headers
