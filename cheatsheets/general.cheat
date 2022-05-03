@@ -12,6 +12,8 @@ g /host
 # Modern alternative to nano #tip
 micro
 
+# Determine when an IP or domain has ever been seen in the past #tip
+fd conn | xargs ug -Flz <search string>
 
 % timestamp
 

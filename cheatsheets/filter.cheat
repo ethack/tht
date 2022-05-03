@@ -34,3 +34,6 @@ filter -i example.com
 
 # Print only the strings that match your search rather than the entire line #tip
 filter -o -p ipv4
+
+# Find files that contain the search term (quits searching file after first instance found)
+eval $(fd . | filter - <term> -n -- -l | sd -s '^# OR ' '')
