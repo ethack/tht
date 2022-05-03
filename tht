@@ -15,16 +15,20 @@ fi
 
 usage() {
     cat <<EOF
-Usage: tht [update|pull|version|dev] [run <arg>] [-- [<args>]]
+Usage: tht [command] [flags] [-- [<args>]]
 
 Run tht without arguments for normal use.
 
-    update   Download the latest THT image and update the script before running.
-    pull     Download the latest THT image before running (don't update this script).
-    version  Print the THT version.
-    dev      Start THT in dev mode. For development purposes only.
+Commands:
+    update   Download the latest THT image and updates this script
+    version  Print the THT version
+    run      Run a script from stdin inside THT
 
-    run      Run either the script from stdin or following argument inside THT.
+Flags:
+    --experimental  Enable experimental features
+    --dev           Start THT in development mode
+
+Arguments:
     --       Any arguments after the -- are run inside THT in _interactive_ mode.
 
 EOF
@@ -50,30 +54,21 @@ while [ $# -gt 0 ]; do
         usage
         exit 0
     ;;
-    update)
+    update|pull)
         echo "Downloading latest THT image..."
         $DOCKER pull $IMAGE
         SUDO=
         if [ ! -w "$0" ]; then
             SUDO="sudo"
         fi
-        echo "Self-updating THT script..."
-        $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht -o "$0"
-        # run the updated script with the same parameters minus the one that triggered the update
-        shift
-        exec "$0" "$@"
-    ;;
-    pull|--pull)
-        echo "Downloading latest THT image..."
-        $DOCKER pull $IMAGE
-        SUDO=
-        if [ ! -w "$0" ]; then
-            SUDO="sudo"
+        # hidden feature to disable clobbering this script for development
+        if [[ $1 != pull ]]; then
+            echo "Self-updating THT script..."
+            $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht -o "$0"
         fi
-        # note: don't update the THT script
         # run the updated script with the same parameters minus the one that triggered the update
         shift
-        exec "$0" "$@"
+        exit 0
     ;;
     version)
         CMD=(zsh -c "cat /etc/tht-release")
@@ -84,28 +79,14 @@ while [ $# -gt 0 ]; do
         # TODO: give a tht prefix to mktemp
         # create temporary file to store commands/script
         SCRIPT=$(mktemp -u)
-        trap "rm -f $SCRIPT" EXIT
-
-        # get command from an argument, if specified
-        if [ -n "$2" ]; then
-            echo "$2" > $SCRIPT
-            shift
-        # otherwise read commands from stdin
-        else
-            cat > $SCRIPT
-        fi
-
-        # TODO: allow passing in a script file to run directly instead of piping on stdin
-        # TODO: --flock and --nice options; flock lock must be stored in /host volume or else a docker volume (e.g. zsh cache)
-        # flock lock must be deterministic; maybe per identical input (md5 of script); or specified manually
+        trap "rm -f '$SCRIPT'" EXIT
+        cat > $SCRIPT
 
         # mount the temp file in the container and execute it
         docker_cmd+=(--mount "source=${SCRIPT},destination=/run.sh,type=bind")
         if head -n 1 $SCRIPT | grep -q '^#!'; then
             # script has a shebang; execute it directly with the defined interpreter
-            # TODO: this will fail if tmpfs is mounted as noexec
-            # could strip off #! and run interpreter directly
-            # or copy script into container instead, but that would mean creating the container first
+            # NOTE: this will fail if tmpfs is mounted as noexec
             chmod +x $SCRIPT
             CMD+=(/run.sh)
         else
@@ -113,7 +94,7 @@ while [ $# -gt 0 ]; do
             CMD+=(zsh /run.sh)
         fi
     ;;
-    dev|--dev)
+    --dev)
         # change to directory this script is in, following any symlinks
         pushd $(dirname $(readlink -f "${BASH_SOURCE[0]}")) >/dev/null
         # loop through dynamically to prevent having to update on every new addition
@@ -131,6 +112,11 @@ while [ $# -gt 0 ]; do
         done < <(find cheatsheets -type f -print0 2>/dev/null)
         docker_cmd+=(--mount "source=${PWD}/test,destination=/usr/local/test,type=bind")
         popd >/dev/null
+        # also enable experimental mode
+        docker_cmd+=(--env "EXPERIMENTAL=true")
+    ;;
+    --experimental)
+        docker_cmd+=(--env "EXPERIMENTAL=true")
     ;;
     --)
         # anything after -- is treated as a command to run in interactive mode
@@ -144,7 +130,7 @@ done
 
 # mount docker inside if we can find it
 if command -v docker >/dev/null && [[ -e /var/run/docker.sock ]]; then
-    # mount the docker binary inside as well so we don't have to include it in THT
+    # mount the docker binary inside as well so we don't have to bundle it in THT
     docker_cmd+=(
         --mount "source=$(command -v docker),destination=/usr/local/bin/docker,type=bind"
         --mount "source=/var/run/docker.sock,destination=/var/run/docker.sock,type=bind"
