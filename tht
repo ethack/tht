@@ -55,19 +55,25 @@ while [ $# -gt 0 ]; do
         exit 0
     ;;
     update|pull)
+        # exit if any of the update commands fail
+        set -e
+
         echo "Downloading latest THT image..."
         $DOCKER pull $IMAGE
         SUDO=
         if [ ! -w "$0" ]; then
             SUDO="sudo"
         fi
+
         # hidden feature to disable clobbering this script for development
         if [[ $1 != pull ]]; then
             echo "Self-updating THT script..."
             $SUDO curl -s https://raw.githubusercontent.com/ethack/tht/main/tht -o "$0"
         fi
-        # run the updated script with the same parameters minus the one that triggered the update
-        shift
+
+        # remove all dangling tht images
+        $DOCKER image rm --force $($DOCKER image ls --no-trunc --quiet $IMAGE --filter "dangling=true")
+        
         exit 0
     ;;
     version)
