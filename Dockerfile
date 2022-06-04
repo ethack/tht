@@ -287,8 +287,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
     # zq - zeek file processor
     ARG ZQ_VERSION=1.1.0
-    RUN wget -nv -O /tmp/zq.zip https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.zip \
-     && unzip -j -d /tmp/ /tmp/zq.zip \
+    RUN wget -nv -O /tmp/zq.tar.gz https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.tar.gz \
+     && tar -xf /tmp/zq.tar.gz -C /tmp \
      && mv /tmp/zq $BIN \
      && mv /tmp/zed $BIN
     # COPY --from=go-builder $GO_BIN/zync $BIN
