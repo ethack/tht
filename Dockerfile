@@ -47,8 +47,6 @@ FROM rust:buster as rust-builder
     RUN cargo install xsv
     # dust - file / directory size analyzer
     RUN cargo install du-dust --bin dust
-    # navi - cheatsheets
-    # RUN cargo install navi
     # tealdeer - tldr cheatsheet client
     RUN cargo install tealdeer
     # zellij - terminal multiplexer
@@ -172,10 +170,10 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=rust-builder $RUST_BIN/fd $BIN
     RUN apt-get -y install file
     # fzf - fuzzy finder
-    ARG FZF_VERSION=0.27.3
+    ARG FZF_VERSION=0.30.0
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
      && tar -xz -f /tmp/fzf.tar.gz -C $BIN
-    ARG HCK_VERSION=0.7.1
+    ARG HCK_VERSION=0.7.2
     RUN wget -nv -O $BIN/hck https://github.com/sstadick/hck/releases/download/v${HCK_VERSION}/hck-linux-amd64 \
      && chmod +x $BIN/hck
     # htop - process monitor
@@ -191,9 +189,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=c-builder /tmp/moreutils/sponge $BIN
     COPY --from=c-builder /tmp/moreutils/zrun $BIN
     # navi - cheatsheet
-    # COPY --from=rust-builder $RUST_BIN/navi $BIN
     # /root/.local/share/navi/
-    ARG NAVI_VERSION=2.17.0
+    ARG NAVI_VERSION=2.20.1
     RUN wget -nv -O /tmp/navi.tar.gz https://github.com/denisidoro/navi/releases/download/v${NAVI_VERSION}/navi-v${NAVI_VERSION}-x86_64-unknown-linux-musl.tar.gz \
      && tar -xzf /tmp/navi.tar.gz -C $BIN \
      && mkdir -p /root/.local/share/navi/cheats
@@ -290,7 +287,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
-    ARG ZQ_VERSION=0.33.0
+    ARG ZQ_VERSION=1.1.0
     RUN wget -nv -O /tmp/zq.zip https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.zip \
      && unzip -j -d /tmp/ /tmp/zq.zip \
      && mv /tmp/zq $BIN \
