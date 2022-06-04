@@ -164,7 +164,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # exa - ls alternative
     ARG EXA_VERSION=0.10.1
     RUN wget -nv -O /tmp/exa.zip https://github.com/ogham/exa/releases/download/v${EXA_VERSION}/exa-linux-x86_64-v${EXA_VERSION}.zip \
-     && unzip -d exa /tmp/exa.tar.gz \
+     && unzip -d exa /tmp/exa.zip \
      && mv /tmp/exa/bin/exa $BIN
     # fd - find alternative
     COPY --from=rust-builder $RUST_BIN/fd $BIN
