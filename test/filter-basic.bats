@@ -245,34 +245,34 @@ setup() {
 	EOF
 }
 
-# @test "file input->no arguments" {
-# 	local temp_dir=$(temp_make)
-# 	cat <<-EOF > "$temp_dir/conn.log"
-# 		one
-# 		two
-# 		three
-# 	EOF
-# 	assert_file_exist "$temp_dir/conn.log"
+@test "file input->no arguments" {
+	local temp_dir=$(temp_make)
+	cat <<-EOF > "$temp_dir/conn.log"
+		one
+		two
+		three
+	EOF
+	assert_file_exist "$temp_dir/conn.log"
 	
-# 	scenario_dry_run() {
-# 		cd "$temp_dir"
-# 		filter --dry-run
-# 	}
-# 	run scenario_dry_run
-# 	assert_output --partial 'conn.log'
+	scenario_dry_run() {
+		cd "$temp_dir"
+		filter --dry-run
+	}
+	run scenario_dry_run
+	assert_output --partial 'conn.log'
 	
-# 	scenario() {
-# 		cd "$temp_dir"
-# 		filter
-# 	}
-# 	run scenario 
-# 	cat <<-EOF | assert_output -
-# 		one
-# 		two
-# 		three
-# 	EOF
-# 	temp_del "$temp_dir"
-# }
+	scenario() {
+		cd "$temp_dir"
+		filter
+	}
+	run scenario 
+	cat <<-EOF | assert_output -
+		one
+		two
+		three
+	EOF
+	temp_del "$temp_dir"
+}
 
 @test "empty string argument" {
 	scenario() {
