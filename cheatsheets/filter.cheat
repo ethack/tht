@@ -36,4 +36,4 @@ filter -i example.com
 filter -o -p ipv4
 
 # Find files that contain the search term (quits searching file after first instance found)
-eval $(fd . | filter - <term> -n -- -l | sd -s '^# OR ' '')
+fd . | filter -l - <term>

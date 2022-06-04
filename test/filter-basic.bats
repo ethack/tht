@@ -371,3 +371,43 @@ setup() {
 		two
 	EOF
 }
+
+@test "files with matches" {
+	local temp_dir=$(temp_make)
+	cat <<-EOF > "$temp_dir/conn.1.log"
+		one
+		all
+	EOF
+	assert_file_exist "$temp_dir/conn.1.log"
+	cat <<-EOF > "$temp_dir/conn.2.log"
+		two
+		all
+	EOF
+	assert_file_exist "$temp_dir/conn.2.log"
+	
+	scenario_one() {
+		cd "$temp_dir"
+		filter -l one
+	}
+	run scenario_one
+	assert_output './conn.1.log'
+
+	scenario_two() {
+		cd "$temp_dir"
+		filter -l two
+	}
+	run scenario_two
+	assert_output './conn.2.log'
+	
+	scenario_all() {
+		cd "$temp_dir"
+		filter -l all | sort
+	}
+	run scenario_all
+	cat <<-EOF | assert_output -
+		./conn.1.log
+		./conn.2.log
+	EOF
+
+	temp_del "$temp_dir"
+}

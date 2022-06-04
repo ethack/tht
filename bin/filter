@@ -19,12 +19,13 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
     --or       at least one search term is required to appear in a line (as opposed to all terms matching)
 
     Search terms will match on word boundaries by default.
-    -r|--regex         signifies that [search_term(s)] should be treated as regexes
-    -s|--starts-with   anchor search term to beginning of field (e.g. 192.168)
-    -e|--ends-with     anchor search term to end of field (e.g. google.com)
-    -i|--ignore-case   perform case-insensitive matching
-    -o|--only-matching print only the matching part of lines
-    -v|--invert-match  will invert the matching
+    -r|--regex               signifies that [search_term(s)] should be treated as regexes
+    -s|--starts-with         anchor search term to beginning of field (e.g. 192.168)
+    -e|--ends-with           anchor search term to end of field (e.g. google.com)
+    -i|--ignore-case         perform case-insensitive matching
+    -l|--files-with-matches  print filenames instead of matches
+    -o|--only-matching       print only the matching part of lines
+    -v|--invert-match        will invert the matching
 
     -n|--dry-run       print out the final search command rather than execute it
 
@@ -96,6 +97,7 @@ escape=true
 condition="and"
 dryRun=false
 invert=false
+onlyFilenames=false
 grepCmd=ug
 termPrefix='\\b'
 termSuffix='\\b'
@@ -119,15 +121,19 @@ while [[ $# -gt 0 ]]; do
             print_usage
             exit
         ;;
-        -s|--starts-with)       termPrefix='[,"\\t]' ;;
-        -e|--ends-with)         termSuffix='[,"\\t]' ;;
-        -r|--regex)             escape=false ;;
-        --or)                   condition="or" ;;
-        -n|--dry-run)           dryRun=true ;;
-        -v|--invert-match)      invert=true ;;
-        -i|--ignore-case)       extra_args+=(--ignore-case) ;;
-        -o|--only-matching)     extra_args+=(--only-matching) ;;
-        --no-cache)             useCache=false ;;
+        -s|--starts-with)        termPrefix='[,"\\t]' ;;
+        -e|--ends-with)          termSuffix='[,"\\t]' ;;
+        -r|--regex)              escape=false ;;
+        --or)                    condition="or" ;;
+        -n|--dry-run)            dryRun=true ;;
+        -v|--invert-match)       invert=true ;;
+        -i|--ignore-case)        extra_args+=(--ignore-case) ;;
+        -l|--files-with-matches) 
+            extra_args+=(--files-with-matches) 
+            onlyFilenames=true
+        ;;
+        -o|--only-matching)      extra_args+=(--only-matching) ;;
+        --no-cache)              useCache=false ;;
         -f|--file)
             shift
             patternfile="$1"
@@ -243,11 +249,15 @@ if [[ ${#regexes[@]} -eq 0 ]]; then
     # skip the cache in this case
     useCache=false
 else
-    invert_flag=""
-    header_flag="-e '^#'"
+    invertFlag=""
+    headerFlag="-e '^#'"
     if $invert; then
-        invert_flag="--invert-match"
-        header_flag=""
+        invertFlag="--invert-match"
+        headerFlag=""
+    fi
+    if $onlyFilenames; then
+        # when filenames are being printed we don't want to match the header
+        headerFlag=""
     fi
 
     # TODO: Test if you can have too many files passed in. Might have to pipe from find directly.
@@ -260,7 +270,7 @@ else
         regex="$(printf "%s" "$regex" | sed -e 's/ /\\x20/g' -e 's/"/\\x22/g')"
         # special case the first search regex
         if $isFirstSearch; then
-            filterCmd="ug ${extra_args[@]} --no-filename --decompress $invert_flag --bool '${header_flag:+^# OR }($regex"
+            filterCmd="ug ${extra_args[@]} --no-filename --decompress $invertFlag --bool '${headerFlag:+^# OR }($regex"
             isFirstSearch=false
         else
             if [ "$condition" = "and" ]; then
