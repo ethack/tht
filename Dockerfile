@@ -147,7 +147,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get update
 
     # set default shell to zsh so apt automatically detects and adds zsh completions
-    RUN apt-get -y install zsh git curl wget
+    RUN apt-get -y install zsh git curl unzip wget
     SHELL ["zsh", "-c"]
 
 ## System Utils ##
@@ -210,7 +210,6 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN apt-get -y install --no-install-recommends python3 python3-pip \
      && ln -s /usr/bin/python3 /usr/bin/python
     COPY --from=rust-builder $RUST_BIN/sd $BIN
-    RUN apt-get -y install unzip
     # zoxide - better directory traversal
     COPY --from=rust-builder $RUST_BIN/zoxide $BIN
     # zutils - better zcat

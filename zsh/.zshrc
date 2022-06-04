@@ -206,12 +206,6 @@ alias z2j=zeek2json
 # convert timestamps to human-readable by default
 alias zeek-cut="zeek-cut -U '%FT%TZ'"
 
-function replace() {
-  local search=$(echo "$1" | sed 's_/_\\/_g')
-  local replace=$(echo "$2" | sed 's_/_\\/_g')
-  echo sed -E "s/$search/$replace/g"
-}
-
 # customize autosuggest
 export ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE="fg=8,underline"
 export ZSH_AUTOSUGGEST_STRATEGY=(match_prev_cmd history)
