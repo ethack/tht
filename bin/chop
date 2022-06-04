@@ -89,7 +89,7 @@ fi
 
 # line empty; cannot continue
 if [[ -z $LINE ]]; then
-    >&2 echo "No input detected! (make first line is not empty)"
+    >&2 echo "No input detected! (make sure first line is not empty)"
     exit 1
 # custom delimiter
 elif [[ -n $customDelim ]]; then
@@ -119,8 +119,10 @@ else
 fi
 
 # TODO
-# use tsv-utils instead of xsv if benchmark is faster
-# tsv-select supports -d
+# benchmark:
+# - tsv-select (supports -d)
+# - hck
+# - frawk
 # allow inverting columns with -v
 # parsing a suricata log or syslog will result in output being tab separated
 #   maybe have it preserve input, implement tsv script that converts input to tsv, already exists for json
