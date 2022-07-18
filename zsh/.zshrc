@@ -113,8 +113,6 @@ if exists zoxide; then
   export _ZO_DATA_DIR="$PERSISTENT/zoxide"
   mkdir -p "$_ZO_DATA_DIR"
   eval "$(zoxide init zsh)"
-  # remove alias conflict
-  __zoxide_unset 'zq'
 
   function g() {
     case "$1" in

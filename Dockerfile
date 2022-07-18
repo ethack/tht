@@ -94,7 +94,7 @@ FROM ubuntu:21.04 as c-builder
 
     # pspg - pager
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git ca-certificates libpq-dev libncurses-dev
-    ARG PSPG_VERSION=5.5.1
+    ARG PSPG_VERSION=5.5.5
     RUN git clone https://github.com/okbob/pspg.git /tmp/pspg \
      && cd /tmp/pspg \
      && git checkout $PSPG_VERSION \
@@ -173,7 +173,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ARG FZF_VERSION=0.30.0
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
      && tar -xz -f /tmp/fzf.tar.gz -C $BIN
-    ARG HCK_VERSION=0.7.2
+    ARG HCK_VERSION=0.7.5
     RUN wget -nv -O $BIN/hck https://github.com/sstadick/hck/releases/download/v${HCK_VERSION}/hck-linux-amd64 \
      && chmod +x $BIN/hck
     # htop - process monitor
@@ -264,7 +264,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
     ### Graphing ###
     RUN apt-get install -y colortest
-    # RUN python3 -m pip install git+https://github.com/piccolomo/plotext#egg=plotext
+    #RUN python3 -m pip install git+https://github.com/piccolomo/plotext
     RUN python3 -m pip install 'plotext'
     COPY --from=go-builder $GO_BIN/pxl $BIN
 
@@ -286,7 +286,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
-    ARG ZQ_VERSION=1.1.0
+    ARG ZQ_VERSION=1.2.0
     RUN wget -nv -O /tmp/zq.tar.gz https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.tar.gz \
      && tar -xf /tmp/zq.tar.gz -C /tmp \
      && mv /tmp/zq $BIN \
