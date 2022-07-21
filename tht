@@ -92,7 +92,7 @@ while [ $# -gt 0 ]; do
         # mount the temp file in the container and execute it
         docker_cmd+=(--mount "source=${SCRIPT},destination=/run.sh,type=bind")
         if head -n 1 $SCRIPT | grep -q '^#!'; then
-            # script has a shebang; execute it directly with the defined interpreter
+            # script has a sh-bang; execute it directly with the defined interpreter
             # NOTE: this will fail if tmpfs is mounted as noexec
             chmod +x $SCRIPT
             CMD+=(/run.sh)
@@ -126,9 +126,14 @@ while [ $# -gt 0 ]; do
         docker_cmd+=(--env "EXPERIMENTAL=true")
     ;;
     --)
-        # anything after -- is treated as a command to run in interactive mode
         shift
-        CMD+=(zsh -c "$*")
+        if $BACKGROUNDJOB; then
+            # anything after -- is passed as an argument to the run script
+            CMD+=("$@")
+        else
+            # anything after -- is treated as a command to run in interactive mode
+            CMD+=(zsh -c "$*")
+        fi
         break
     ;; 
     esac
