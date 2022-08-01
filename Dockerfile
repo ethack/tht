@@ -71,7 +71,7 @@ FROM ubuntu:22.04 as c-builder
     # RUN apt-get update && apt-get -y install ca-certficates git gcc g++ make wget
 
     # SiLK IPSet
-    RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ libpcap-dev python python-dev libglib2.0-dev ca-certificates
+    RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ libpcap-dev python3 python3-dev libglib2.0-dev ca-certificates
     ARG IPSET_VERSION=3.18.0
     RUN wget -nv -O /tmp/silk-ipset.tar.gz https://tools.netsa.cert.org/releases/silk-ipset-${IPSET_VERSION}.tar.gz \
      && cd /tmp \
