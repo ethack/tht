@@ -72,9 +72,10 @@ while [ $# -gt 0 ]; do
         fi
 
         # remove all dangling tht images
-        echo "Removing old THT images..."
-        $DOCKER image rm --force $($DOCKER image ls --no-trunc --quiet $IMAGE --filter "dangling=true")
-        
+        if [[ $($DOCKER image ls --no-trunc --quiet $IMAGE --filter "dangling=true" | wc -l) -gt 0 ]]; then
+            echo "Removing old THT images..."
+            $DOCKER image rm --force $($DOCKER image ls --no-trunc --quiet $IMAGE --filter "dangling=true")
+        fi       
         exit 0
     ;;
     version)
