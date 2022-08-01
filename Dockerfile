@@ -60,7 +60,7 @@ FROM rust:buster as rust-builder
     #RUN cargo install frawk --no-default-features --features use_jemalloc,allow_avx2
 
 # C/C++ Builder Stage #
-FROM ubuntu:21.04 as c-builder
+FROM ubuntu:22.04 as c-builder
 
     ENV DEBIAN_FRONTEND noninteractive
     ENV DEBCONF_NONINTERACTIVE_SEEN true
@@ -128,7 +128,7 @@ FROM ubuntu:21.04 as c-builder
     && make && make test
 
 # Package Installer Stage #
-FROM ubuntu:21.04 as base
+FROM ubuntu:22.04 as base
 ARG GO_BIN
 ARG RUST_BIN
 ENV BIN=/usr/local/bin
@@ -366,7 +366,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     RUN rm -rf /tmp/*
 
 # Squash layers #
-FROM ubuntu:21.04
+FROM ubuntu:22.04
 
 ## Squash all previous layers ##
     COPY --from=base / /
