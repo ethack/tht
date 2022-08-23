@@ -80,20 +80,20 @@ csv)
         # add one to account for the header row
         cmd="$cmd head -n $((lines+1)) |"
     fi
-    cmd="$cmd pspg --csv --csv-header=on --vertical-cursor --freezecols=0" 
+    cmd="$cmd pspg --csv --csv-header=on --vertical-cursor --freezecols=0 --highlight-odd-rec" 
 ;;
 tsv)
     if ! isEmpty "$lines"; then
         # add one to account for the header row
         cmd="$cmd head -n $((lines+1)) |"
     fi
-    cmd="$cmd pspg --tsv --csv-header=on --vertical-cursor --freezecols=0" 
+    cmd="$cmd pspg --tsv --csv-header=on --vertical-cursor --freezecols=0 --highlight-odd-rec" 
 ;;
 zeek) 
     if ! isEmpty "$lines"; then
-        cmd="$cmd zq -f csv 'head $lines' - | pspg --csv --csv-header=on --vertical-cursor --freezecols=0"
+        cmd="$cmd zq -f csv 'head $lines | fuse' - | pspg --csv --csv-header=on --vertical-cursor --freezecols=0 --highlight-odd-rec"
     else
-        cmd="$cmd zq -f csv - | pspg --csv --csv-header=on --vertical-cursor --freezecols=0"
+        cmd="$cmd zq -f csv 'fuse' - | pspg --csv --csv-header=on --vertical-cursor --freezecols=0 --highlight-odd-rec"
     fi
 
     # note: the options below don't convert timestamps to human readable format
@@ -120,3 +120,4 @@ eval "$cmd"
 
 # TODO
 # Make usage generic using ideas from chop to intelligently pick the right format/options.
+# Make it take arbitrary number of filenames; compressed or not
