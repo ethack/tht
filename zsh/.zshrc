@@ -115,9 +115,15 @@ if exists zoxide; then
   eval "$(zoxide init zsh)"
 
   function g() {
-    case "$1" in
+    case "$*" in
     #-) cd - && ls ;; # hard-code - to be previous cwd # not needed
-    *) 
+    today)
+      z "$(date +%F)"
+    ;;
+    yesterday)
+      z "$(date --date yesterday +%F)"
+    ;;
+    *)
       # if z fails to find a directory, then try again in the /host/ filesystem
       # if both fail then print the error message from the original command instead
       {z "$*" 2>/dev/null && ls} || \
