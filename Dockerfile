@@ -94,7 +94,7 @@ FROM ubuntu:22.04 as c-builder
 
     # pspg - pager
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git ca-certificates libpq-dev libncurses-dev
-    ARG PSPG_VERSION=5.5.5
+    ARG PSPG_VERSION=5.5.6
     RUN git clone https://github.com/okbob/pspg.git /tmp/pspg \
      && cd /tmp/pspg \
      && git checkout $PSPG_VERSION \
@@ -170,7 +170,7 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     COPY --from=rust-builder $RUST_BIN/fd $BIN
     RUN apt-get -y install file
     # fzf - fuzzy finder
-    ARG FZF_VERSION=0.30.0
+    ARG FZF_VERSION=0.33.0
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
      && tar -xz -f /tmp/fzf.tar.gz -C $BIN
     ARG HCK_VERSION=0.7.5
@@ -232,6 +232,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
      && chmod +x $BIN/mlr5
     COPY --from=go-builder $GO_BIN/mlr $BIN/mlr6
     RUN ln -s $BIN/mlr6 $BIN/mlr
+    # VisiData
+    RUN apt-get -y install visidata
     # CSV/TSV toolkit
     COPY --from=rust-builder $RUST_BIN/xsv $BIN
     # CSV/TSV toolkit
