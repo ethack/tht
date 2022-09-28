@@ -4,7 +4,7 @@
 fd dns 2021-01-{15..31} 2021-02-{01..10} | filter - example.com
 
 # Extract IPs from text #tip
-filter -p ipv4 -- -o | distinct
+filter -o -p ipv4 | distinct
 
 # Find IPs associated with a domain #tip
 filter --dns <domain> | chop answers | filter -o -p ipv4 | distinct

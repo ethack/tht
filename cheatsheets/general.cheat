@@ -9,7 +9,7 @@ g logs
 # Go to the host filesystem #tip
 g /host
 
-# Modern alternative to nano #tip
+# Not a fan of Vim or Emacs? Try a modern alternative to nano #tip
 micro
 
 # Determine when an IP or domain has ever been seen in the past #tip
