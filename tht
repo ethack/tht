@@ -141,8 +141,10 @@ while [ $# -gt 0 ]; do
     shift
 done
 
-# mount docker inside if we can find it
-if command -v docker >/dev/null && [[ -e /var/run/docker.sock ]]; then
+# mount docker inside if we can find it, and it's not the snap version
+if [[ -e $(command -v docker) ]] \
+   && ! snap list docker >/dev/null 2>&1 \
+   && [[ -e /var/run/docker.sock ]]; then
     # mount the docker binary inside as well so we don't have to bundle it in THT
     docker_cmd+=(
         --mount "source=$(command -v docker),destination=/usr/local/bin/docker,type=bind"
