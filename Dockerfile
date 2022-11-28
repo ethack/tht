@@ -1,8 +1,4 @@
-# go get installs tools to /go/bin/
-ARG GO_BIN=/go/bin
-# cargo installs tools to /usr/local/cargo/bin/
-ARG RUST_BIN=/usr/local/cargo/bin
-
+# syntax=docker/dockerfile:1.3-labs
 # Golang Builder Stage #
 FROM golang:buster as go-builder
 
@@ -26,7 +22,6 @@ FROM golang:buster as go-builder
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
-    ARG RUST_BIN
 
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
@@ -58,6 +53,8 @@ FROM rust:buster as rust-builder
     # frawk - fast awk (TODO: check readme for better build instructions)
     # RUN cargo +nightly install frawk --no-default-features --features use_jemalloc,allow_avx2,unstable
     #RUN cargo install frawk --no-default-features --features use_jemalloc,allow_avx2
+    # zet - set operations on files
+    RUN cargo install zet
 
 # C/C++ Builder Stage #
 FROM ubuntu:22.04 as c-builder
@@ -94,7 +91,7 @@ FROM ubuntu:22.04 as c-builder
 
     # pspg - pager
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git ca-certificates libpq-dev libncurses-dev
-    ARG PSPG_VERSION=5.5.6
+    ARG PSPG_VERSION=5.5.13
     RUN git clone https://github.com/okbob/pspg.git /tmp/pspg \
      && cd /tmp/pspg \
      && git checkout $PSPG_VERSION \
@@ -129,14 +126,16 @@ FROM ubuntu:22.04 as c-builder
 
 # Package Installer Stage #
 FROM ubuntu:22.04 as base
-ARG GO_BIN
-ARG RUST_BIN
-ENV BIN=/usr/local/bin
-ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
+    # go install puts tools in /go/bin
+    ENV GO_BIN=/go/bin
+    # cargo puts tools in /usr/local/cargo/bin
+    ENV RUST_BIN=/usr/local/cargo/bin
+    # put all THT tools in /usr/local/bin
+    ENV BIN=/usr/local/bin
+    ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
 
-
-# NOTE: Intentionally written with many layers for efficient caching
-# and readability. All layers are squashed at the end.
+# NOTE: Intentionally written with many layers for efficient build caching
+# and readability. All layers are squashed in the final stage.
 
 ## Setup ##
     ENV DEBIAN_FRONTEND noninteractive
@@ -240,20 +239,20 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ARG TSVUTILS_VERSION=2.2.0
     RUN wget -nv -O /tmp/tsv-utils.tar.gz https://github.com/eBay/tsv-utils/releases/download/v${TSVUTILS_VERSION}/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2.tar.gz \
      && tar -xzf /tmp/tsv-utils.tar.gz -C /tmp \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/keep-header $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/csv2tsv $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/keep-header $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/csv2tsv $BIN \
     #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/number-lines $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-append $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-filter $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-join $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-append $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-filter $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-join $BIN \
     #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-pretty $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-sample $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-select $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-split $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-summarize $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-uniq $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort $BIN \
-     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort-fast $BIN
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-sample $BIN \
+     && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-select $BIN
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-split $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-summarize $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-uniq $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort $BIN \
+    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort-fast $BIN
     #COPY --from=rust-builder $RUST_BIN/frawk $BIN
 
     # Misc useful tools from https://www.datascienceatthecommandline.com/
@@ -263,6 +262,8 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/dseq $BIN
     ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/trim $BIN
     RUN chmod +x $BIN/*
+
+    COPY --from=rust-builder $RUST_BIN/zet $BIN
 
     ### Graphing ###
     RUN apt-get install -y colortest
@@ -323,6 +324,18 @@ ENV ZSH_COMPLETIONS=/usr/share/zsh/vendor-completions
     # zannotate
     COPY --from=go-builder $GO_BIN/zannotate $BIN
     RUN apt-get -y install geoipupdate
+
+    RUN apt-get -y install --no-install-recommends aha bind9-host mtr-tiny ncat
+    COPY <<-'EOF' $BIN/nmap
+		#!/bin/bash
+
+		# hacky wrapper script to fulfill this functionality and avoid installing nmap:
+		# https://github.com/nitefood/asn/blob/1f794b9b26d10863070f9bf4fd9978c159d77542/asn#L1488
+
+		echo "$3" | cidr2ip | sed 's/^/Nmap scan report for /g'
+EOF
+    RUN wget -nv -O $BIN/asn https://raw.githubusercontent.com/nitefood/asn/master/asn \
+     && chmod +x $BIN/asn $BIN/nmap
 
 ## Network Utils ##
     # dig
