@@ -217,7 +217,7 @@ filter --ssl cloudfront.net | chop ts | ts2 date | freq | plot-bar
 
 <!-- TODO prevent line wrapping on smaller width screens. The above block should purely scroll instead. -->
 
-Compare this to a (rougly) equivalent command without THT. It's doable, but you have to be fluent in quite a few builtin Linux tools, as well as their various flags, and how to escape special characters. After all that you get the same information, but you have to compare relative size of numbers in the text output rather than looking at an graph.
+Compare this to a (rougly) equivalent command without THT. It's doable, but you have to be fluent in quite a few builtin Linux tools, as well as their various flags, and how to escape special characters. After all that you get the same information, but you have to compare relative size of numbers in the text output rather than looking at a graph.
 
 ```bash
 zgrep -hF cloudfront.net */ssl* | cut -d$'\t' -f1 | sed 's/^/@/' | date -Idate -f - | sort -nr | uniq -c

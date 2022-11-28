@@ -24,16 +24,10 @@ This mounts certain files from this repository directly into the container which
 
 ## Building Docker Image
 
-You can build the image manually with the following command. However, the Maxmind geo information will not be included.
+You can build the image manually with the following command.
 
 ```bash
 docker build -t ethack/tht .
-```
-
-If you want to build with Maxmind data, you'll need to sign up for a free [Maxmind license key](https://support.maxmind.com/account-faq/license-keys/where-do-i-find-my-license-key/). You can then specify your key when building.
-
-```bash
-docker build --build-arg MAXMIND_LICENSE=yourkeyhere -t ethack/tht .
 ```
 
 ## Building Documentation
@@ -44,6 +38,8 @@ Once you have Hugo you can compile and host the documentation locally with:
 
 ```bash
 hugo -s docs server -D
+# or using a docker image
+scripts/serve-docs.sh
 ```
 
 Then access the local website http://localhost:1313 in your browser.

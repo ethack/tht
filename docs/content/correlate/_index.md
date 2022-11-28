@@ -10,7 +10,6 @@ Here is an overview of the pages in this category:
 <!-- {{% children description="true" %}} -->
 
 - `zannotate`
-- `dog`
 - `mtr`
 - `whois`
 - `whois-bulk`
