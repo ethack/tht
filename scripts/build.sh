@@ -14,7 +14,7 @@ fi
 pushd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" > /dev/null
 cd ..
 
-docker build \
+docker buildx build \
   --pull \
   --build-arg THT_HASH=$(git describe --always --dirty) \
   --build-arg MAXMIND_LICENSE=$(cat scripts/maxmind_license.txt) \
