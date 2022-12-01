@@ -22,7 +22,10 @@ Run tht without arguments for normal use.
 Commands:
     update   Download the latest THT image and updates this script
     version  Print the THT version
-    run      Run a script from stdin inside THT
+
+To execute a script with tht you may either:
+    - Pass the commands in through stdin
+    - Give the path to a script file as an argument
 
 Flags:
     --experimental  Enable experimental features
@@ -34,7 +37,31 @@ Arguments:
 EOF
 }
 
-docker_cmd=(
+# sets up to execute a script within tht
+prepare_script_execution() {
+    SCRIPT_EXECUTION=true
+    local script_file=$(realpath "$1")
+
+    # mount the temp file in the container and execute it
+    DOCKER_ARGS+=(--mount "source=${script_file},destination=/run.sh,type=bind")
+    # check if script has a hash-bang, but ignore tht as a shell
+    if head -n 1 "$script_file" | grep -q '^#!' \
+        && ! head -n 1 "$script_file" | grep -q '[/#]tht$'; then
+        # execute it directly with the defined interpreter
+        # NOTE: this will fail if tmpfs is mounted as noexec
+        #chmod +x $script_file
+        if [ ! -x "$script_file" ]; then
+            >&2 echo "WARNING: $1 is not executable"
+        else
+            CMD+=(/run.sh)
+        fi
+    else
+        # otherwise run using zsh
+        CMD+=(zsh /run.sh)
+    fi
+}
+
+DOCKER_ARGS=(
     container run
     --rm
     --hostname "$(hostname)"
@@ -47,7 +74,7 @@ docker_cmd=(
     --workdir "/host/$(realpath "${PWD}")"
 )
 CMD=()
-BACKGROUNDJOB=false
+SCRIPT_EXECUTION=false
 while [ $# -gt 0 ]; do
     case $1 in
     help|-h|--help)
@@ -80,27 +107,7 @@ while [ $# -gt 0 ]; do
     ;;
     version)
         CMD=(zsh -c "cat /etc/tht-release")
-        break
-    ;;
-    run)
-        BACKGROUNDJOB=true
-        # TODO: give a tht prefix to mktemp
-        # create temporary file to store commands/script
-        SCRIPT=$(mktemp -u)
-        trap "rm -f '$SCRIPT'" EXIT
-        cat > $SCRIPT
-
-        # mount the temp file in the container and execute it
-        docker_cmd+=(--mount "source=${SCRIPT},destination=/run.sh,type=bind")
-        if head -n 1 $SCRIPT | grep -q '^#!'; then
-            # script has a sh-bang; execute it directly with the defined interpreter
-            # NOTE: this will fail if tmpfs is mounted as noexec
-            chmod +x $SCRIPT
-            CMD+=(/run.sh)
-        else
-            # run script using zsh
-            CMD+=(zsh /run.sh)
-        fi
+        exit 0
     ;;
     --dev)
         # change to directory this script is in, following any symlinks
@@ -108,27 +115,27 @@ while [ $# -gt 0 ]; do
         # loop through dynamically to prevent having to update on every new addition
         while IFS=  read -r -d $'\0' PROG; do
             # mount bin scripts for development
-            docker_cmd+=(--mount "source=${PWD}/${PROG},destination=/usr/local/bin/${PROG#"bin"},type=bind")
+            DOCKER_ARGS+=(--mount "source=${PWD}/${PROG},destination=/usr/local/bin/${PROG#"bin"},type=bind")
         done < <(find bin -type f -print0 2>/dev/null)
         while IFS=  read -r -d $'\0' CONF; do
             # mount zsh configs for development
-            docker_cmd+=(--mount "source=${PWD}/${CONF},destination=/root/${CONF#"zsh"},type=bind")
+            DOCKER_ARGS+=(--mount "source=${PWD}/${CONF},destination=/root/${CONF#"zsh"},type=bind")
         done < <(find zsh -type f -print0 2>/dev/null)
         while IFS=  read -r -d $'\0' CHEAT; do
             # mount navi cheats development
-            docker_cmd+=(--mount "source=${PWD}/${CHEAT},destination=/root/.local/share/navi/cheats/${CHEAT#"cheatsheets"},type=bind")
+            DOCKER_ARGS+=(--mount "source=${PWD}/${CHEAT},destination=/root/.local/share/navi/cheats/${CHEAT#"cheatsheets"},type=bind")
         done < <(find cheatsheets -type f -print0 2>/dev/null)
-        docker_cmd+=(--mount "source=${PWD}/test,destination=/usr/local/test,type=bind")
+        DOCKER_ARGS+=(--mount "source=${PWD}/test,destination=/usr/local/test,type=bind")
         popd >/dev/null
         # also enable experimental mode
-        docker_cmd+=(--env "EXPERIMENTAL=true")
+        DOCKER_ARGS+=(--env "EXPERIMENTAL=true")
     ;;
     --experimental)
-        docker_cmd+=(--env "EXPERIMENTAL=true")
+        DOCKER_ARGS+=(--env "EXPERIMENTAL=true")
     ;;
     --)
         shift
-        if $BACKGROUNDJOB; then
+        if $SCRIPT_EXECUTION; then
             # anything after -- is passed as an argument to the run script
             CMD+=("$@")
         else
@@ -136,17 +143,53 @@ while [ $# -gt 0 ]; do
             CMD+=(zsh -c "$*")
         fi
         break
-    ;; 
+    ;;
+    # undocumented compatibility with bash -c to work with ansible.builtin.shell
+    -c)
+        # TODO: give a tht prefix to mktemp
+        # create temporary file to store commands/script
+        SCRIPT_FILE=$(mktemp -u)
+        trap "rm -f '$SCRIPT_FILE'" EXIT
+        echo "$2" > "$SCRIPT_FILE"
+        shift
+        chmod +x "$SCRIPT_FILE"
+        
+        prepare_script_execution "$SCRIPT_FILE"
+    ;;
+    *)
+        # if there's not already a script slated for execution
+        # and the argument is a valid file
+        if ! $SCRIPT_EXECUTION && [ -f "$1" ]; then
+            prepare_script_execution "$1"
+        fi
+    ;;
     esac
     shift
 done
+
+# -t returns true if file descriptor (stdin) is a tty,
+# which means it is connected to the terminal;
+# the opposite is if it is redirected or piped
+
+# if there's not already a script slated for execution
+# and stdin is being piped, execute stdin within tht
+if ! $SCRIPT_EXECUTION && [ ! -t 0 ]; then
+    # TODO: give a tht prefix to mktemp
+    # create temporary file to store commands/script
+    SCRIPT_FILE=$(mktemp -u)
+    trap "rm -f '$SCRIPT_FILE'" EXIT
+    cat > "$SCRIPT_FILE"
+    chmod +x "$SCRIPT_FILE"
+
+    prepare_script_execution "$SCRIPT_FILE"
+fi
 
 # mount docker inside if we can find it, and it's not the snap version
 if [[ -e $(command -v docker) ]] \
    && ! snap list docker >/dev/null 2>&1 \
    && [[ -e /var/run/docker.sock ]]; then
     # mount the docker binary inside as well so we don't have to bundle it in THT
-    docker_cmd+=(
+    DOCKER_ARGS+=(
         --mount "source=$(command -v docker),destination=/usr/local/bin/docker,type=bind"
         --mount "source=/var/run/docker.sock,destination=/var/run/docker.sock,type=bind"
     )
@@ -154,14 +197,14 @@ fi
 
 # create and use a persistent volume
 $DOCKER volume create tht_zsh-cache >/dev/null && \
-    docker_cmd+=(--mount "source=tht_zsh-cache,destination=${PERSISTENT},type=volume")
+    DOCKER_ARGS+=(--mount "source=tht_zsh-cache,destination=${PERSISTENT},type=volume")
 
 # connect a tty when not running a background command/script
-if ! $BACKGROUNDJOB; then
-    docker_cmd+=(--interactive --tty)
+if ! $SCRIPT_EXECUTION; then
+    DOCKER_ARGS+=(--interactive --tty)
 fi
 
-$DOCKER "${docker_cmd[@]}" "$IMAGE" "${CMD[@]}"
+$DOCKER "${DOCKER_ARGS[@]}" "$IMAGE" "${CMD[@]}"
 
 
 # TODO: create a service option for long running processes (e.g. vector), that have healthchecks and restart policy
