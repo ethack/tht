@@ -29,5 +29,5 @@ jobs:
         # Use Github Container Registry THT image
         IMAGE: ghcr.io/ethack/tht:latest
       run: |
-        ./tht run "cat /etc/tht-release"
-        ./tht --dev run "/usr/local/test/bats/bin/bats /usr/local/test"
+        ./tht -c "cat /etc/tht-release"
+        ./tht --dev -c "/usr/local/test/bats/bin/bats /usr/local/test"
