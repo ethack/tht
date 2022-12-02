@@ -107,7 +107,6 @@ while [ $# -gt 0 ]; do
     ;;
     version)
         CMD=(zsh -c "cat /etc/tht-release")
-        exit 0
     ;;
     --dev)
         # change to directory this script is in, following any symlinks
