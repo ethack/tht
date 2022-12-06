@@ -1,11 +1,10 @@
-#!/bin/bash
+#!/usr/local/bin/tht
+
 # Updates a passive DNS database by processing new Zeek logs.
 # Suggested frequency: hourly
 
-tht run <<\SCRIPT
 # CHANGE ME: cd to the directory of your zeek logs
 cd /host/opt/zeek/logs/
 
 nice ionice -c 2 flock -n "/host/tmp/pdns.lock" \
 fd 'dns.*log' | sort | xargs -n 24 bro-pdns index
-SCRIPT

@@ -88,34 +88,26 @@ This is the simplest way to launch THT.
 tht
 ```
 
-This will give you a `zsh` shell inside a new THT container. All the tools and examples from this documentation can now be used. 
+This will give you a shell inside a new THT container. All the tools and examples from this documentation can now be used. 
 
 {{% notice tip %}}
 Your host's filesystem is accessible from `/host`.
 {{% /notice %}}
+
 ### Advanced Usage
 
-With `tht` you can also run one-off commands or even give it scripts to execute within the context of the container. This is useful if you want to automate or schedule certain tasks from the host system.
+With `tht` you can also execute scripts from your host that run within the context of a THT container. The usage is much like you would with a shell such as `bash` or `zsh`. This is useful if you want to automate or schedule certain tasks from the host system.
 
-The basic usage is `tht run <command>`.
-
-```bash
-tht run "echo hello world"
-```
-**Result:**
-
-    hello world
-
-This will run existing script.
+This will run an existing script.
 
 ```bash
-cat my_script.sh | tht run
+tht my_script.sh
 ```
 
-You can also specify multiple commands or an entire script like this.
+You can also specify multiple commands or an entire script by piping on stdin, like this:
 
 ```bash
-tht run <<\SCRIPT
+tht <<\SCRIPT
 message=GREAT!
 echo -n "Running multiple commands "
 echo -n "without escaping feels $message "
@@ -127,7 +119,7 @@ SCRIPT
     Running multiple commands without escaping feels GREAT! 1 2 3
 
 ```bash
-tht run <<\SCRIPT
+tht <<\SCRIPT
 #!/usr/bin/env python3
 
 print('Here is an example python program')
@@ -138,21 +130,34 @@ SCRIPT
 
     Here is an example python program
 
-You might want to put a script like this in your host's cron scheduler `/etc/cron.hourly/pdns`.
+You can also use `tht` in a shell script's hash-bang where you would normally have your shell executable.
+
+For instance, you might want to put a script like this in your host's cron scheduler `/etc/cron.hourly/pdns`.
 
 ```bash
-#!/bin/bash
+#!/usr/local/bin/tht
 
-tht run <<\SCRIPT
 cd /host/opt/zeek/logs/
 
 nice flock -n "/host/tmp/pdns.lock" \
 fd 'dns.*log' | sort | xargs -n 24 bro-pdns index
-SCRIPT
 ```
-<!-- TODO convert to asciidoc and #include cron/tht-pdns -->
 
 See the [cron/](https://github.com/ethack/tht/tree/main/cron) directory in the code repo for more examples of cron scripts.
+
+{{% notice tip %}}
+You can use `tht` as a shell executable in [Ansible's `shell` module](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html). E.g. 
+```yaml
+- name: Count the number of HTTP server errors to POST requests
+  ansible.builtin.shell: |
+    echo -n "Number of HTTP server errors to POSTs: "
+    filter --http POST 500 | count
+  args:
+    executable: /usr/local/bin/tht
+    chdir: "/opt/zeek/logs"
+```
+{{% /notice %}}
+
 ## Updating THT
 
 This will pull the latest image as well as latest `tht` script.

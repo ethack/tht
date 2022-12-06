@@ -59,6 +59,10 @@ prepare_script_execution() {
         # otherwise run using zsh
         CMD+=(zsh /run.sh)
     fi
+
+    # pass the rest as arguments to the script
+    shift
+    CMD+=("$@")
 }
 
 DOCKER_ARGS=(
@@ -75,6 +79,7 @@ DOCKER_ARGS=(
 )
 CMD=()
 SCRIPT_EXECUTION=false
+SCRIPT_ARGS=()
 while [ $# -gt 0 ]; do
     case $1 in
     help|-h|--help)
@@ -153,13 +158,13 @@ while [ $# -gt 0 ]; do
         shift
         chmod +x "$SCRIPT_FILE"
         
-        prepare_script_execution "$SCRIPT_FILE"
+        prepare_script_execution "$SCRIPT_FILE" "${@:2}"
     ;;
     *)
         # if there's not already a script slated for execution
         # and the argument is a valid file
         if ! $SCRIPT_EXECUTION && [ -f "$1" ]; then
-            prepare_script_execution "$1"
+            prepare_script_execution "$1" "${@:2}"
         fi
     ;;
     esac
