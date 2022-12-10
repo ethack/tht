@@ -270,7 +270,7 @@ else
         regex="$(printf "%s" "$regex" | sed -e 's/ /\\x20/g' -e 's/"/\\x22/g')"
         # special case the first search regex
         if $isFirstSearch; then
-            filterCmd="ug ${extra_args[@]} --no-filename --decompress $invertFlag --bool '${headerFlag:+^# OR }($regex"
+            filterCmd="ug ${extra_args[@]} --binary-files=without-match --no-filename --decompress $invertFlag --bool '${headerFlag:+^# OR }($regex"
             isFirstSearch=false
         else
             if [ "$condition" = "and" ]; then

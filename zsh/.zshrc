@@ -201,7 +201,7 @@ function zeek2tsv() {
   fi
 }
 function zeek2zeek() { zq -f zeek ${@:-} - }
-function zeek2json() { zq -f ndjson ${@:-} - }
+function zeek2json() { zq -f json ${@:-} - }
 alias z2c=zeek2csv
 alias z2t=zeek2tsv
 alias z2z=zeek2zeek
