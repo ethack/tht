@@ -4,11 +4,13 @@ if [ -n "$DEBUG" ]; then set -x; set -e; fi
 
 print_usage() {
     2>&1 cat <<EOF
-Usage: $0 [-H|--headers] [<delimiter>] <fields>
+Usage: $(basename $0)  [-H] [-d <delimiter>] <fields>
+
+Flags:
   -H|--header             request headers be maintained in the output (default omitted where possible)
   -d|--delimiter <CHR>    custom character to use as a delimiter
 
-  delimiter      must be a single non-alphanum character and the first argument; optional
+Arguments:
   fields         can be names, numbers, or ranges; space or comma separated
 EOF
 }
