@@ -232,7 +232,7 @@ FROM ubuntu:22.04 as base
     COPY --from=go-builder $GO_BIN/mlr $BIN/mlr6
     RUN ln -s $BIN/mlr6 $BIN/mlr
     # VisiData
-    RUN apt-get -y install visidata
+    #RUN apt-get -y install visidata
     # CSV/TSV toolkit
     COPY --from=rust-builder $RUST_BIN/xsv $BIN
     # CSV/TSV toolkit
