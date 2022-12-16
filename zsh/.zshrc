@@ -94,15 +94,22 @@ if exists mtr; then
   alias tracert=mtr
 fi
 
+if exists asn; then
+  # disable traceroute
+  alias asn='asn -n'
+fi
+
 if exists navi; then
   eval "$(navi widget zsh)"
   function cht() { navi --print --cheatsh "$*" }
 fi
 
-if exists tldr; then
-  export TEALDEER_CACHE_DIR="$PERSISTENT/tealdear"
-  mkdir -p "$TEALDEER_CACHE_DIR"
-fi
+function cheat() {
+  cd /root/.local/share/navi/cheats/
+  fd --type file --extension cheat --exec echo {/.} \
+    | fzf --query="$1" --select-1 --exit-0 \
+    | xargs -I {} bat -l bash {}.cheat
+}
 
 if exists zannotate; then 
   alias zannotate="zannotate --geoasn-database /usr/share/GeoIP/GeoLite2-ASN.mmdb --geoip2-database /usr/share/GeoIP/GeoLite2-Country.mmdb"

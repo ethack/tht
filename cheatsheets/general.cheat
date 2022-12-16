@@ -3,7 +3,7 @@
 # Read file line by line
 while IFS= read -r line; do echo "$line"; done < "<inputfile>"
 
-# Go to a nested directory (e.g. /host/opt/zeek/logs) #tip
+# Go to a recently visited directory (e.g. /host/opt/zeek/logs) #tip
 g logs
 
 # Go to the host filesystem #tip
@@ -108,6 +108,8 @@ domain
 # Strip up to 3rd level domain from list of domains #tip
 domain 3
 
+# Turn a list of IPv4 addresses into class C subnets #tip
+cat ips.txt | rev | domain 3 | rev | distinct
+
 # Perform WHOIS queries on a list of IPs #tip
 cat ips.txt | whois-bulk
-

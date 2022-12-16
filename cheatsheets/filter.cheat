@@ -3,7 +3,7 @@
 # Search dns logs in a date range #tip
 fd dns 2021-01-{15..31} 2021-02-{01..10} | filter - example.com
 
-# Extract IPs from text #tip
+# Extract IPv4 addresses from text #tip
 filter -o -p ipv4 | distinct
 
 # Find IPs associated with a domain #tip
@@ -26,8 +26,8 @@ fd conn <date_glob> | filter - <ip> | conn-summary
 # Find IPs going to a domain over HTTP or SSL #tip
 { filter --ssl <domain> | chop id.orig_h ; filter --http <domain> | chop id.orig_h } | distinct
 
-# Send flags to the underlying search tool #tip
-filter example.com -- --binary
+# Send flags to the underlying grep command #tip
+filter example.com -- -F
 
 # Search case-insensitive #tip
 filter -i example.com
@@ -35,5 +35,8 @@ filter -i example.com
 # Print only the strings that match your search rather than the entire line #tip
 filter -o -p ipv4
 
-# Find files that contain the search term (quits searching file after first instance found)
+# Find files that contain the search term (quits searching file after first instance found) #tip
 fd . | filter -l - <term>
+
+# Preview the command filter is going to run #tip
+filter --dry-run

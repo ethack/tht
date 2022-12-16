@@ -23,3 +23,5 @@ ff00::/8
 # See information about a network range #tip
 ipcalc <cidr>
 
+# Perform OSINT on an IP address #tip
+asn <ip>

@@ -3,8 +3,6 @@
 # Display a random #tip
 random-tip
 
-# Press <alt-g> to search local THT cheatsheets and replace current command (shell) #tip
-
 # Search local THT cheatsheets (drop --print to execute) #tip
 navi --print
 
@@ -12,10 +10,10 @@ navi --print
 cht <topic>
 
 # Display cheatsheets for topic #tip
-tldr <topic>
+tldr <tldr_topic>
 
 # Display local THT cheatsheets #tip
-bat -l bash /root/.local/share/navi/cheats/<topic>.cheat
+cheat <sheet>
 
-$ topic: fd . /root/.local/share/navi/cheats/ --extension cheat --exec echo {/.}
-
+$ sheet: fd . /root/.local/share/navi/cheats/ --extension cheat --exec echo {/.}
+$ tldr_topic: tldr --list

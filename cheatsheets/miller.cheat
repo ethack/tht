@@ -20,7 +20,7 @@ mlr -t --prepipe "sed '0,/^#fields\t/s///'" --skip-comments --headerless-csv-out
   reorder -f count |
   plot-bar "Interval (s)"
 
-; This doesn't work b/c the timestamp needs to be parsed (try localtime2sec function in Miller)
+;# This does not work b/c the timestamp needs to be parsed (try localtime2sec function in Miller)
 # Connection interval bar chart (Zeek JSON)
 mlr --json \
   cut -f ts then \

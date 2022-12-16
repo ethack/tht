@@ -1,30 +1,28 @@
 % zq, partial
-;TODO can't insert in the middle
 
-# Include outbound traffic (int->ext)
-local_orig == true and local_resp == false
+# Only outbound traffic (int->ext)
+z2z '(local_orig == true and local_resp == false)'
 
-# Include outbound traffic by cidr (int->ext)
-((id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and not (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+# Only outbound traffic by cidr (int->ext)
+z2z '((cidr_match(192.168.0.0/16, id.orig_h) or cidr_match(172.16.0.0/12, id.orig_h) or cidr_match(172.16.0.0/12, id.orig_h)) and not (cidr_match(192.168.0.0/16, id.resp_h) or cidr_match(172.16.0.0/12, id.resp_h) or cidr_match(172.16.0.0/12, id.resp_h)))'
 
-# Include inbound traffic (ext->int)
-local_orig == false and local_resp == true
+# Only inbound traffic (ext->int)
+z2z '(local_orig == false and local_resp == true)'
 
-# Include inbound traffic by cidr (ext->int)
-(not (id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+# Only inbound traffic by cidr (ext->int)
+z2z '(not (cidr_match(192.168.0.0/16, id.orig_h) or cidr_match(172.16.0.0/12, id.orig_h) or cidr_match(172.16.0.0/12, id.orig_h)) and (cidr_match(192.168.0.0/16, id.resp_h) or cidr_match(172.16.0.0/12, id.resp_h) or cidr_match(172.16.0.0/12, id.resp_h)))'
 
-# Exclude local traffic (int<->int)
-not (local_orig == true and local_resp == true)
+# Only local traffic (int<->int)
+z2z '(local_orig == true and local_resp == true)'
 
-# Exclude local traffic by cidr (int<->int)
-not ((id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+# Only local traffic by cidr (int<->int)
+z2z '((cidr_match(192.168.0.0/16, id.orig_h) or cidr_match(172.16.0.0/12, id.orig_h) or cidr_match(172.16.0.0/12, id.orig_h)) and (cidr_match(192.168.0.0/16, id.resp_h) or cidr_match(172.16.0.0/12, id.resp_h) or cidr_match(172.16.0.0/12, id.resp_h)))'
 
-# Exclude remote traffic (ext<->ext)
-not (local_orig == false and local_resp == false)
+# Only remote traffic (ext<->ext)
+z2z '(local_orig == false and local_resp == false)'
 
-# Exclude remote traffic by cidr (ext<->ext)
-not (not (id.orig_h in 192.168.0.0/16 or id.orig_h in 172.16.0.0/12 or id.orig_h in 10.0.0.0/8) and not (id.resp_h in 192.168.0.0/16 or id.resp_h in 172.16.0.0/12 or id.resp_h in 10.0.0.0/8))
+# Only remote traffic by cidr (ext<->ext)
+z2z '(not (cidr_match(192.168.0.0/16, id.orig_h) or cidr_match(172.16.0.0/12, id.orig_h) or cidr_match(172.16.0.0/12, id.orig_h)) and not (cidr_match(192.168.0.0/16, id.resp_h) or cidr_match(172.16.0.0/12, id.resp_h) or cidr_match(172.16.0.0/12, id.resp_h)))'
 
 # Calculate PCR
-sum_orig=sum(orig_bytes:int64),sum_resp=sum(resp_bytes:int64) by src=id.orig_h,dst=id.resp_h | put pcr=(sum_orig-sum_resp)/(sum_orig+sum_resp+0.001)
-
+z2z 'sum_orig=sum(orig_bytes:int64),sum_resp=sum(resp_bytes:int64) by src=id.orig_h,dst=id.resp_h | put pcr=(sum_orig-sum_resp)/(sum_orig+sum_resp+0.001)'
