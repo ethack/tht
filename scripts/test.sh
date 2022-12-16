@@ -7,5 +7,5 @@
 
 # tht --dev -- 'echo /usr/local/test/*.bats | entr /usr/local/test/bats/bin/bats /usr/local/test'
 
-tht --dev -- /usr/local/test/bats/bin/bats /usr/local/test
-# tht --dev run "/usr/local/test/bats/bin/bats /usr/local/test"
+# tht --dev -- /usr/local/test/bats/bin/bats /usr/local/test
+tht --dev -c "/usr/local/test/bats/bin/bats /usr/local/test"

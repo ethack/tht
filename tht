@@ -67,6 +67,8 @@ prepare_script_execution() {
 
 DOCKER_ARGS=(
     container run
+    --interactive
+    --tty
     --rm
     --hostname "$(hostname)"
     --init
@@ -203,12 +205,6 @@ fi
 $DOCKER volume create tht_zsh-cache >/dev/null && \
     DOCKER_ARGS+=(--mount "source=tht_zsh-cache,destination=${PERSISTENT},type=volume")
 
-# connect a tty when not running a background command/script
-if ! $SCRIPT_EXECUTION; then
-    DOCKER_ARGS+=(--interactive --tty)
-fi
-
 $DOCKER "${DOCKER_ARGS[@]}" "$IMAGE" "${CMD[@]}"
-
 
 # TODO: create a service option for long running processes (e.g. vector), that have healthchecks and restart policy
