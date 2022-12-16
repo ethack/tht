@@ -1,3 +1,66 @@
 #!/bin/bash
 
-wc -l "$@"
+print_usage() {
+    2>&1 cat <<EOF
+Counts (uncommented) lines passed on stdin or from file arguments
+
+Usage: $(basename $0) [-H] [<file> ...]
+
+Flags:
+  -H|--headers   also count the header lines (beginning with #)
+
+EOF
+}
+
+if [[ $# -eq 0 ]]; then
+    print_usage
+    exit 0
+fi
+
+cmd=
+removeHeader=true
+flags=()
+files=()
+# Parse through command args to override values
+while [[ $# -gt 0 ]]; do
+    case $1 in
+    -h|--help)
+        print_usage
+        exit 0
+        ;;
+    -H|--header|--headers|--all)
+        removeHeader=false
+        ;;
+    *)
+        files+=("$1")
+        ;;
+    esac
+    shift
+done
+
+if $removeHeader; then
+    cmd=ug
+    flags+=(--count --invert-match '^#' --decompress)
+else
+    # wc -l is faster than a match-all grep
+    cmd=wc
+    flags+=(-l)
+fi
+
+echo $cmd "${flags[@]}" "${files[@]}"
+
+# TODO: normalize output so it's the same for:
+# wc -l conn.log dns.log
+# ug -c -v '^#' conn.log dns.log
+
+# Benchmark results 2022-12-16
+# JSON Summary
+#   'ug -c -v "^#" conn.log dns.log http.log | cat' ran
+#     1.76 ± 0.25 times faster than 'grep -v "^#" -c conn.log dns.log http.log | cat'
+#     1.76 ± 0.26 times faster than 'rg -c -v "^#" conn.log dns.log http.log | cat'
+#     1.86 ± 0.24 times faster than 'wc -l conn.log dns.log http.log | cat'
+# TSV Summary
+#   'ug -c -v "^#" conn.log dns.log http.log | cat' ran
+#     2.06 ± 0.23 times faster than 'grep -v "^#" -c conn.log dns.log http.log | cat'
+#     2.25 ± 0.29 times faster than 'wc -l conn.log dns.log http.log | cat'
+#     2.29 ± 0.29 times faster than 'rg -c -v "^#" conn.log dns.log http.log | cat'
