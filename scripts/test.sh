@@ -1,11 +1,7 @@
 #!/bin/bash
 
-# tht --dev run <<\EOF
-# #echo /usr/local/test/*.bats /usr/local/bin/* | entr /usr/local/test/bats/bin/bats /usr/local/test
-# /usr/local/test/bats/bin/bats /usr/local/test
-# EOF
+# run tests in interactive mode for better output
+tht --dev -- /usr/local/test/bats/bin/bats /usr/local/test
 
-# tht --dev -- 'echo /usr/local/test/*.bats | entr /usr/local/test/bats/bin/bats /usr/local/test'
-
-# tht --dev -- /usr/local/test/bats/bin/bats /usr/local/test
-tht --dev -c "/usr/local/test/bats/bin/bats /usr/local/test"
+# run tests in non-interactive mode to simulate github actions environment
+# tht --dev -c "/usr/local/test/bats/bin/bats /usr/local/test"

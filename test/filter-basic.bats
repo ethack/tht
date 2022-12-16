@@ -234,25 +234,20 @@ setup() {
 
 # TODO: not finding the file in CICD with temp_make
 @test "file input->no arguments" {
-	cat <<-EOF > "$BATS_TEST_TMPDIR/conn.log"
+	cd "$BATS_TEST_TMPDIR"
+
+	cat <<-EOF >conn.log
 		one
 		two
 		three
 	EOF
-	assert_file_exist "$BATS_TEST_TMPDIR/conn.log"
-	
-	scenario_dry_run() {
-		cd "$BATS_TEST_TMPDIR"
-		filter --dry-run
-	}
-	run scenario_dry_run
-	assert_output --partial 'conn.log'
-	
-	scenario() {
-		cd "$BATS_TEST_TMPDIR"
-		filter
-	}
-	run scenario 
+	assert_file_exist conn.log
+
+	# note: must use --conn because without, filter thinks stdin is attached when there's no tty
+	run filter --conn --dry-run
+	assert_output --partial conn.log
+
+	run filter --conn
 	cat <<-EOF | assert_output -
 		one
 		two
@@ -360,34 +355,28 @@ setup() {
 
 # TODO: not finding the file in CICD with temp_make
 @test "files with matches" {
-	cat <<-EOF > "$BATS_TEST_TMPDIR/conn.1.log"
+	cd "$BATS_TEST_TMPDIR"
+	
+	cat <<-EOF > conn.1.log
 		one
 		all
 	EOF
-	assert_file_exist "$BATS_TEST_TMPDIR/conn.1.log"
-	cat <<-EOF > "$BATS_TEST_TMPDIR/conn.2.log"
+	assert_file_exist conn.1.log
+	cat <<-EOF > conn.2.log
 		two
 		all
 	EOF
-	assert_file_exist "$BATS_TEST_TMPDIR/conn.2.log"
+	assert_file_exist conn.2.log
 	
-	scenario_one() {
-		cd "$BATS_TEST_TMPDIR"
-		filter -l one
-	}
-	run scenario_one
+	# note: must use --conn because without, filter thinks stdin is attached when there's no tty
+	run filter --conn -l one
 	assert_output './conn.1.log'
 
-	scenario_two() {
-		cd "$BATS_TEST_TMPDIR"
-		filter -l two
-	}
-	run scenario_two
+	run filter --conn -l two
 	assert_output './conn.2.log'
 	
 	scenario_all() {
-		cd "$BATS_TEST_TMPDIR"
-		filter -l all | sort
+		filter --conn -l all | sort
 	}
 	run scenario_all
 	cat <<-EOF | assert_output -
