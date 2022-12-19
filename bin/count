@@ -12,11 +12,6 @@ Flags:
 EOF
 }
 
-if [[ $# -eq 0 ]]; then
-    print_usage
-    exit 0
-fi
-
 cmd=
 removeHeader=true
 flags=()
