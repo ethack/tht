@@ -42,7 +42,7 @@ else
     flags+=(-l)
 fi
 
-echo $cmd "${flags[@]}" "${files[@]}"
+$cmd "${flags[@]}" "${files[@]}"
 
 # TODO: normalize output so it's the same for:
 # wc -l conn.log dns.log
