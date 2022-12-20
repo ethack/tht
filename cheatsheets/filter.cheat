@@ -14,6 +14,9 @@ filter --or \
   -f <(filter --dns <domain> | chop answers | filter -o -p ipv4 | distinct) | 
   chop id.orig_h | distinct
 
+# Find domains associated with an IP #tip
+filter --dns <IP> | chop query answers | filter <IP> | chop 1 | mfo
+
 # Summary of traffic for a single systems #tip
 filter <IP1> | conn-summary
 
