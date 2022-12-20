@@ -43,6 +43,7 @@ else
 fi
 
 $cmd "${flags[@]}" "${files[@]}"
+exit 0
 
 # TODO: normalize output so it's the same for:
 # wc -l conn.log dns.log
