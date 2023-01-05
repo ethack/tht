@@ -185,8 +185,6 @@ alias distinctcount=card
 alias stackcount=mfo
 alias shorttail=mfo
 alias longtail=lfo
-alias first='sort | head -n 1'
-alias last='sort | tail -n 1'
 
 alias cv="viewer csv"
 alias tv="viewer tsv"
