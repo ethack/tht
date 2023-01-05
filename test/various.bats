@@ -119,7 +119,6 @@ setup() {
 # TODO: 
 # cidr2ip
 # cols
-# count
 # distinct
 # freq
 # headers

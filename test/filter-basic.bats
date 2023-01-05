@@ -232,7 +232,6 @@ setup() {
 	EOF
 }
 
-# TODO: not finding the file in CICD with temp_make
 @test "file input->no arguments" {
 	cd "$BATS_TEST_TMPDIR"
 
@@ -353,7 +352,6 @@ setup() {
 	EOF
 }
 
-# TODO: not finding the file in CICD with temp_make
 @test "files with matches" {
 	cd "$BATS_TEST_TMPDIR"
 	
