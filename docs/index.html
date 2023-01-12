@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Threat Hunting Toolkit</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Description">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="icon" href="_assets/images/target.svg">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+  <!-- https://docsify-darklight-theme.boopathikumar.me/#/ -->
+  <link 
+    rel="stylesheet"
+    href="//cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/style.min.css"
+    title="docsify-darklight-theme"
+    type="text/css"
+  />
+</head>
+<body>
+  <div id="app">Please wait...</div>
+  <script>
+    window.$docsify = {
+      name: 'Threat Hunting Toolkit',
+      repo: 'ethack/tht',
+      //basePath: '/tht/',
+      homepage: 'about/README.md',
+      search: 'auto',
+      autoHeader: true,
+      auto2top: true,
+      loadSidebar: true,
+      subMaxLevel: 3,
+      plugins: [
+        // https://docsify.js.org/#/write-a-plugin?id=page-footer
+        function pageFooter(hook, vm) {
+          var footer = `
+            <hr/>
+            <footer id="copyright">
+              <p xmlns:cc="http://creativecommons.org/ns#" >This work is licensed under <a href="http://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">CC BY-NC-SA 4.0<img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/cc.svg?ref=chooser-v1"><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/by.svg?ref=chooser-v1"><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/nc.svg?ref=chooser-v1"><img style="height:22px!important;margin-left:3px;vertical-align:text-bottom;" src="https://mirrors.creativecommons.org/presskit/icons/sa.svg?ref=chooser-v1"></a></p>
+            </footer>`;
+
+          hook.afterEach(function (html) {
+            return html + footer;
+          });
+        },
+        // custom wikilinks version until https://github.com/zpengg/docsify-wikilink/pull/5 is merged
+        function wikilink(hook, vm) {
+          hook.beforeEach(function (content) {
+            return content
+          })
+          hook.afterEach(function (html, next) {
+            // 解析成 html 后调用。
+            // beforeEach 和 afterEach 支持处理异步逻辑
+            var mdDom = document.createElement(
+              'div')
+            mdDom.innerHTML=html;
+            var index = location.hash.lastIndexOf('/')
+            var relativePath = location.hash.substring(0, index + 1)
+            const list = []
+            list.push(...mdDom.getElementsByTagName('p'))
+            list.push(...mdDom.getElementsByTagName('li'))
+            list.push(...mdDom.getElementsByTagName('td'))
+            list.push(...mdDom.getElementsByTagName('th'))
+
+            for (var i=0; i < list.length; i++) {
+              var para = list[i].innerHTML
+              const eachParaRes = para.replace(/\[\[([^\[\]]+)\]\]/g, function (content) {
+                const innerContent = content.replace('[[', '').replace(']]', '')
+                const linkAliasSps = innerContent.split('|') // [link, alias]
+                // [[link|showtext]] = 创建一个链接，指向内部的wiki页面'Link', 链接文字是'click here'.
+                const link = linkAliasSps.length === 2 ? `${linkAliasSps[0].trim()}` : innerContent
+                var hashPath = link
+                var topic = ''
+                var showText = innerContent
+                if (link.indexOf('#') != -1) {
+                  const linkTopicSps = link.split('#') // link, topic
+                  hashPath = linkTopicSps[0]
+                  topic = `?id=${linkTopicSps[1]}`
+                  showText = `${linkAliasSps[1].trim()}`
+                }
+                if (showText.split("|").length==2){showText=showText.split("|")[1]}
+                if (hashPath.indexOf('/') === 0) {
+                  //absolute path
+                  return `<a href="#${hashPath}${topic}">${showText}</a>`
+                } else {
+                  return `<a href="${relativePath}${hashPath}${topic}">${showText}</a>`
+                }
+              })
+              list[i].innerHTML = eachParaRes
+            }
+
+            next(mdDom.innerHTML)
+          })
+        },
+      ],
+    }
+  </script>
+  <!-- Docsify v4 -->
+  <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <!-- https://docsify.js.org/#/plugins?id=copy-to-clipboard -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-copy-code/dist/docsify-copy-code.min.js"></script>
+  <!-- https://docsify.js.org/#/language-highlight -->
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <!-- https://github.com/fzankl/docsify-plugin-flexible-alerts -->
+  <script src="//unpkg.com/docsify-plugin-flexible-alerts"></script>
+  <!-- https://github.com/imyelo/docsify-pagination -->
+  <!-- <script src="//unpkg.com/docsify-pagination/dist/docsify-pagination.min.js"></script> -->
+  <!-- https://docsify-darklight-theme.boopathikumar.me/#/ -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/index.min.js"></script>
+  <!-- https://github.com/zpengg/docsify-wikilink -->
+  <!-- <script src="//cdn.jsdelivr.net/npm/docsify-wikilink@1"></script> -->
+</body>
+</html>
+
+<!--
+Plugins to look at.
+https://github.com/stijn-dejongh/docsify-glossary
+https://github.com/shawntabrizi/docsify-slides
+https://github.com/zuisong/docsify-kroki
+https://h-hg.github.io/docsify-image-caption/#/
+
+Prism plugins
+https://prismjs.com/plugins/command-line/
+https://prismjs.com/plugins/line-highlight/#linkable.28
+https://prismjs.com/plugins/line-numbers/
+-->

@@ -7,9 +7,6 @@
 [submodule "test/helper/bats-assert"]
 	path = test/helper/bats-assert
 	url = https://github.com/bats-core/bats-assert.git
-[submodule "docs/themes/hugo-theme-relearn"]
-	path = docs/themes/hugo-theme-relearn
-	url = https://github.com/McShelby/hugo-theme-relearn
 [submodule "test/helper/bats-file"]
 	path = test/helper/bats-file
-	url = https://github.com/ztombol/bats-file
+	url = https://github.com/bats-core/bats-file
