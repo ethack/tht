@@ -1,0 +1,19 @@
+% cheatsheet
+
+# Display local THT cheatsheets #tip
+cheat <sheet>
+
+# Display a random #tip
+random-tip
+
+# Search local THT cheatsheets (drop --print to execute) #tip
+navi --print
+
+# Search online cheatsheets for topic #tip
+cht <topic>
+
+# Display cheatsheets for topic #tip
+tldr <tldr_topic>
+
+$ sheet: fd . /root/.local/share/navi/cheats/ --extension cheat --exec echo {/.}
+$ tldr_topic: tldr --list

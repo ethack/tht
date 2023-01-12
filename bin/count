@@ -48,6 +48,8 @@ exit 0
 # TODO: normalize output so it's the same for:
 # wc -l conn.log dns.log
 # ug -c -v '^#' conn.log dns.log
+# Make the default behavior print the grand total. Have a flag to print the breakdown.
+# Have a flag to change the comment character.
 
 # Benchmark results 2022-12-16
 # JSON Summary
