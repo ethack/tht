@@ -273,11 +273,9 @@ FROM ubuntu:22.04 as base
 
     ### Grep ###
     # grep, sed, awk, etc
-    RUN apt-get -y install coreutils
-    # RUN apt-get -y install ripgrep
+    RUN apt-get -y install coreutils gawk
     COPY --from=rust-builder $RUST_BIN/rg $BIN
     RUN wget -nv -O $ZSH_COMPLETIONS/_rg https://raw.githubusercontent.com/BurntSushi/ripgrep/master/complete/_rg
-    # RUN apt-get -y install ugrep
     COPY --from=c-builder /tmp/ugrep/bin/ugrep $BIN
     COPY --from=c-builder /tmp/ugrep/bin/ug $BIN
 

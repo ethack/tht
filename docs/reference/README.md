@@ -120,14 +120,14 @@ Also see [Set Theory](#set-theory).
 
 ## OSINT
 ### Online
-- `asn`
+- [`asn`](https://github.com/nitefood/asn)
 - `dig`
 - `mtr`
 - `ncat`
 - `netcat`
 - `ping`
 - `whois`
-- `whois-bulk`
+- `[[whois-bulk]]`
 
 ### Offline
 - `bro-pdns`
