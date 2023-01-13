@@ -17,20 +17,20 @@ sudo curl -o /usr/local/bin/tht 'https://raw.githubusercontent.com/ethack/tht/ma
 
 ## Usage
 
-Launch THT using the script you installed.
+This will launch THT in interactive mode.
 
 ```bash
 tht
 ```
 
-This will give you a customized ZSH shell inside a new THT container. All the tools and examples from this documentation can now be used. 
+This will give you a ZSH shell inside a new THT container. All the tools and examples from this documentation can now be used. 
 
 > [!TIP|style:flat]
 > Your host's filesystem is accessible from `/host`.
 
 ## Updating
 
-This will pull the latest image as well as latest `tht` script.
+This will pull the latest THT container image as well as latest `tht` script.
 
 ```bash
 tht update

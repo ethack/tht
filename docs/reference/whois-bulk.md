@@ -1,5 +1,10 @@
 
-`whois-bulk` uses [Team Cymru's service](https://team-cymru.com/community-services/ip-asn-mapping/).
+`whois-bulk` uses [Team Cymru's service](https://www.team-cymru.com/ip-asn-mapping).
+
+> [!WARNING]
+> IPs that are seen abusing the whois server with large numbers of individual queries [...] will be null routed.
+
+This tool and service should be fine to use for ad hoc manual queries. But if you attempt any form of automation, be sure to reference the link above to learn about acceptable use and the preferred DNS method for automation.
 
 ## Example
 
@@ -14,7 +19,7 @@ cat ips.txt
 ```
 
 ```
-$ cat ips.txt| whois-bulk | tvt
+$ cat ips.txt | whois-bulk | tvt
 +-------+----------------+------------------+
 |  asn  |       ip       |       org        |
 +-------+----------------+------------------+
