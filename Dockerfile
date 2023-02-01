@@ -148,6 +148,8 @@ FROM ubuntu:22.04 as base
     # set default shell to zsh so apt automatically detects and adds zsh completions
     RUN apt-get -y install zsh git curl unzip wget
     SHELL ["zsh", "-c"]
+    # let tht scripts run inside tht as well
+    RUN ln -s /usr/bin/zsh /usr/local/bin/tht
 
 ## System Utils ##
     # bat - fancy cat
