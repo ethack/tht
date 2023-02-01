@@ -228,11 +228,7 @@ FROM ubuntu:22.04 as base
 
 ## Data Processing ##
     # CSV/TSV/JSON toolkit and lightweight streaming stats
-    ARG MILLER_VERSION=5.10.2
-    RUN wget -nv -O $BIN/mlr5 https://github.com/johnkerl/miller/releases/download/v${MILLER_VERSION}/mlr.linux.x86_64 \
-     && chmod +x $BIN/mlr5
-    COPY --from=go-builder $GO_BIN/mlr $BIN/mlr6
-    RUN ln -s $BIN/mlr6 $BIN/mlr
+    COPY --from=go-builder $GO_BIN/mlr $BIN
     # VisiData
     #RUN apt-get -y install visidata
     # CSV/TSV toolkit
