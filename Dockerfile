@@ -19,12 +19,19 @@ FROM golang:buster as go-builder
     # miller - text delimited processor
     RUN go install github.com/johnkerl/miller/cmd/mlr@main
     # RUN go install github.com/brimdata/zync/cmd/zync@main
+    # trdsql - sql on plaintext files
+    # https://github.com/noborus/trdsql
+    RUN git clone https://github.com/noborus/trdsql \
+     && cd trdsql \
+     && make && mv trdsql /go/bin
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
 
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
+
+    # NOTE: try adding --locked if builds rail in the future
 
     # exa - fancy ls
     #RUN cargo install exa
@@ -40,6 +47,14 @@ FROM rust:buster as rust-builder
     RUN cargo install bat
     # xsv - fast csv / text delimited processing
     RUN cargo install xsv
+    # qsv - fast csv / text delimited processing
+    # https://github.com/jqnatividad/qsv#installation
+    RUN apt-get update && apt-get install -y clang \
+     && cargo install qsv --locked --features full,apply,foreach,luau,to
+    # RUN git clone https://github.com/jqnatividad/qsv /tmp/qsv \
+    #  && cd /tmp/qsv \
+    #  && cargo build --release --locked --features full,apply,foreach,generate,luau,to \
+    #  && mv target/release/qsv /usr/local/cargo/bin
     # dust - file / directory size analyzer
     RUN cargo install du-dust --bin dust
     # tealdeer - tldr cheatsheet client
@@ -55,6 +70,9 @@ FROM rust:buster as rust-builder
     #RUN cargo install frawk --no-default-features --features use_jemalloc,allow_avx2
     # zet - set operations on files
     RUN cargo install zet
+    # huniq - sort | uniq with hashtables
+    # https://github.com/koraa/huniq
+    RUN cargo install huniq
 
 # C/C++ Builder Stage #
 FROM ubuntu:22.04 as c-builder
@@ -123,6 +141,12 @@ FROM ubuntu:22.04 as c-builder
     RUN git clone -b v$BOXES_VERSION --depth=1 https://github.com/ascii-boxes/boxes /tmp/boxes \
     && cd /tmp/boxes \
     && make && make test
+
+    # xe - https://github.com/leahneukirchen/xe
+    RUN apt-get update && apt-get -y install --no-install-recommends make gcc git
+    RUN git clone --depth=1 https://github.com/leahneukirchen/xe /tmp/xe \
+    && cd /tmp/xe \
+    && make all
 
 # Package Installer Stage #
 FROM ubuntu:22.04 as base
@@ -202,6 +226,9 @@ FROM ubuntu:22.04 as base
     RUN mkdir -p /usr/share/zsh/site-functions/ \
      && wget -nv -O /usr/share/zsh/site-functions/_tldr https://raw.githubusercontent.com/dbrgn/tealdeer/master/completion/zsh_tealdeer
     #RUN apt-get -y install parallel
+    # xe - job execution
+    COPY --from=c-builder /tmp/xe/xe $BIN
+    COPY --from=c-builder /tmp/xe/_xe /usr/share/zsh/site-functions/_xe
     # pspg - Pager
     RUN apt-get -y install libpq5
     COPY --from=c-builder /tmp/pspg/pspg $BIN
@@ -233,6 +260,8 @@ FROM ubuntu:22.04 as base
     #RUN apt-get -y install visidata
     # CSV/TSV toolkit
     COPY --from=rust-builder $RUST_BIN/xsv $BIN
+    COPY --from=rust-builder $RUST_BIN/qsv $BIN
+    COPY --from=go-builder $GO_BIN/trdsql $BIN
     # CSV/TSV toolkit
     ARG TSVUTILS_VERSION=2.2.0
     RUN wget -nv -O /tmp/tsv-utils.tar.gz https://github.com/eBay/tsv-utils/releases/download/v${TSVUTILS_VERSION}/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2.tar.gz \
@@ -262,6 +291,7 @@ FROM ubuntu:22.04 as base
     RUN chmod +x $BIN/*
 
     COPY --from=rust-builder $RUST_BIN/zet $BIN
+    COPY --from=rust-builder $RUST_BIN/huniq $BIN
 
     ### Graphing ###
     RUN apt-get install -y colortest
@@ -285,7 +315,7 @@ FROM ubuntu:22.04 as base
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
-    ARG ZQ_VERSION=1.2.0
+    ARG ZQ_VERSION=1.5.0
     RUN wget -nv -O /tmp/zq.tar.gz https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.tar.gz \
      && tar -xf /tmp/zq.tar.gz -C /tmp \
      && mv /tmp/zq $BIN \
