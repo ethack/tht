@@ -28,7 +28,7 @@ for line in sys.stdin:
   line = line.strip()
   if line:
     try:
-      parts = line.strip().split()
+      parts = line.split()
       counts.append(int(parts[0]))
       things.append(' '.join(parts[1:]))
     except ValueError as e:
@@ -38,11 +38,5 @@ if not counts:
   print('No data to plot!', file=sys.stderr)
   sys.exit(1)
 
-plt.bar(things, counts)
-plt.plotsize(100, 30)
-plt.xlabel(xlabel)
-plt.ylabel(ylabel)
+plt.simple_bar(things, counts)
 plt.show()
-
-# TODO
-# labels don't always extend to the last entry on the X-axis, which is very important as the extrema
