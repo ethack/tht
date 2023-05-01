@@ -50,7 +50,7 @@ FROM rust:buster as rust-builder
     # qsv - fast csv / text delimited processing
     # https://github.com/jqnatividad/qsv#installation
     RUN apt-get update && apt-get install -y clang \
-     && cargo install qsv --locked --features full,apply,foreach,luau,to
+     && cargo install qsv --locked --features feature_capable,apply,foreach,luau,to
     # RUN git clone https://github.com/jqnatividad/qsv /tmp/qsv \
     #  && cd /tmp/qsv \
     #  && cargo build --release --locked --features full,apply,foreach,generate,luau,to \
