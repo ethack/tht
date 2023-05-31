@@ -19,11 +19,6 @@ FROM golang:buster as go-builder
     # miller - text delimited processor
     RUN go install github.com/johnkerl/miller/cmd/mlr@main
     # RUN go install github.com/brimdata/zync/cmd/zync@main
-    # trdsql - sql on plaintext files
-    # https://github.com/noborus/trdsql
-    RUN git clone https://github.com/noborus/trdsql \
-     && cd trdsql \
-     && make && mv trdsql /go/bin
 
 # Rust Builder Stage #
 FROM rust:buster as rust-builder
@@ -261,7 +256,6 @@ FROM ubuntu:22.04 as base
     # CSV/TSV toolkit
     COPY --from=rust-builder $RUST_BIN/xsv $BIN
     COPY --from=rust-builder $RUST_BIN/qsv $BIN
-    COPY --from=go-builder $GO_BIN/trdsql $BIN
     # CSV/TSV toolkit
     ARG TSVUTILS_VERSION=2.2.0
     RUN wget -nv -O /tmp/tsv-utils.tar.gz https://github.com/eBay/tsv-utils/releases/download/v${TSVUTILS_VERSION}/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2.tar.gz \
