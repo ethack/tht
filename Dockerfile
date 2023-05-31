@@ -268,6 +268,11 @@ FROM ubuntu:22.04 as base
      && tar -xzf /tmp/tsv-utils.tar.gz -C /tmp \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-select $BIN
     #COPY --from=rust-builder $RUST_BIN/frawk $BIN
+    # DuckDB
+    ARG DUCKDB_VERSION=0.8.0
+    RUN wget -nv -O /tmp/duckdb.zip https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-amd64.zip \
+     && unzip -d /tmp/duckdb /tmp/duckdb.zip \
+     && mv /tmp/duckdb/duckdb $BIN
 
     # Misc useful tools from https://www.datascienceatthecommandline.com/
     RUN wget -nv -O $BIN/body https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/body
