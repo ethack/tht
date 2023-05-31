@@ -266,42 +266,31 @@ FROM ubuntu:22.04 as base
     ARG TSVUTILS_VERSION=2.2.0
     RUN wget -nv -O /tmp/tsv-utils.tar.gz https://github.com/eBay/tsv-utils/releases/download/v${TSVUTILS_VERSION}/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2.tar.gz \
      && tar -xzf /tmp/tsv-utils.tar.gz -C /tmp \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/keep-header $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/csv2tsv $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/number-lines $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-append $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-filter $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-join $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-pretty $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-sample $BIN \
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-select $BIN
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-split $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-summarize $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-uniq $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort $BIN \
-    #  && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/extras/scripts/tsv-sort-fast $BIN
     #COPY --from=rust-builder $RUST_BIN/frawk $BIN
 
     # Misc useful tools from https://www.datascienceatthecommandline.com/
-    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/body $BIN
-    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/cols $BIN
-    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/header $BIN
-    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/dseq $BIN
-    ADD https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/trim $BIN
+    RUN wget -nv -O $BIN/body https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/body
+    RUN wget -nv -O $BIN/cols https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/cols
+    RUN wget -nv -O $BIN/explain https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/explain
+    RUN wget -nv -O $BIN/header https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/header
+    RUN wget -nv -O $BIN/trim https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/trim
     RUN chmod +x $BIN/*
+
+    RUN apt-get -y install dateutils \
+     && for d in /usr/bin/dateutils.*; do ln -s $d /usr/local/bin/${d##*.}; done
 
     COPY --from=rust-builder $RUST_BIN/zet $BIN
     COPY --from=rust-builder $RUST_BIN/huniq $BIN
 
     ### Graphing ###
-    RUN apt-get install -y colortest
+    RUN apt-get -y install colortest
     #RUN python3 -m pip install git+https://github.com/piccolomo/plotext
     RUN python3 -m pip install 'plotext'
-    COPY --from=go-builder $GO_BIN/pxl $BIN
 
     ### Grep ###
     # grep, sed, awk, etc
-    RUN apt-get -y install coreutils gawk
+    RUN apt-get -y install coreutils
     COPY --from=rust-builder $RUST_BIN/rg $BIN
     RUN wget -nv -O $ZSH_COMPLETIONS/_rg https://raw.githubusercontent.com/BurntSushi/ripgrep/master/complete/_rg
     COPY --from=c-builder /tmp/ugrep/bin/ugrep $BIN
@@ -322,6 +311,7 @@ FROM ubuntu:22.04 as base
      && mv /tmp/zed $BIN
     # COPY --from=go-builder $GO_BIN/zync $BIN
 
+    # TODO: set up a python-builder stage
     # trace-summary
     # install pysubnettree dependency
     RUN apt-get -y install build-essential python3-dev
