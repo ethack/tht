@@ -31,6 +31,8 @@ mkdir -p "$PERSISTENT"
 export TMPDIR=/tmp
 export SHELL=/usr/bin/zsh
 
+# export PATH=$PATH:/usr/local/bundle/bin
+
 # change directories by typing the name of the directory
 setopt AUTO_CD
 
@@ -99,16 +101,26 @@ if exists asn; then
   alias asn='asn -n'
 fi
 
+# QSV settings
+# https://github.com/jqnatividad/qsv#environment-variables
+export QSV_SNIFF_DELIMITER=1
+export QSV_NO_UPDATE=1
+export QSV_PREFER_DMY=1
+export QSV_PROGRESSBAR=1
+# export QSV_COMMENT_CHAR=#
+# export QSV_DEFAULT_DELIMITER=$'\t'
+
 if exists navi; then
   eval "$(navi widget zsh)"
   function cht() { navi --print --cheatsh "$*" }
 fi
 
 function cheat() {
-  cd /root/.local/share/navi/cheats/
+  (cd /root/.local/share/navi/cheats/;
   fd --type file --extension cheat --exec echo {/.} \
     | fzf --query="$1" --select-1 --exit-0 \
     | xargs -I {} bat -l bash {}.cheat
+  )
 }
 
 if exists zannotate; then 
@@ -123,19 +135,19 @@ if exists zoxide; then
 
   function g() {
     case "$*" in
-    #-) cd - && ls ;; # hard-code - to be previous cwd # not needed
+    # environment specific paths
     today)
-      z "$(date +%F)"
+      __zoxide_z "/host/opt/zeek/remotelogs/COMBINED__0000/$(date +%F)"
     ;;
     yesterday)
-      z "$(date --date yesterday +%F)"
+      __zoxide_z "/host/opt/zeek/remotelogs/COMBINED__0000/$(date --date yesterday +%F)"
     ;;
     *)
       # if z fails to find a directory, then try again in the /host/ filesystem
       # if both fail then print the error message from the original command instead
-      {z "$*" 2>/dev/null && ls} || \
-      {z "/host/$*" 2>/dev/null && ls} || \
-      z "$*"
+      {__zoxide_z "$*" 2>/dev/null && ls} || \
+      {__zoxide_z "/host/$*" 2>/dev/null && ls} || \
+      __zoxide_z "$*"
     ;;
     esac
   }
