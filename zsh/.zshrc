@@ -71,13 +71,13 @@ if exists fzf; then
   export FZF_CTRL_T_COMMAND="$FZF_DEFAULT_COMMAND"
 fi
 
-if exists bro-pdns; then
-  alias pdns=bro-pdns
-  alias pdi="bro-pdns index"
-  alias pdli="bro-pdns like individual"
-  alias pdlt="bro-pdns like tuples"
-  alias pdfi="bro-pdns find individual"
-  alias pdft="bro-pdns find tuples"
+if exists zeek-pdns; then
+  alias pdns=zeek-pdns
+  alias pdi="zeek-pdns index"
+  alias pdli="zeek-pdns like individual"
+  alias pdlt="zeek-pdns like tuples"
+  alias pdfi="zeek-pdns find individual"
+  alias pdft="zeek-pdns find tuples"
 fi
 
 if exists exa; then

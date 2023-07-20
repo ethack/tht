@@ -27,6 +27,11 @@ $(basename "$0") [--<logtype>] [OPTIONS] [search_term] [search_term...] [-- [OPT
     -o|--only-matching       print only the matching part of lines
     -v|--invert-match        will invert the matching
 
+    Output options
+    -h|--headers
+    -H|--no-headers
+    --serial
+
     -n|--dry-run       print out the final search command rather than execute it
 
     You can specify search terms in other ways as well.
@@ -98,6 +103,7 @@ condition="and"
 dryRun=false
 invert=false
 onlyFilenames=false
+onlyMatching=false
 grepCmd=ug
 termPrefix='\\b'
 termSuffix='\\b'
@@ -132,7 +138,10 @@ while [[ $# -gt 0 ]]; do
             extra_args+=(--files-with-matches) 
             onlyFilenames=true
         ;;
-        -o|--only-matching)      extra_args+=(--only-matching) ;;
+        -o|--only-matching)
+            extra_args+=(--only-matching) 
+            onlyMatching=true
+        ;;
         --no-cache)              useCache=false ;;
         -f|--file)
             shift
@@ -255,8 +264,8 @@ else
         invertFlag="--invert-match"
         headerFlag=""
     fi
-    if $onlyFilenames; then
-        # when filenames are being printed we don't want to match the header
+    if $onlyFilenames || $onlyMatching; then
+        # don't want to match the header
         headerFlag=""
     fi
 

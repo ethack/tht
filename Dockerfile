@@ -11,7 +11,7 @@ FROM golang:buster as go-builder
     # gron - help find the path to the json data you want
     RUN go install github.com/tomnomnom/gron@master
     # zeek passive dns
-    RUN go install github.com/JustinAzoff/bro-pdns@main
+    RUN go install github.com/JustinAzoff/zeek-pdns@main
     # pxl - image viewer
     RUN go install github.com/ichinaski/pxl@master
     # geoipupdate - Maxmind data downloader
@@ -40,12 +40,10 @@ FROM rust:buster as rust-builder
     RUN cargo install zoxide
     # bat - fancy cat
     RUN cargo install bat
-    # xsv - fast csv / text delimited processing
-    RUN cargo install xsv
     # qsv - fast csv / text delimited processing
     # https://github.com/jqnatividad/qsv#installation
     RUN apt-get update && apt-get install -y clang \
-     && cargo install qsv --locked --features feature_capable,apply,foreach,luau,to
+     && cargo install qsv --locked --features feature_capable,apply,foreach,luau
     # RUN git clone https://github.com/jqnatividad/qsv /tmp/qsv \
     #  && cd /tmp/qsv \
     #  && cargo build --release --locked --features full,apply,foreach,generate,luau,to \
@@ -254,8 +252,8 @@ FROM ubuntu:22.04 as base
     # VisiData
     #RUN apt-get -y install visidata
     # CSV/TSV toolkit
-    COPY --from=rust-builder $RUST_BIN/xsv $BIN
     COPY --from=rust-builder $RUST_BIN/qsv $BIN
+    RUN ln -s $BIN/qsv $BIN/xsv
     # CSV/TSV toolkit
     ARG TSVUTILS_VERSION=2.2.0
     RUN wget -nv -O /tmp/tsv-utils.tar.gz https://github.com/eBay/tsv-utils/releases/download/v${TSVUTILS_VERSION}/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2.tar.gz \
@@ -296,8 +294,8 @@ FROM ubuntu:22.04 as base
     COPY --from=c-builder /tmp/ugrep/bin/ug $BIN
 
     ### Zeek ###
-    # bro-pdns - Passive DNS for Zeek logs
-    COPY --from=go-builder $GO_BIN/bro-pdns $BIN
+    # zeek-pdns - Passive DNS for Zeek logs
+    COPY --from=go-builder $GO_BIN/zeek-pdns $BIN
 
     # zeek-cut
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
@@ -306,8 +304,8 @@ FROM ubuntu:22.04 as base
     ARG ZQ_VERSION=1.5.0
     RUN wget -nv -O /tmp/zq.tar.gz https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.tar.gz \
      && tar -xf /tmp/zq.tar.gz -C /tmp \
-     && mv /tmp/zq $BIN \
-     && mv /tmp/zed $BIN
+     && mv /tmp/zq $BIN
+    #  && mv /tmp/zed $BIN
     # COPY --from=go-builder $GO_BIN/zync $BIN
 
     # TODO: set up a python-builder stage

@@ -34,3 +34,10 @@ sed 's/^[0-9.]*$/@\0/g' | "${cmd[@]}" --file -
 
 # TODO 
 # write usage and proper argument handling
+# use miller for the date and second cases as it is faster
+#   mlr -t sec2gmt ts
+#   mlr -t sec2gmtdate ts
+# Test: 
+# https://github.com/sj14/epoch
+# https://github.com/JensRantil/unfy
+# handle columns, especially Zeek files

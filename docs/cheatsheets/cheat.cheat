@@ -1,15 +1,15 @@
 % cheatsheet
 
-# Display local THT cheatsheets #tip
+# Display local cheatsheets #tip
 cheat <sheet>
 
 # Display a random #tip
 random-tip
 
-# Search local THT cheatsheets (drop --print to execute) #tip
+# Interactive local cheatsheet search (drop --print to execute) #tip
 navi --print
 
-# Search online cheatsheets for topic #tip
+# Interactive online cheatsheet search #tip
 cht <topic>
 
 # Display cheatsheets for topic #tip

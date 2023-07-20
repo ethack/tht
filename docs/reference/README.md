@@ -102,7 +102,7 @@ Also see [Set Theory](#set-theory).
 - `ifne`
 - `jq`
 - `json-cut` - Like `zeek-cut` but for JSON logs.
-- `mlr` / `mlr5` / `mlr6`
+- `mlr`
 - `pee`
 - `rg`
 - `sd`
