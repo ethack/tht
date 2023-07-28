@@ -379,7 +379,7 @@ EOF
 
     # sheldon - plugin manager for zsh (and others)
     ENV XDG_CONFIG_HOME /root/.config
-    ARG SHELDON_VERSION=0.7.3
+    ARG SHELDON_VERSION=0.6.6
     RUN wget -nv -O /tmp/sheldon.tar.gz https://github.com/rossmacarthur/sheldon/releases/download/${SHELDON_VERSION}/sheldon-${SHELDON_VERSION}-x86_64-unknown-linux-musl.tar.gz \
      && tar -C /tmp -xzf /tmp/sheldon.tar.gz \
      && mv /tmp/sheldon $BIN
