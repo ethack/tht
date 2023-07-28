@@ -102,7 +102,7 @@ FROM ubuntu:22.04 as c-builder
 
     # pspg - pager
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git ca-certificates libpq-dev libncurses-dev
-    ARG PSPG_VERSION=5.5.13
+    ARG PSPG_VERSION=5.7.8
     RUN git clone https://github.com/okbob/pspg.git /tmp/pspg \
      && cd /tmp/pspg \
      && git checkout $PSPG_VERSION \
@@ -130,7 +130,7 @@ FROM ubuntu:22.04 as c-builder
 
     # boxes - https://boxes.thomasjensen.com/build.html
     RUN apt-get update && apt-get -y install --no-install-recommends make gcc git diffutils flex bison libunistring-dev libpcre2-dev vim-common
-    ARG BOXES_VERSION=2.1.1
+    ARG BOXES_VERSION=2.2.0
     RUN git clone -b v$BOXES_VERSION --depth=1 https://github.com/ascii-boxes/boxes /tmp/boxes \
     && cd /tmp/boxes \
     && make && make test
@@ -188,10 +188,10 @@ FROM ubuntu:22.04 as base
     COPY --from=rust-builder $RUST_BIN/fd $BIN
     RUN apt-get -y install file
     # fzf - fuzzy finder
-    ARG FZF_VERSION=0.33.0
+    ARG FZF_VERSION=0.42.0
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
      && tar -xz -f /tmp/fzf.tar.gz -C $BIN
-    ARG HCK_VERSION=0.7.5
+    ARG HCK_VERSION=0.9.2
     RUN wget -nv -O $BIN/hck https://github.com/sstadick/hck/releases/download/v${HCK_VERSION}/hck-linux-amd64 \
      && chmod +x $BIN/hck
     # htop - process monitor
@@ -208,7 +208,7 @@ FROM ubuntu:22.04 as base
     COPY --from=c-builder /tmp/moreutils/zrun $BIN
     # navi - cheatsheet
     # /root/.local/share/navi/
-    ARG NAVI_VERSION=2.20.1
+    ARG NAVI_VERSION=2.22.1
     RUN wget -nv -O /tmp/navi.tar.gz https://github.com/denisidoro/navi/releases/download/v${NAVI_VERSION}/navi-v${NAVI_VERSION}-x86_64-unknown-linux-musl.tar.gz \
      && tar -xzf /tmp/navi.tar.gz -C $BIN \
      && mkdir -p /root/.local/share/navi/cheats
@@ -261,7 +261,7 @@ FROM ubuntu:22.04 as base
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-select $BIN
     #COPY --from=rust-builder $RUST_BIN/frawk $BIN
     # DuckDB
-    ARG DUCKDB_VERSION=0.8.0
+    ARG DUCKDB_VERSION=0.8.1
     RUN wget -nv -O /tmp/duckdb.zip https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-amd64.zip \
      && unzip -d /tmp/duckdb /tmp/duckdb.zip \
      && mv /tmp/duckdb/duckdb $BIN
@@ -301,7 +301,7 @@ FROM ubuntu:22.04 as base
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
-    ARG ZQ_VERSION=1.5.0
+    ARG ZQ_VERSION=1.9.0
     RUN wget -nv -O /tmp/zq.tar.gz https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.tar.gz \
      && tar -xf /tmp/zq.tar.gz -C /tmp \
      && mv /tmp/zq $BIN
@@ -379,7 +379,7 @@ EOF
 
     # sheldon - plugin manager for zsh (and others)
     ENV XDG_CONFIG_HOME /root/.config
-    ARG SHELDON_VERSION=0.6.6
+    ARG SHELDON_VERSION=0.7.3
     RUN wget -nv -O /tmp/sheldon.tar.gz https://github.com/rossmacarthur/sheldon/releases/download/${SHELDON_VERSION}/sheldon-${SHELDON_VERSION}-x86_64-unknown-linux-musl.tar.gz \
      && tar -C /tmp -xzf /tmp/sheldon.tar.gz \
      && mv /tmp/sheldon $BIN
