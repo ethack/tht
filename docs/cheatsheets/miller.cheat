@@ -46,3 +46,5 @@ mlr -t --prepipe "sed -e '0,/^#fields\t/s///' -e 's/\t-/\t0/g'" --skip-comments 
 
 $ groupby: printf "id.orig_h\nid.orig_h,ts\nid.orig_h,id.resp_h\nid.orig_h,id.resp_h,ts\n"
 
+# Create a histogram
+filter --capture_loss | chop -H peer percent_lost | mlr -t histogram -f percent_lost --lo 0 --hi 100 --nbins 10
