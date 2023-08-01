@@ -376,6 +376,7 @@ EOF
     COPY zsh/.zshrc /root/
     COPY zsh/.zlogout /root/
     COPY zsh/.config/fd/ignore /root/.config/fd/ignore
+    COPY zsh/.config/zq/shaper.zed /root/.config/zq/shaper.zed
 
     # sheldon - plugin manager for zsh (and others)
     ENV XDG_CONFIG_HOME /root/.config
