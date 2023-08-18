@@ -71,6 +71,7 @@ DOCKER_ARGS=(
     --hostname "$(hostname)"
     --init
     --pid host
+    --cap-add SYS_NICE
     --env "TERM=${TERM}"
     --mount source=/etc/localtime,destination=/etc/localtime,type=bind
     --mount source=/,destination=/host,type=bind
