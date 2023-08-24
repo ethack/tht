@@ -200,7 +200,6 @@ FROM ubuntu:22.04 as base
     COPY --from=rust-builder $RUST_BIN/hyperfine $BIN
     RUN apt-get -y install less
     # moreutils
-    COPY --from=c-builder /tmp/moreutils/chronic $BIN
     COPY --from=c-builder /tmp/moreutils/combine $BIN
     COPY --from=c-builder /tmp/moreutils/ifne $BIN
     COPY --from=c-builder /tmp/moreutils/pee $BIN
