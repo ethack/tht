@@ -17,7 +17,6 @@
 |                     `lfo` | **least frequent occurrences** first           | <code>sort &vert; uniq -c &vert; sort -n</code>  |
 |                     `mfo` | **most frequent occurrences** first            | <code>sort &vert; uniq -c &vert; sort -nr</code> |
 |                `plot-bar` | produce a bar **graph**                        |                                                  |
-|              `random-tip` | prints a random cheatsheet tip entry           |                                                  |
 |                    `skip` | **skips** elements and prints the rest         |                   `tail -n +2`                   |
 |                     `ts2` | convert/truncate **timestamps**                |                                                  |
 |                  `viewer` | displays results in a scrollable table         |                    `less -S`                     |
@@ -25,9 +24,10 @@
 
 
 ## Shell Utils
-These are purely to enhance the interactive experience of THT.
+These are purely to enhance the interactive shell experience of THT.
 - [`bat`](https://github.com/sharkdp/bat) - Like `cat` but with line numbers, syntax highlighting, and scrolling.
 - `boxes` - Used by `random-tip`
+- `cheat` - Cheatsheet browser
 - `entr` - File change watcher
 - `exa` - `ls` alternative
 - `fzf` - Fuzzy finder
@@ -35,65 +35,56 @@ These are purely to enhance the interactive experience of THT.
 - `nq` - Enqueue commands to run in the background
 - `pspg` - Used by `viewer`
 - [`pv`](https://catonmat.net/unix-utilities-pipe-viewer) - Show a progress bar for long-running commands.
-- [`pxl`](https://github.com/ichinaski/pxl) - Display images in the terminal. Useful if you generate a chart and save it as an image.
+- `random-tip` - prints a random cheatsheet tip entry
 - `tldr` - Cheatsheets
-- `tmux`
+- `tmux` - Terminal multiplexer
 - `trim` - Truncates output to fit in the terminal and prevent line wrapping (not scrollable). Useful for copy-pasting.
-- `zellij`
+- `zellij` - Terminal workspace (like `tmux`)
 - `zcat` from `zutils` - Used by `filter`.
 - `zoxide` - Better directory traversal. Used by `g`.
 
 ### Aliases & Functions
 These are shell constructs that can be used to save some keystrokes in an interactive session. However, they cannot be used in shell scripts.
 
-|         Command | Alternative                                                  |
-| ---------------:|:------------------------------------------------------------ |
-|             `g` | `cd`                                                         |
-|         `cheat` | `navi --print`                                               |
-|   `cardinality` | `card`                                                       |
-| `countdistinct` | `card`                                                       |
-| `distinctcount` | `card`                                                       |
-|    `stackcount` | `mfo`                                                        |
-|     `shorttail` | `mfo`                                                        |
-|      `longtail` | `lfo`                                                        |
-|    `cv` / `cvt` | `viewer csv`                                                 |
-|    `tv` / `tvt` | `viewer tsv`                                                 |
-|    `zv` / `zvt` | `viewer zeek`                                                |
-|           `z2z` | `zq -f zeek ${@} -`                                          |
-|           `z2j` | `zq -f json ${@} -`                                          |
-|           `z2c` | `zq -f csv ${@} -`                                           |
-|           `z2t` | <code>sed -e '0,/^#fields\t/s///' &vert; grep -v '^#'</code> |
+|         Command | Purpose                                                                     | Alternative                                                  |
+| ---------------:|:----------------------------------------------------------------------------|:------------------------------------------------------------:|
+|             `g` | Change directories by frecency and list contents                            | `cd`                                                         |
+|         `cheat` | View the included cheatsheets                                               | `navi --print`                                               |
+|    `cv` / `cvt` | Pipe CSV logs to `cv` for an interactive pager or `cvt` for an ascii table  | `viewer csv`                                                 |
+|    `tv` / `tvt` | Pipe TSV logs to `tv` for an interactive pager or `tvt` for an ascii table  | `viewer tsv`                                                 |
+|    `zv` / `zvt` | Pipe Zeek logs to `zv` for an interactive pager or `zvt` for an ascii table | `viewer zeek`                                                |
+|           `z2z` | Convert (any) Zeek logs to Zeek TSV format                                  | `zq -f zeek ${@} -`                                          |
+|           `z2j` | Convert (any) Zeek logs to JSON format                                      | `zq -f json ${@} -`                                          |
+|           `z2c` | Convert Zeek logs logs to CSV format                                        | `zq -f csv ${@} -`                                           |
+|           `z2t` | Convert Zeek logs to TSV (not Zeek) format                                  | <code>sed -e '0,/^#fields\t/s///' &vert; grep -v '^#'</code> |
 <!-- TODO: make these defined automatically -->
 
 ## Set Theory
 
-|        Command | Purpose |
-| --------------:|:------- |
-|      `ipcount` |         |
-|      `ipdiffs` |         |
-|  `ipintersect` |         |
-|      `ipunion` |         |
-|      `setdiff` |         |
-| `setintersect` |         |
-|     `setunion` |         |
-|   `rwsetbuild` |         |
-|     `rwsetcat` |         |
-|  `rwsetmember` |         |
-|    `rwsettool` |         |
+|        Command | Purpose                                      |
+| --------------:|:-------------------------------------------- |
+|      `ipcount` | Count number of IP addresses in ranges       |
+|      `ipdiffs` |                                              |
+|  `ipintersect` | IPs that intersect given ranges              |
+|      `ipunion` | Union of all IP ranges                       |
+|      `setdiff` | Set difference for newline separated lists   |
+| `setintersect` | Set intersection for newline separated lists |
+|     `setunion` | Set union for newline separated lists        |
+|          `zet` | Set operations all in one command            |
 
 ## IP Addresses
 
-|    Command | Purpose |
-| ----------:|:------- |
-|  `cidr2ip` |         |
-|  `ip2cidr` |         |
-| `grepcidr` |         |
+|    Command | Purpose                                                |
+| ----------:|:------------------------------------------------------ |
+|  `cidr2ip` | Convert CIDR ranges to list of individual IP addresses |
+|  `ip2cidr` | Convert list of individual IP addresses to CIDR ranges |
+| `grepcidr` | Membership test for given IP in CIDR ranges            |
 
 Also see [Set Theory](#set-theory).
 
 ## Other Tools
-- `chronic`
 - `combine`
+- `duckdb` - Embedded OLAP SQL engine and database.
 - `dseq`
 - `fd` - File finder. Like `find` but better.
 - `gron`
@@ -102,18 +93,17 @@ Also see [Set Theory](#set-theory).
 - `ifne`
 - `jq`
 - `json-cut` - Like `zeek-cut` but for JSON logs.
-- `mlr`
+- `mlr` - Miller
 - `pee`
-- `rg`
+- `rg` - Ripgrep
 - `sd`
 - `sponge`
 - `tsv-select`
 - `ug` / `ugrep`
-- `xsv`
+- `xsv` / `qsv` - Fash CSV / TSV processor.
 - `zed`
 - `zeek-cut`
-- `zet`
-- `zq`
+- `zq` 
 - `zrun`
 
 <!-- TODO: make these link to their homepages -->
@@ -130,7 +120,7 @@ Also see [Set Theory](#set-theory).
 - `[[whois-bulk]]`
 
 ### Offline
-- `bro-pdns`
+- `zeek-pdns`
 - `ipcalc`
 - `zannotate`
 - `trace-summary` - Used by `conn-summary`.

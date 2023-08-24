@@ -190,14 +190,6 @@ alias history="history 0"  # make history show all entries by default
 alias h="head"
 alias t="tail -f"
 
-# other names people might use instead
-alias cardinality=card
-alias countdistinct=card
-alias distinctcount=card
-alias stackcount=mfo
-alias shorttail=mfo
-alias longtail=lfo
-
 alias cv="viewer csv"
 alias tv="viewer tsv"
 alias zv="viewer zeek" 
@@ -223,6 +215,16 @@ alias z2c=zeek2csv
 alias z2t=zeek2tsv
 alias z2z=zeek2zeek
 alias z2j=zeek2json
+function z2() {
+  format="$1"
+  shift
+  type="$1"
+  # if argument is a file, extract the type from the filename
+  if [[ -f $type ]]; then
+    type=$(basename "$1" | sed -E 's/^(.*?)(\.|_\d)/\1/')
+  fi
+  zq "put _path:='$type'" "$@" | zq -f $format -I /root/.config/zq/shaper.zed -
+}
 
 # convert timestamps to human-readable by default
 alias zeek-cut="zeek-cut -U '%FT%TZ'"

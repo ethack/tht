@@ -93,6 +93,12 @@ If you'd like to build the image or documentation manually, see [here](https://e
 
 For the current documentation, see [here](https://ethack.github.io/tht/).
 
+These pages are good place to get the lay of the land:
+- [List of tools included in THT](https://ethack.github.io/tht/#/reference/)
+- [Cheatsheets covering common cases](https://ethack.github.io/tht/#/how-to/)
+  - You can also access these from inside THT by running `cheat` or by pressing the `ctrl-g` keyboard shortcut.
+  - You'll get a random tip from these cheatsheets every time you start THT.
+
 ## License
 
 The source code in this project is licensed under the [MIT license](LICENSE).
