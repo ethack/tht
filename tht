@@ -2,9 +2,9 @@
 
 if [ -n "$DEBUG" ]; then set -x; set -e; fi
 
-IMAGE=${IMAGE:-ethack/tht}
+IMAGE=${IMAGE:-ethack/tht:latest}
 # switch to ghcr.io if dockerhub fails due to rate limits
-#IMAGE=ghcr.io/ethack/tht
+#IMAGE=ghcr.io/ethack/tht:latest
 PERSISTENT=/usr/local/share/zsh/
 
 # if the current user doesn't have docker permissions run with sudo
@@ -15,17 +15,16 @@ fi
 
 usage() {
     cat <<EOF
-Usage: tht [command] [flags] [-- [<args>]]
+Usage: tht [<command>] [<flags>] [-- [<args>]]
 
 Run tht without arguments for normal use.
 
 Commands:
+    install <user@remotesystem>
+             Installs THT on a remove system over SSH
+                (requires docker on remote system)
     update   Download the latest THT image and updates this script
     version  Print the THT version
-
-To execute a script with tht you may either:
-    - Pass the commands in through stdin
-    - Give the path to a script file as an argument
 
 Flags:
     --experimental  Enable experimental features
@@ -34,7 +33,15 @@ Flags:
 Arguments:
     --       Any arguments after the -- are run inside THT in _interactive_ mode.
 
+To execute a script with tht you may either:
+    - Pass the commands in through stdin (e.g. echo whoami | tht)
+    - Give the path to a script file as an argument (e.g. tht script.sh)
+
 EOF
+}
+
+exists () {
+    command -v $1 >/dev/null 2>&1
 }
 
 # sets up to execute a script within tht
@@ -86,6 +93,23 @@ while [ $# -gt 0 ]; do
     help|-h|--help)
         usage
         exit 0
+    ;;
+    install)
+        shift
+
+        echo "Installing THT script"
+        cat $(realpath "$0") | ssh "$@" "cat >tht; chmod +x tht; sudo mv tht /usr/local/bin/tht"
+
+        echo "Uploading THT container image"
+        if exists pv && exists jq; then
+            # display nice progress bar
+            docker image save "$IMAGE" | pv --size $(docker image inspect "$IMAGE" | jq '.[].Size') | ssh -C "$@" docker image load
+        else
+            docker image save "$IMAGE" | ssh -C "$@" docker image load
+        fi
+
+        echo "Done"
+        exit
     ;;
     update|pull)
         # exit if any of the update commands fail
