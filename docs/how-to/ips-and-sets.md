@@ -11,17 +11,20 @@ Answer the following questions:
 
 ### **⚠️ Spoilers**
 
-You can view _hints_ :question: and the **final solution** :exclamation: by selecting a tab.
+You can view _hints_ :question: with relevant background and direction and **solutions** :exclamation: where a command is given by selecting a tab.
 
 #### **:question: Suggested tools **
 
-- `[[filter]]`
-- `[[chop]]`
+- [`filter`](reference/filter)
+- [`chop`](reference/chop)
 - `ipintersect` / `ipdiff` / `zet`
 
 #### **:question: Log fields to consider**
 
 Most Zeek logs contain an [`id` struct](https://docs.zeek.org/en/master/scripts/base/init-bare.zeek.html#type-conn_id) which has the source (`id.orig_h`) and destination (`id.resp_h`) IP addresses along with the source (`id.orig_p`) and destination (`id.resp_p`) ports.
+
+> [!NOTE]
+> `orig` refers to the _originator_ and `resp` refers to the _responder_. `_h` is the first letter in _host_ and `_p` is first letter in _port_. I.e. `id.orig_h` is the originating host, or source IP address of the connection.
 
 The Zeek [`conn`](https://docs.zeek.org/en/master/logs/conn.html) log will show all connections observed. SSL servers typically use TCP port 443 and HTTP servers typically use TCP port 80. The `conn` log contains a `service` field that indicates if Zeek detected a certain protocol for that connection. When certain protocols are detected, Zeek will also generate one (or more) entries in a log specific for that protocol. For example, [`http`](https://docs.zeek.org/en/master/logs/http.html) or [`ssl`](https://docs.zeek.org/en/master/logs/ssl.html).
 
@@ -34,7 +37,7 @@ Log file field refences:
 - https://docs.zeek.org/en/master/scripts/base/protocols/ssl/main.zeek.html#type-SSL::Info
 - https://docs.zeek.org/en/master/scripting/basics.html#writing-scripts-connection-record
 
-#### **:question: Extracting IPs**
+#### **:exclamation: Extracting IPs**
 
 ```bash
 filter --http | chop id.orig_h | distinct >http-ips.txt
@@ -44,7 +47,7 @@ filter --ssl | chop id.orig_h | distinct >ssl-ips.txt
 > [!TIP]
 > The `distinct` in the above commands is optional but will remove duplicates from your lists.
 
-#### **:question: Finding items in common**
+#### **:exclamation: Finding items in common**
 
 When dealing with IP addresses in particular, the `ipcount`, `ipdiff`, `ipdiffs`, `ipintersect`, and `ipunion` tools can be used. These work with both IP ranges and individual addesses. You may also find them to be faster for very large lists.
 
@@ -67,7 +70,7 @@ This is called the _set difference_ or the _complement_ in [[Set Theory]]. Look 
 - `zet diff`
 </details>
 
-#### **:exclamation: Solution**
+#### **:exclamation: Final Solution**
 
 Read through the hints to understand the solution.
 
