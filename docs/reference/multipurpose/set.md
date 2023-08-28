@@ -8,15 +8,8 @@ draft: true
 
 # Tools
 
-There are several tools available for performing set operations on files containing arbitrary data.
-
-- `setdiff` - difference
-- `setintersect` - intersection
-- `setunion` - union
-
-{{% notice note %}}
-Symmetric difference is currently not implemented.
-{{% /notice %}}
+- `zet`
+- `duckdb`
 
 ## IP Addresses
 

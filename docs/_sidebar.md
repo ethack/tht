@@ -8,6 +8,7 @@
 - [Tutorials](tutorials/)
 
 - [How To](how-to/)
+  - [Extracting IPs / Working with Sets](how-to/ips-and-sets.md)
   <!-- - [Working with IP Addresses](how-to/ip.md) -->
 
 - [Reference](reference/)

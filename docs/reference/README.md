@@ -67,10 +67,7 @@ These are shell constructs that can be used to save some keystrokes in an intera
 |      `ipdiffs` |                                              |
 |  `ipintersect` | IPs that intersect given ranges              |
 |      `ipunion` | Union of all IP ranges                       |
-|      `setdiff` | Set difference for newline separated lists   |
-| `setintersect` | Set intersection for newline separated lists |
-|     `setunion` | Set union for newline separated lists        |
-|          `zet` | Set operations all in one command            |
+|          `zet` | Set operations on generic lists              |
 
 ## IP Addresses
 

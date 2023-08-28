@@ -7,14 +7,12 @@
   <meta name="description" content="Description">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
   <link rel="icon" href="_assets/images/target.svg">
-  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
-  <!-- https://docsify-darklight-theme.boopathikumar.me/#/ -->
-  <link 
-    rel="stylesheet"
-    href="//cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/style.min.css"
-    title="docsify-darklight-theme"
-    type="text/css"
-  />
+  
+  <!-- Themes (light + dark) -->
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify-darklight-theme@3/dist/docsify-themeable/style.min.css" type="text/css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple.css" title="light">
+  <link rel="stylesheet alternative" href="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/css/theme-simple-dark.css" title="dark">
+  
 </head>
 <body>
   <div id="app">Please wait...</div>
@@ -42,7 +40,7 @@
             return html + footer;
           });
         },
-        // custom wikilinks version until https://github.com/zpengg/docsify-wikilink/pull/5 is merged
+        // custom wikilinks version until https://github.com/zpengg/docsify-wikilink/pull/5 is merged and available
         function wikilink(hook, vm) {
           hook.beforeEach(function (content) {
             return content
@@ -96,17 +94,29 @@
   </script>
   <!-- Docsify v4 -->
   <script src="//cdn.jsdelivr.net/npm/docsify@4"></script>
+
+  <!-- https://jhildenbiddle.github.io/docsify-themeable/#/quick-start -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify-themeable@0/dist/js/docsify-themeable.min.js"></script>
+
   <script src="//cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/zoom-image.min.js"></script>
+
   <!-- https://docsify.js.org/#/plugins?id=copy-to-clipboard -->
   <script src="//cdn.jsdelivr.net/npm/docsify-copy-code/dist/docsify-copy-code.min.js"></script>
+
   <!-- https://docsify.js.org/#/language-highlight -->
   <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+
   <!-- https://github.com/fzankl/docsify-plugin-flexible-alerts -->
   <script src="//unpkg.com/docsify-plugin-flexible-alerts"></script>
-  <!-- https://github.com/imyelo/docsify-pagination -->
-  <!-- <script src="//unpkg.com/docsify-pagination/dist/docsify-pagination.min.js"></script> -->
-  <!-- https://docsify-darklight-theme.boopathikumar.me/#/ -->
-  <script src="//cdn.jsdelivr.net/npm/docsify-darklight-theme@latest/dist/index.min.js"></script>
+
+  <!-- https://jhildenbiddle.github.io/docsify-tabs/#/?id=installation -->
+  <script src="https://cdn.jsdelivr.net/npm/docsify-tabs@1"></script>
+
+  <!-- https://docsify-darklight-theme.boopathikumar.me/#/docsifyThemeable -->
+  <script src="//cdn.jsdelivr.net/npm/docsify-darklight-theme@3/dist/docsify-themeable/main.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/docsify-darklight-theme@3/dist/docsify-themeable/index.min.js"></script>
+
   <!-- https://github.com/zpengg/docsify-wikilink -->
   <!-- <script src="//cdn.jsdelivr.net/npm/docsify-wikilink@1"></script> -->
 </body>
