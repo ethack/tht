@@ -17,6 +17,7 @@
   - [`whois-bulk`](reference/whois-bulk.md)
   <!-- - [`zannotate`](reference/zannotate.md) -->
 
-<!-- - [Explanation](explanation/) -->
+- [Explanation](explanation/)
+  - [Set Theory](explanation/set-theory.md)
 
 - [Development](development.md)

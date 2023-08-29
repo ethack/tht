@@ -34,3 +34,29 @@ python3 -m http.server 3000
 Then access the local website http://localhost:3000 in your browser.
 
 When you make changes, just force refresh your browser.
+
+### Alerts
+
+```markdown
+> [!NOTE]
+> An alert of type 'note' using global style 'callout'.
+
+> [!TIP]
+> An alert of type 'tip' using global style 'callout'.
+
+> [!WARNING]
+> An alert of type 'warning' using global style 'callout'.
+
+> [!ATTENTION]
+> An alert of type 'attention' using global style 'callout'.
+
+> [!NOTE|style:flat]
+> An alert of type 'note' using alert specific style 'flat' which overrides global style 'callout'.
+```
+
+Create custom headings or change styling.
+https://github.com/fzankl/docsify-plugin-flexible-alerts
+
+### LaTeX
+
+https://oeis.org/wiki/List_of_LaTeX_mathematical_symbols

@@ -71,7 +71,7 @@ zet intersect http-ips.txt ssl-ips.txt
 
 #### **:question: _Find differences_**
 
-This is called the _set difference_ or the _complement_ in [[Set Theory]]. Look at the following tools:
+This is called the _set difference_ or the _relative complement_ in [Set Theory](explanation/set-theory.md#difference-). Look at the following tools:
 - `ipdiff`
 - `zet diff`
 
@@ -270,7 +270,7 @@ zet diff external-web-servers-nonstandard-port.txt external-http-80-servers.txt 
 ## Challenge 4
 
 > [!ATTENTION]
-> For this **advanced challenge**, use `zq` to convert the logs to JSON or Parquet and use `duckdb` to solve the challenges above using SQL.
+> For this **advanced challenge**, use `zq` to convert the logs to a JSON or Parquet file and use `duckdb` to solve challenges 1-3 above using SQL.
 
 <!-- tabs:start -->
 

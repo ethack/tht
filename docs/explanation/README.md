@@ -1,7 +1,1 @@
-Coming soon.
-
-<!-- Ideas 
-- Set theory
-- SQL joins
-- SQL window functions
--->
+Deeper explanations of trickier topics.
