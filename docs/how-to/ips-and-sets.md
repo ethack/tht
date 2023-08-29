@@ -7,8 +7,8 @@ Extract source IP addresses from SSL and HTTP. These are IP addresses making HTT
 
 Answer the following questions:
 - How many IPs made both types of connections?
-- How many IPs made only SSL connections but no HTTP connections?
 - How many IPs made only HTTP connections but no SSL connections?
+- How many IPs made only SSL connections but no HTTP connections?
 
 <!-- tabs:start -->
 
@@ -163,12 +163,12 @@ filter --conn http | chop id.resp_h id.resp_p | filter -p rfc1918 | distinct
 Another solution involves using `zq`, which can natively understand both Zeek's TSV and JSON formats. In this example, we can keep the entire log line.
 
 ```bash
-zq -f zeek 'local_resp == true and service in ["http", "ssl"]' conn.* >conn-internal-web-servers.log
+zq -f zeek 'local_resp == true and service in ["http", "ssl"]' conn.*.log* >conn-internal-web-servers.log
 ```
 
 > [!NOTE]
 > If you don't get expected results using `zq`, try this form. This has to do with the way `zq` applies datatypes to Zeek fields and can differ between TSV and JSON logs. Applying this [shaper](https://github.com/brimdata/zed/blob/main/docs/integrations/zeek/shaping-zeek-ndjson.md) file helps normalize the differences.
-> `zq -f zeek -I /root/.config/zq/shaper.zed '| local_resp == true and service in ["http", "ssl"]' conn.* >conn-internal-web-servers.log`
+> `zq -f zeek -I /root/.config/zq/shaper.zed '| local_resp == true and service in ["http", "ssl"]' conn.*.log* >conn-internal-web-servers.log`
 
 #### **:question: _Find items in common_**
 
@@ -197,7 +197,7 @@ This solution doesn't give us the hostnames for the servers. Think about how you
 
 ```bash
 # Find internal HTTP and SSL servers
-zq -f text 'local_resp == true and service in ["http", "ssl"] and id.resp_p not in [80, 443] | cut id.resp_h | sort | uniq' conn.* >internal-web-servers-nonstandard-port.txt
+zq -f text 'local_resp == true and service in ["http", "ssl"] and id.resp_p != 80 and id.resp_p != 443 | cut id.resp_h | sort | uniq' conn.*.log* >internal-web-servers-nonstandard-port.txt
 
 # Find servers listening only on a port other than 80 or 443
 zet diff internal-web-servers-nonstandard-port.txt internal-http-80-servers.txt internal-ssl-443-servers.txt
@@ -252,7 +252,7 @@ zet diff external-ssl-443-servers.txt external-http-80-servers.txt
 
 ```bash
 # Find external HTTP and SSL servers
-zq -f text 'local_resp == false and service in ["http", "ssl"] and id.resp_p not in [80, 443] | cut id.resp_h | sort | uniq' conn.* >external-web-servers-nonstandard-port.txt
+zq -f text 'local_resp == false and service in ["http", "ssl"] and id.resp_p != 80 and id.resp_p != 443 | cut id.resp_h | sort | uniq' conn.*.log* >external-web-servers-nonstandard-port.txt
 
 # Find servers listening only on a port other than 80 or 443
 zet diff external-web-servers-nonstandard-port.txt external-http-80-servers.txt external-ssl-443-servers.txt
@@ -285,7 +285,7 @@ Set `_path` to the log type (in this case `conn`) to ensure the `shaper.zed` fil
 
 ```bash
 # Combine all conn logs and convert to Parquet
-zq "put _path:='conn'" conn.* | pv | zq -I /root/.config/zq/shaper.zed -f parquet -o conn.parquet -
+zq "put _path:='conn'" conn.*.log* | pv | zq -I /root/.config/zq/shaper.zed -f parquet -o conn.parquet -
 ```
 
 > [!NOTE]
@@ -329,28 +329,6 @@ FROM (
 );
 ```
 
-How many IPs made only SSL connections but no HTTP connections?
-
-```sql
-WITH 
-    http_clients AS (
-        SELECT id.orig_h AS orig_h
-        FROM read_parquet('conn.parquet')
-        WHERE service = 'http'
-    ), 
-    ssl_clients AS (
-        SELECT id.orig_h AS orig_h
-        FROM read_parquet('conn.parquet')
-        WHERE service = 'ssl'
-    )
-SELECT count(orig_h)
-FROM (
-    SELECT orig_h FROM ssl_clients
-    EXCEPT
-    SELECT orig_h FROM http_clients
-);
-```
-
 How many IPs made only HTTP connections but no SSL connections?
 
 ```sql
@@ -373,6 +351,28 @@ FROM (
 );
 ```
 
+How many IPs made only SSL connections but no HTTP connections?
+
+```sql
+WITH 
+    http_clients AS (
+        SELECT id.orig_h AS orig_h
+        FROM read_parquet('conn.parquet')
+        WHERE service = 'http'
+    ), 
+    ssl_clients AS (
+        SELECT id.orig_h AS orig_h
+        FROM read_parquet('conn.parquet')
+        WHERE service = 'ssl'
+    )
+SELECT count(orig_h)
+FROM (
+    SELECT orig_h FROM ssl_clients
+    EXCEPT
+    SELECT orig_h FROM http_clients
+);
+```
+
 ##### **Solution 2**
 
 Which servers are listening on both ports 443 and 80?
@@ -382,12 +382,18 @@ WITH
     http_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE local_resp AND id.resp_p = 80
+        WHERE 
+            local_resp 
+            AND id.resp_p = 80
+            AND service = 'http'
     ), 
     ssl_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE local_resp AND id.resp_p = 443
+        WHERE 
+            local_resp 
+            AND id.resp_p = 443
+            AND service = 'ssl'
     )
 SELECT resp_h FROM http_servers
 INTERSECT 
@@ -401,12 +407,18 @@ WITH
     http_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE local_resp AND id.resp_p = 80
+        WHERE 
+            local_resp 
+            AND id.resp_p = 80
+            AND service = 'http'
     ), 
     ssl_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE local_resp AND id.resp_p = 443
+        WHERE 
+            local_resp 
+            AND id.resp_p = 443
+            AND service = 'ssl'
     )
 SELECT resp_h FROM http_servers
 EXCEPT 
@@ -420,12 +432,18 @@ WITH
     http_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE local_resp AND id.resp_p = 80
+        WHERE 
+            local_resp 
+            AND id.resp_p = 80
+            AND service = 'http'
     ), 
     ssl_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE local_resp AND id.resp_p = 443
+        WHERE 
+            local_resp 
+            AND id.resp_p = 443
+            AND service = 'ssl'
     )
 SELECT resp_h FROM ssl_servers
 EXCEPT 
@@ -439,12 +457,18 @@ WITH
     http_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE local_resp AND id.resp_p = 80
+        WHERE 
+            local_resp 
+            AND id.resp_p = 80
+            AND service = 'http'
     ), 
     ssl_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE local_resp AND id.resp_p = 443
+        WHERE 
+            local_resp 
+            AND id.resp_p = 443
+            AND service = 'ssl'
     ),
     nonstandard_servers AS (
         SELECT id.resp_h AS resp_h
@@ -469,12 +493,18 @@ SELECT resp_h FROM ssl_servers;
 >     http_servers AS (
 >         SELECT id.resp_h AS resp_h
 >         FROM read_parquet('conn.parquet')
->         WHERE local_resp AND id.resp_p = 80
+>         WHERE 
+>             local_resp 
+>             AND id.resp_p = 80
+>             AND service = 'http'
 >     ), 
 >     ssl_servers AS (
 >         SELECT id.resp_h AS resp_h
 >         FROM read_parquet('conn.parquet')
->         WHERE local_resp AND id.resp_p = 443
+>         WHERE 
+>             local_resp 
+>             AND id.resp_p = 443
+>             AND service = 'ssl'
 >     ),
 >     nonstandard_servers AS (
 >         SELECT 
@@ -504,12 +534,18 @@ WITH
     http_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE NOT local_resp AND id.resp_p = 80
+        WHERE 
+            NOT local_resp 
+            AND id.resp_p = 80
+            AND service = 'http'
     ), 
     ssl_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE NOT local_resp AND id.resp_p = 443
+        WHERE 
+            NOT local_resp 
+            AND id.resp_p = 443
+            AND service = 'ssl'
     )
 SELECT resp_h FROM http_servers
 INTERSECT 
@@ -523,12 +559,18 @@ WITH
     http_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE NOT local_resp AND id.resp_p = 80
+        WHERE 
+            NOT local_resp 
+            AND id.resp_p = 80
+            AND service = 'http'
     ), 
     ssl_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE NOT local_resp AND id.resp_p = 443
+        WHERE 
+            NOT local_resp 
+            AND id.resp_p = 443
+            AND service = 'ssl'
     )
 SELECT resp_h FROM http_servers
 EXCEPT 
@@ -542,12 +584,18 @@ WITH
     http_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE NOT local_resp AND id.resp_p = 80
+        WHERE 
+            NOT local_resp 
+            AND id.resp_p = 80
+            AND service = 'http'
     ), 
     ssl_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE NOT local_resp AND id.resp_p = 443
+        WHERE 
+            NOT local_resp 
+            AND id.resp_p = 443
+            AND service = 'ssl'
     )
 SELECT resp_h FROM ssl_servers
 EXCEPT 
@@ -561,12 +609,18 @@ WITH
     http_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE NOT local_resp AND id.resp_p = 80
+        WHERE 
+            NOT local_resp 
+            AND id.resp_p = 80
+            AND service = 'http'
     ), 
     ssl_servers AS (
         SELECT id.resp_h AS resp_h
         FROM read_parquet('conn.parquet')
-        WHERE NOT local_resp AND id.resp_p = 443
+        WHERE 
+            NOT local_resp 
+            AND id.resp_p = 443
+            AND service = 'ssl'
     ),
     nonstandard_servers AS (
         SELECT id.resp_h AS resp_h
@@ -591,12 +645,18 @@ SELECT resp_h FROM ssl_servers;
 >     http_servers AS (
 >         SELECT id.resp_h AS resp_h
 >         FROM read_parquet('conn.parquet')
->         WHERE NOT local_resp AND id.resp_p = 80
+>         WHERE 
+>             NOT local_resp 
+>             AND id.resp_p = 80
+>             AND service = 'http'
 >     ), 
 >     ssl_servers AS (
 >         SELECT id.resp_h AS resp_h
 >         FROM read_parquet('conn.parquet')
->         WHERE NOT local_resp AND id.resp_p = 443
+>         WHERE 
+>             NOT local_resp 
+>             AND id.resp_p = 443
+>             AND service = 'ssl'
 >     ),
 >     nonstandard_servers AS (
 >         SELECT 
@@ -615,7 +675,8 @@ SELECT resp_h FROM ssl_servers;
 >     AND resp_h NOT IN (SELECT resp_h FROM ssl_servers);
 > ```
 
-
 <!-- tabs:end -->
+
+Type `.quit` to exit `duckdb` when finished.
 
 <!-- tabs:end -->
