@@ -299,13 +299,13 @@ Start `duckdb` without arguments.
 duckdb
 ```
 
+Note that we apply the same structure in the SQL solutions. See if you can pick out the pieces from earlier solutions.
+1. Building temporary result sets for both HTTP and SSL clients.
+2. Performing set operations on the datasets to get the result we want.
+
 <!-- tabs:start -->
 
 ##### **Solution 1**
-
-Note that we apply the same structure in the SQL solutions. See if you can pick out the pieces from earlier.
-1. Building temporary result sets for both HTTP and SSL clients.
-2. Performing set operations on the two datasets to get the result we want.
 
 How many IPs made both types (SSL and HTTP) of connections?
 
