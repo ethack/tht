@@ -168,9 +168,12 @@ Another solution involves using `zq`, which can natively understand both Zeek's 
 zq -f zeek 'local_resp == true and service in ["http", "ssl"]' conn.*.log* >conn-internal-web-servers.log
 ```
 
-> [!NOTE]
-> If you don't get expected results using `zq`, try this form. This has to do with the way `zq` applies datatypes to Zeek fields and can differ between TSV and JSON logs. Applying this [shaper](https://github.com/brimdata/zed/blob/main/docs/integrations/zeek/shaping-zeek-ndjson.md) file helps normalize the differences.
-> `zq -f zeek -I /root/.config/zq/shaper.zed '| local_resp == true and service in ["http", "ssl"]' conn.*.log* >conn-internal-web-servers.log`
+> [!WARNING]
+> If you don't get expected results using `zq`, try this form. 
+> ```bash
+> zq -f zeek -I /root/.config/zq/shaper.zed '| local_resp == true and service in ["http", "ssl"]' conn.*.log* >conn-internal-web-servers.log
+> ```
+> This has to do with the way `zq` applies datatypes to Zeek fields and can differ between TSV and JSON logs. Applying a [shaper](https://github.com/brimdata/zed/blob/main/docs/integrations/zeek/shaping-zeek-ndjson.md) file helps normalize the differences.
 
 #### **:question: _Find items in common_**
 
@@ -267,7 +270,7 @@ zet diff external-web-servers-nonstandard-port.txt external-http-80-servers.txt 
 ## Challenge 4
 
 > [!ATTENTION]
-> For an **advanced challenge**, use `zq` to convert the logs to JSON or Parquet and use `duckdb` to solve the challenges above using SQL.
+> For this **advanced challenge**, use `zq` to convert the logs to JSON or Parquet and use `duckdb` to solve the challenges above using SQL.
 
 <!-- tabs:start -->
 
