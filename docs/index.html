@@ -27,6 +27,10 @@
       auto2top: true,
       loadSidebar: true,
       subMaxLevel: 3,
+      // https://jhildenbiddle.github.io/docsify-tabs/#/?id=sync
+      tabs: {
+        sync: false
+      },
       plugins: [
         // https://docsify.js.org/#/write-a-plugin?id=page-footer
         function pageFooter(hook, vm) {
@@ -106,6 +110,7 @@
 
   <!-- https://docsify.js.org/#/language-highlight -->
   <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="//cdn.jsdelivr.net/npm/prismjs@1/components/prism-sql.min.js"></script>
 
   <!-- https://github.com/fzankl/docsify-plugin-flexible-alerts -->
   <script src="//unpkg.com/docsify-plugin-flexible-alerts"></script>
