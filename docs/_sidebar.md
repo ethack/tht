@@ -6,10 +6,9 @@
   - [Documentation Structure](about/docs.md)
 
 - [Tutorials](tutorials/)
+  - [Working with Sets of IPs](tutorials/sets-and-ips.md)
 
-- [How To](how-to/)
-  - [Extracting IPs / Working with Sets](how-to/ips-and-sets.md)
-  <!-- - [Working with IP Addresses](how-to/ip.md) -->
+- [Cheatsheets](cheatsheets/)
 
 - [Reference](reference/)
   - [`chop`](reference/chop.md)
@@ -18,6 +17,6 @@
   - [`whois-bulk`](reference/whois-bulk.md)
   <!-- - [`zannotate`](reference/zannotate.md) -->
 
-- [Explanation](explanation/)
+<!-- - [Explanation](explanation/) -->
 
 - [Development](development.md)

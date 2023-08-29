@@ -8,7 +8,7 @@ This will install the `tht` script in `/usr/local/bin/tht`.
 sudo curl -o /usr/local/bin/tht 'https://raw.githubusercontent.com/ethack/tht/main/tht' && sudo chmod +x /usr/local/bin/tht
 ```
 
-> [!NOTE|style:flat]
+> [!NOTE]
 > You will need docker to use THT. If you don't already have docker you can either install [Docker Desktop](https://docs.docker.com/get-docker/) or on Linux use this one-liner:
 > 
 > ```bash
@@ -25,7 +25,7 @@ tht
 
 This will give you a ZSH shell inside a new THT container. All the tools and examples from this documentation can now be used. 
 
-> [!TIP|style:flat]
+> [!TIP]
 > Your host's filesystem is accessible from `/host`.
 
 ## Updating
@@ -85,7 +85,7 @@ fd 'dns.*log' | sort | xargs -n 24 bro-pdns index
 
 See the [cron/](https://github.com/ethack/tht/tree/main/cron) directory in the code repo for more examples of cron scripts.
 
-> [!TIP|style:flat]
+> [!TIP]
 > You can use `tht` as a shell executable in [Ansible's `shell` module](https://docs.ansible.com/ansible/latest/collections/ansible/builtin/shell_module.html). E.g. 
 > ```yaml
 > - name: Count the number of HTTP server errors to POST requests
