@@ -26,7 +26,9 @@ FROM rust:buster as rust-builder
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
 
-    # NOTE: try adding --locked if builds rail in the future
+    RUN rustup update
+
+    # NOTE: try adding --locked if builds fail in the future
 
     # exa - fancy ls
     #RUN cargo install exa
@@ -58,14 +60,22 @@ FROM rust:buster as rust-builder
     RUN cargo install amp
     # sd - better find and replace (sed)
     RUN cargo install sd
-    # frawk - fast awk (TODO: check readme for better build instructions)
-    # RUN cargo +nightly install frawk --no-default-features --features use_jemalloc,allow_avx2,unstable
-    #RUN cargo install frawk --no-default-features --features use_jemalloc,allow_avx2
     # zet - set operations on files
     RUN cargo install zet
     # huniq - sort | uniq with hashtables
     # https://github.com/koraa/huniq
     RUN cargo install huniq
+    # polars-cli - https://github.com/pola-rs/polars-cli
+    RUN git clone https://github.com/pola-rs/polars-cli \
+     && cd polars-cli \
+     && cargo install --locked --path .
+    
+    # the following require rust unstable
+    RUN rustup toolchain install nightly
+
+    # frawk - fast awk
+    # use cranelift; could install llvm12 instead
+    RUN cargo +nightly install frawk --no-default-features --features use_jemalloc,allow_avx2,unstable
 
 # C/C++ Builder Stage #
 FROM ubuntu:22.04 as c-builder
@@ -264,6 +274,12 @@ FROM ubuntu:22.04 as base
     RUN wget -nv -O /tmp/duckdb.zip https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-amd64.zip \
      && unzip -d /tmp/duckdb /tmp/duckdb.zip \
      && mv /tmp/duckdb/duckdb $BIN
+    # polars-cli
+    COPY --from=rust-builder $RUST_BIN/polars $BIN
+
+    # evtx
+    RUN wget -nv -O $BIN/evtx_dump https://github.com/omerbenamram/evtx/releases/download/v0.8.1/evtx_dump-v0.8.1-x86_64-unknown-linux-musl \
+     && chmod +x $BIN/evtx_dump
 
     # Misc useful tools from https://www.datascienceatthecommandline.com/
     RUN wget -nv -O $BIN/body https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/body
