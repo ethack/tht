@@ -59,8 +59,9 @@ https://github.com/fzankl/docsify-plugin-flexible-alerts
 
 ### LaTeX
 
-https://oeis.org/wiki/List_of_LaTeX_mathematical_symbols
+- [LaTeX](https://oeis.org/wiki/List_of_LaTeX_mathematical_symbols)
 
 ### Emoji
 
-https://docsify.js.org/#/emoji?id=emoji
+- [Emoji](https://docsify.js.org/#/emoji?id=emoji) supported directly by Docsify
+- [Unicode Arrows](http://xahlee.info/comp/unicode_arrows.html)
