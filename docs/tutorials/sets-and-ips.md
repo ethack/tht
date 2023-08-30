@@ -5,7 +5,7 @@ Use [Zeek](https://zeek.org/) logs to solve these challenges.
 
 ## Challenge 1
 
-Extract source IP addresses from SSL and HTTP. These are IP addresses making HTTP and SSL/TLS requests to web servers.
+Extract source IP addresses from SSL and HTTP connections. These are IP addresses making HTTP and SSL/TLS requests to web servers.
 
 Answer the following questions:
 - How many IPs made both types of connections?
