@@ -11,6 +11,7 @@
 - [Cheatsheets](cheatsheets/)
 
 - [Reference](reference/)
+  - [IP ⟷ Hostname](reference/names.md)
   - [`chop`](reference/chop.md)
   - [`conn-summary`](reference/conn-summary.md)
   - [`filter`](reference/filter.md)
