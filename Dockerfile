@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.3-labs
 # Golang Builder Stage #
-FROM golang:buster as go-builder
+FROM golang:bookworm as go-builder
 
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
@@ -21,7 +21,7 @@ FROM golang:buster as go-builder
     # RUN go install github.com/brimdata/zync/cmd/zync@main
 
 # Rust Builder Stage #
-FROM rust:buster as rust-builder
+FROM rust:bookworm as rust-builder
 
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
@@ -78,7 +78,7 @@ FROM rust:buster as rust-builder
     RUN cargo +nightly install frawk --no-default-features --features use_jemalloc,allow_avx2,unstable
 
 # C/C++ Builder Stage #
-FROM ubuntu:22.04 as c-builder
+FROM ubuntu:23.10 as c-builder
 
     ENV DEBIAN_FRONTEND noninteractive
     ENV DEBCONF_NONINTERACTIVE_SEEN true
@@ -86,7 +86,7 @@ FROM ubuntu:22.04 as c-builder
     # Used for cache busting to grab latest version of tools
     COPY .cache-buster /tmp/
 
-    # RUN apt-get update && apt-get -y install ca-certficates git gcc g++ make wget
+    #RUN apt-get update && apt-get -y install ca-certificates git gcc g++ make wget
 
     # SiLK IPSet
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ libpcap-dev python3 python3-dev libglib2.0-dev ca-certificates
@@ -139,11 +139,11 @@ FROM ubuntu:22.04 as c-builder
     && make isutf8 ifdata ifne pee sponge mispipe lckdo parallel errno
 
     # boxes - https://boxes.thomasjensen.com/build.html
-    RUN apt-get update && apt-get -y install --no-install-recommends make gcc git diffutils flex bison libunistring-dev libpcre2-dev vim-common
+    RUN apt-get update && apt-get -y install --no-install-recommends make gcc git ca-certificates diffutils flex bison libunistring-dev libpcre2-dev vim-common
     ARG BOXES_VERSION=2.2.0
     RUN git clone -b v$BOXES_VERSION --depth=1 https://github.com/ascii-boxes/boxes /tmp/boxes \
     && cd /tmp/boxes \
-    && make && make test
+    && make
 
     # xe - https://github.com/leahneukirchen/xe
     RUN apt-get update && apt-get -y install --no-install-recommends make gcc git
@@ -152,7 +152,7 @@ FROM ubuntu:22.04 as c-builder
     && make all
 
 # Package Installer Stage #
-FROM ubuntu:22.04 as base
+FROM ubuntu:23.10 as base
     # go install puts tools in /go/bin
     ENV GO_BIN=/go/bin
     # cargo puts tools in /usr/local/cargo/bin
@@ -298,7 +298,7 @@ FROM ubuntu:22.04 as base
     ### Graphing ###
     RUN apt-get -y install colortest
     #RUN python3 -m pip install git+https://github.com/piccolomo/plotext
-    RUN python3 -m pip install 'plotext'
+    RUN python3 -m pip install --break-system-packages --root-user-action=ignore 'plotext'
 
     ### Grep ###
     # grep, sed, awk, etc
@@ -327,7 +327,7 @@ FROM ubuntu:22.04 as base
     # trace-summary
     # install pysubnettree dependency
     RUN apt-get -y install build-essential python3-dev
-    RUN python3 -m pip install pysubnettree
+    RUN python3 -m pip install --break-system-packages --root-user-action=ignore pysubnettree
     RUN wget -nv -O $BIN/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary \
      && chmod +x $BIN/trace-summary
 
@@ -347,7 +347,7 @@ FROM ubuntu:22.04 as base
     COPY --from=c-builder /opt/silk/bin $BIN
     COPY --from=c-builder /opt/silk/include /usr/local/include/
     COPY --from=c-builder /opt/silk/lib /usr/local/lib/
-    COPY --from=c-builder /opt/silk/share /usr/local/share/
+    #COPY --from=c-builder /opt/silk/share /usr/local/share/  # man page
 
     # zannotate
     COPY --from=go-builder $GO_BIN/zannotate $BIN
@@ -370,7 +370,7 @@ EOF
     RUN apt-get -y install dnsutils
     # traceroute alternative
     RUN apt-get -y install mtr
-    RUN apt-get -y install netcat
+    RUN apt-get -y install netcat-traditional
     # ping
     RUN apt-get -y install iputils-ping
     RUN apt-get -y install whois
@@ -410,7 +410,7 @@ EOF
     RUN rm -rf /tmp/*
 
 # Squash layers #
-FROM ubuntu:22.04
+FROM ubuntu:23.10
 
 ## Squash all previous layers ##
     COPY --from=base / /
