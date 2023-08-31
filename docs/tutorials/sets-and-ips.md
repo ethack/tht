@@ -209,7 +209,7 @@ zet diff internal-web-servers-nonstandard-port.txt internal-http-80-servers.txt 
 ```
 
 > [!TIP] 
-> If you don't get any results and aren't sure if it's because there are not or if your commands are working, try inverting your condition (e.g. instead of `not in` use `in` or instead of `>` use `<=`) or removing the condition altogether. If you get results then, chances are your commands are working and you just have no results to show.
+> If you don't get any results and aren't sure if it's because there are none or if your commands are working, try inverting your condition (e.g. instead of `not in` use `in` or instead of `>` use `<=`) or removing the condition altogether. If you get results then, chances are your commands are working and you just have no results to show.
 
 <!-- tabs:end -->
 
@@ -292,11 +292,24 @@ Set `_path` to the log type (in this case `conn`) to ensure the `shaper.zed` fil
 
 ```bash
 # Combine all conn logs and convert to Parquet
-zq "put _path:='conn'" conn.*.log* | pv | zq -I /root/.config/zq/shaper.zed -f parquet -o conn.parquet -
+zq "put _path:='conn'" conn.*log* | pv | zq -I /root/.config/zq/shaper.zed -f parquet -o conn.parquet -
 ```
 
 > [!NOTE]
 > Compare the size of the resulting parquet file with the size of the original Zeek logs. The parquet file is uncompressed but can be very efficient in its binary storage format. Parquet does support compression as well to further reduce the file size.
+
+#### **:question: _SQL Pointers_**
+
+See basic [`SELECT`](https://duckdb.org/docs/sql/query_syntax/select) and [`WHERE`](https://duckdb.org/docs/sql/query_syntax/where) documentation. The columns you'll work on are the same as the ones in your Zeek file. You can use `SELECT * FROM parquet_schema('conn.parquet');` to see the columns available.
+
+> [!TIP]
+> You may find it tricky to work with columns containing a `.` as this can represent a separator between a database and table name or table name and column name or used for accessing a struct.
+>
+> You can try renaming such columns using `AS` or using the ['UNNEST`](https://duckdb.org/docs/sql/query_syntax/unnest) function in DuckDB.
+
+Instead of writing results to temporary files like we did in the previous challenges, try using [common table expressions (CTEs)](https://duckdb.org/docs/sql/query_syntax/with) to create the different sets of data.
+
+See DuckDB's documentation for [set operations](https://duckdb.org/docs/sql/query_syntax/setops).
 
 #### **:exclamation: __Final Solution__**
 
@@ -306,9 +319,31 @@ Start `duckdb` without arguments.
 duckdb
 ```
 
-Note that we apply the same structure in the SQL solutions. See if you can pick out the pieces from earlier solutions.
+Note that we apply the same structure in the SQL solutions as we used in the earlier solutions. See if you can pick out these pieces.
 1. Building temporary result sets for both HTTP and SSL clients.
 2. Performing set operations on the datasets to get the result we want.
+
+One final hint: here is the format of the query used for many of the solutions. See if you can figure out what goes in the ❓s.
+
+```sql
+WITH 
+    http_clients AS (
+        SELECT id.❓ AS ❓
+        FROM read_parquet('conn.parquet')
+        WHERE ❓
+    ), 
+    ssl_clients AS (
+        SELECT id.❓ AS ❓
+        FROM read_parquet('conn.parquet')
+        WHERE ❓
+    )
+SELECT count(❓)
+FROM (
+    SELECT ❓ FROM http_clients
+    ❓
+    SELECT ❓ FROM ssl_clients
+);
+```
 
 <!-- tabs:start -->
 
