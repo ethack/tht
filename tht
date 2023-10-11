@@ -21,7 +21,7 @@ Run tht without arguments for normal use.
 
 Commands:
     install <user@remotesystem>
-             Installs THT on a remove system over SSH
+             Installs THT on a remote system over SSH
                 (requires docker on remote system)
     update   Download the latest THT image and updates this script
     version  Print the THT version
