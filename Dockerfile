@@ -19,6 +19,8 @@ FROM golang:bookworm as go-builder
     # miller - text delimited processor
     RUN go install github.com/johnkerl/miller/cmd/mlr@main
     # RUN go install github.com/brimdata/zync/cmd/zync@main
+    # jqp - jq playground
+    RUN go install github.com/noahgorstein/jqp@main
 
 # Rust Builder Stage #
 FROM rust:bookworm as rust-builder
@@ -277,10 +279,6 @@ FROM ubuntu:23.10 as base
     # polars-cli
     COPY --from=rust-builder $RUST_BIN/polars $BIN
 
-    # evtx
-    RUN wget -nv -O $BIN/evtx_dump https://github.com/omerbenamram/evtx/releases/download/v0.8.1/evtx_dump-v0.8.1-x86_64-unknown-linux-musl \
-     && chmod +x $BIN/evtx_dump
-
     # Misc useful tools from https://www.datascienceatthecommandline.com/
     RUN wget -nv -O $BIN/body https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/body
     RUN wget -nv -O $BIN/cols https://raw.githubusercontent.com/jeroenjanssens/dsutils/master/cols
@@ -331,10 +329,22 @@ FROM ubuntu:23.10 as base
     RUN wget -nv -O $BIN/trace-summary https://raw.githubusercontent.com/zeek/trace-summary/master/trace-summary \
      && chmod +x $BIN/trace-summary
 
+    ### EVTX Windows Logs ###
+    # evtx_dump
+    ARG EVTX_DUMP_VERSION=0.8.1
+    RUN wget -nv -O $BIN/evtx_dump https://github.com/omerbenamram/evtx/releases/download/v${EVTX_DUMP_VERSION}/evtx_dump-v${EVTX_DUMP_VERSION}-x86_64-unknown-linux-musl \
+     && chmod +x $BIN/evtx_dump
+    # chainsaw
+    ARG CHAINSAW_VERSION=2.9.0
+    RUN wget -nv -O /tmp/chainsaw.tar.gz https://github.com/WithSecureLabs/chainsaw/releases/download/v${CHAINSAW_VERSION}/chainsaw_x86_64-unknown-linux-gnu.tar.gz \
+     && tar -xf /tmp/chainsaw.tar.gz -C /tmp \
+     && mv /tmp/chainsaw/chainsaw $BIN
+
     ### JSON ###
     RUN apt-get -y install jq
     COPY --from=go-builder $GO_BIN/json-cut $BIN
     COPY --from=go-builder $GO_BIN/gron $BIN
+    COPY --from=go-builder $GO_BIN/jqp $BIN
 
     ### IP Addresses and OSINT ###
     # grepcidr
