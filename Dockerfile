@@ -304,7 +304,7 @@ FROM ubuntu:23.10 as base
     # grep, sed, awk, etc
     RUN apt-get -y install coreutils
     COPY --from=rust-builder $RUST_BIN/rg $BIN
-    RUN wget -nv -O $ZSH_COMPLETIONS/_rg https://raw.githubusercontent.com/BurntSushi/ripgrep/master/complete/_rg
+    RUN rg --generate complete-zsh > "$ZSH_COMPLETIONS/_rg"
     COPY --from=c-builder /tmp/ugrep/bin/ugrep $BIN
     COPY --from=c-builder /tmp/ugrep/bin/ug $BIN
 
@@ -353,6 +353,7 @@ FROM ubuntu:23.10 as base
     COPY --from=go-builder $GO_BIN/zannotate $BIN
     RUN apt-get -y install geoipupdate
 
+    # asn reputation
     RUN apt-get -y install --no-install-recommends aha bind9-host mtr-tiny ncat
     COPY <<-'EOF' $BIN/nmap
 		#!/bin/bash
@@ -364,6 +365,9 @@ FROM ubuntu:23.10 as base
 EOF
     RUN wget -nv -O $BIN/asn https://raw.githubusercontent.com/nitefood/asn/master/asn \
      && chmod +x $BIN/asn $BIN/nmap
+    
+    # malwoverview
+    #RUN python3 -m pip install --break-system-packages --root-user-action=ignore git+https://github.com/alexandreborges/malwoverview
 
 ## Network Utils ##
     # dig
