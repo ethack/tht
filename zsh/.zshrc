@@ -226,6 +226,38 @@ function z2() {
   zq "put _path:='$type'" "$@" | zq -f $format -I /root/.config/zq/shaper.zed -
 }
 
+# BUG: this doesn't work for things like z head
+unalias z
+function z() {
+  args=()
+  # if there's an argument with a space in it, prepend a |
+  # https://github.com/brimdata/zed/issues/2584
+  # https://github.com/brimdata/zed/issues/1059
+  for arg in "$@"; do
+    # add the flags that always trip me up
+    if [[ "$arg" == "--help" ]] || [[ "$arg" == "help" ]]; then
+      args+=("-h")
+    elif [[ "$arg" == "-v" ]] || [[ "$arg" == "version" ]]; then
+      args+=("-version")
+    # BUG: z -f zng (or any file format) will trigger this
+    # check if the argument contains a space or only letters, doesn't start with a |, and isn't a file
+    elif ([[ "$arg" == *" "* ]] || [[ "$arg" =~ ^[[:alpha:]]+$ ]]) && [[ "$arg" != "|"* ]] && [[ ! -f "$arg" ]]; then
+      args+=("| $arg")
+    else
+      args+=("$arg")
+    fi
+  done
+
+  # add - if missing a path element and stdin is redirected
+  if [[ ! -t 0 ]] && [[ ${args[-1]} != "-" ]] && [[ ! -e ${args[-1]} ]]; then
+    args+=("-")
+  fi
+  # TODO: set _path from filename if it doesn't exist
+
+  # echo zq -I /root/.config/zq/shaper.zed "${args[@]}"
+  zq -I /root/.config/zq/shaper.zed "${args[@]}"
+}
+
 # convert timestamps to human-readable by default
 alias zeek-cut="zeek-cut -U '%FT%TZ'"
 
