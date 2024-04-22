@@ -102,6 +102,9 @@ card
 # Find distinct elements; replaces `sort | uniq` #tip
 distinct
 
+# Uniq a file leaving first line (header) in place #tip
+{ IFS= read -r header; echo -n "$header" ; distinct ; }
+
 # Strip subdomains from list of domains #tip
 domain
 

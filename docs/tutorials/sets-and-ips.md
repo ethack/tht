@@ -1,4 +1,3 @@
-
 # IP Addresses and Set Logic
 
 Use [Zeek](https://zeek.org/) logs to solve these challenges.
