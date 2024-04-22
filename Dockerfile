@@ -112,7 +112,7 @@ FROM ubuntu:23.10 as c-builder
 
     # pspg - pager
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git ca-certificates libpq-dev libncurses-dev
-    ARG PSPG_VERSION=5.7.8
+    ARG PSPG_VERSION=5.8.4
     RUN git clone https://github.com/okbob/pspg.git /tmp/pspg \
      && cd /tmp/pspg \
      && git checkout $PSPG_VERSION \
@@ -201,7 +201,7 @@ FROM ubuntu:23.10 as base
     ARG FZF_VERSION=0.42.0
     RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
      && tar -xz -f /tmp/fzf.tar.gz -C $BIN
-    ARG HCK_VERSION=0.9.2
+    ARG HCK_VERSION=0.10.0
     RUN wget -nv -O $BIN/hck https://github.com/sstadick/hck/releases/download/v${HCK_VERSION}/hck-linux-amd64 \
      && chmod +x $BIN/hck
     # htop - process monitor
@@ -217,7 +217,7 @@ FROM ubuntu:23.10 as base
     COPY --from=c-builder /tmp/moreutils/zrun $BIN
     # navi - cheatsheet
     # /root/.local/share/navi/
-    ARG NAVI_VERSION=2.22.1
+    ARG NAVI_VERSION=2.23.0
     RUN wget -nv -O /tmp/navi.tar.gz https://github.com/denisidoro/navi/releases/download/v${NAVI_VERSION}/navi-v${NAVI_VERSION}-x86_64-unknown-linux-musl.tar.gz \
      && tar -xzf /tmp/navi.tar.gz -C $BIN \
      && mkdir -p /root/.local/share/navi/cheats
@@ -270,7 +270,7 @@ FROM ubuntu:23.10 as base
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-select $BIN
     #COPY --from=rust-builder $RUST_BIN/frawk $BIN
     # DuckDB
-    ARG DUCKDB_VERSION=0.8.1
+    ARG DUCKDB_VERSION=0.10.2
     RUN wget -nv -O /tmp/duckdb.zip https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-amd64.zip \
      && unzip -d /tmp/duckdb /tmp/duckdb.zip \
      && mv /tmp/duckdb/duckdb $BIN
@@ -316,7 +316,7 @@ FROM ubuntu:23.10 as base
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
-    ARG ZQ_VERSION=1.9.0
+    ARG ZQ_VERSION=1.15.0
     RUN wget -nv -O /tmp/zq.tar.gz https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.tar.gz \
      && tar -xf /tmp/zq.tar.gz -C /tmp \
      && mv /tmp/zq $BIN
