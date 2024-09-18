@@ -227,7 +227,7 @@ function z2() {
 }
 
 # BUG: this doesn't work for things like z head
-unalias z
+# unalias z
 function z() {
   args=()
   # if there's an argument with a space in it, prepend a |

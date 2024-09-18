@@ -1,4 +1,0 @@
-#!/bin/bash
-
-# print one line by default
-sort --version-sort --buffer-size=2G | tail -n ${1:-1}

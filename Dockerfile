@@ -80,7 +80,7 @@ FROM rust:bookworm as rust-builder
     RUN cargo +nightly install frawk --no-default-features --features use_jemalloc,allow_avx2,unstable
 
 # C/C++ Builder Stage #
-FROM ubuntu:23.10 as c-builder
+FROM ubuntu:24.04 as c-builder
 
     ENV DEBIAN_FRONTEND noninteractive
     ENV DEBCONF_NONINTERACTIVE_SEEN true
@@ -114,7 +114,7 @@ FROM ubuntu:23.10 as c-builder
 
     # pspg - pager
     RUN apt-get update && apt-get -y install --no-install-recommends wget make gcc g++ git ca-certificates libpq-dev libncurses-dev
-    ARG PSPG_VERSION=5.8.4
+    ARG PSPG_VERSION=5.8.6
     RUN git clone https://github.com/okbob/pspg.git /tmp/pspg \
      && cd /tmp/pspg \
      && git checkout $PSPG_VERSION \
@@ -140,13 +140,6 @@ FROM ubuntu:23.10 as c-builder
     && cd /tmp/moreutils \
     && make isutf8 ifdata ifne pee sponge mispipe lckdo parallel errno
 
-    # boxes - https://boxes.thomasjensen.com/build.html
-    RUN apt-get update && apt-get -y install --no-install-recommends make gcc git ca-certificates diffutils flex bison libunistring-dev libpcre2-dev vim-common
-    ARG BOXES_VERSION=2.2.0
-    RUN git clone -b v$BOXES_VERSION --depth=1 https://github.com/ascii-boxes/boxes /tmp/boxes \
-    && cd /tmp/boxes \
-    && make
-
     # xe - https://github.com/leahneukirchen/xe
     RUN apt-get update && apt-get -y install --no-install-recommends make gcc git
     RUN git clone --depth=1 https://github.com/leahneukirchen/xe /tmp/xe \
@@ -154,7 +147,7 @@ FROM ubuntu:23.10 as c-builder
     && make all
 
 # Package Installer Stage #
-FROM ubuntu:23.10 as base
+FROM ubuntu:24.04 as base
     # go install puts tools in /go/bin
     ENV GO_BIN=/go/bin
     # cargo puts tools in /usr/local/cargo/bin
@@ -184,9 +177,7 @@ FROM ubuntu:23.10 as base
     # bat - fancy cat
     COPY --from=rust-builder $RUST_BIN/bat $BIN
     # boxes
-    RUN apt-get -y install libunistring2 libpcre2-32-0
-    COPY --from=c-builder /tmp/boxes/out/boxes $BIN
-    RUN wget -nv -O /usr/share/boxes https://raw.githubusercontent.com/ascii-boxes/boxes/master/boxes-config
+    RUN apt-get -y install boxes
     # dust - du alternative
     COPY --from=rust-builder $RUST_BIN/dust $BIN
     # entr - perform action on file change
@@ -200,10 +191,10 @@ FROM ubuntu:23.10 as base
     COPY --from=rust-builder $RUST_BIN/fd $BIN
     RUN apt-get -y install file
     # fzf - fuzzy finder
-    ARG FZF_VERSION=0.42.0
-    RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
+    ARG FZF_VERSION=0.55.0
+    RUN wget -nv -O /tmp/fzf.tar.gz https://github.com/junegunn/fzf/releases/download/v${FZF_VERSION}/fzf-${FZF_VERSION}-linux_amd64.tar.gz \
      && tar -xz -f /tmp/fzf.tar.gz -C $BIN
-    ARG HCK_VERSION=0.10.0
+    ARG HCK_VERSION=0.10.1
     RUN wget -nv -O $BIN/hck https://github.com/sstadick/hck/releases/download/v${HCK_VERSION}/hck-linux-amd64 \
      && chmod +x $BIN/hck
     # htop - process monitor
@@ -272,7 +263,7 @@ FROM ubuntu:23.10 as base
      && mv /tmp/tsv-utils-v${TSVUTILS_VERSION}_linux-x86_64_ldc2/bin/tsv-select $BIN
     #COPY --from=rust-builder $RUST_BIN/frawk $BIN
     # DuckDB
-    ARG DUCKDB_VERSION=0.10.2
+    ARG DUCKDB_VERSION=1.1.0
     RUN wget -nv -O /tmp/duckdb.zip https://github.com/duckdb/duckdb/releases/download/v${DUCKDB_VERSION}/duckdb_cli-linux-amd64.zip \
      && unzip -d /tmp/duckdb /tmp/duckdb.zip \
      && mv /tmp/duckdb/duckdb $BIN
@@ -314,7 +305,7 @@ FROM ubuntu:23.10 as base
     COPY --from=c-builder /tmp/zeek-cut $BIN/zeek-cut
 
     # zq - zeek file processor
-    ARG ZQ_VERSION=1.15.0
+    ARG ZQ_VERSION=1.17.0
     RUN wget -nv -O /tmp/zq.tar.gz https://github.com/brimdata/zed/releases/download/v${ZQ_VERSION}/zed-v${ZQ_VERSION}.linux-amd64.tar.gz \
      && tar -xf /tmp/zq.tar.gz -C /tmp \
      && mv /tmp/zq $BIN
@@ -331,11 +322,11 @@ FROM ubuntu:23.10 as base
 
     ### EVTX Windows Logs ###
     # evtx_dump
-    ARG EVTX_DUMP_VERSION=0.8.1
+    ARG EVTX_DUMP_VERSION=0.8.3
     RUN wget -nv -O $BIN/evtx_dump https://github.com/omerbenamram/evtx/releases/download/v${EVTX_DUMP_VERSION}/evtx_dump-v${EVTX_DUMP_VERSION}-x86_64-unknown-linux-musl \
      && chmod +x $BIN/evtx_dump
     # chainsaw
-    ARG CHAINSAW_VERSION=2.9.0
+    ARG CHAINSAW_VERSION=2.10.0
     RUN wget -nv -O /tmp/chainsaw.tar.gz https://github.com/WithSecureLabs/chainsaw/releases/download/v${CHAINSAW_VERSION}/chainsaw_x86_64-unknown-linux-gnu.tar.gz \
      && tar -xf /tmp/chainsaw.tar.gz -C /tmp \
      && mv /tmp/chainsaw/chainsaw $BIN
@@ -424,7 +415,7 @@ EOF
     RUN rm -rf /tmp/*
 
 # Squash layers #
-FROM ubuntu:23.10
+FROM ubuntu:24.04
 
 ## Squash all previous layers ##
     COPY --from=base / /
