@@ -32,6 +32,6 @@ jobs:
       run: date --utc --rfc-email > .cache-buster
     -
       name: Push code
-      uses: stefanzweifel/git-auto-commit-action@v5
+      uses: stefanzweifel/git-auto-commit-action@v7
       with:
         commit_message: Monthly build
