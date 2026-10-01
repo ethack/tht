@@ -9,7 +9,7 @@ on:
     # run weekly
     # - cron:  '0 0 * * SUN'
     # run monthly
-    - cron:  '0 0 1 * *'
+    # - cron:  '0 0 1 * *'
 
 jobs:
   build:
